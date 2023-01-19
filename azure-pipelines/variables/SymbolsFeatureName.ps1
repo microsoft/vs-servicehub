@@ -1,1 +1,1 @@
-'LibraryName'
+'Microsoft.ServiceHub.Framework'

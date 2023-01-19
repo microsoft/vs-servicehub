@@ -48,7 +48,6 @@ jobs:
         EnableCompliance: ${{ parameters.EnableCompliance }}
         EnableAPIScan: ${{ parameters.EnableAPIScan }}
 
-  - template: expand-template.yml
 
 - job: Linux
   pool:
@@ -61,7 +60,6 @@ jobs:
   - template: dotnet.yml
     parameters:
       RunTests: ${{ parameters.RunTests }}
-  - template: expand-template.yml
 
 - job: macOS
   condition: ${{ parameters.includeMacOS }}
@@ -75,7 +73,6 @@ jobs:
   - template: dotnet.yml
     parameters:
       RunTests: ${{ parameters.RunTests }}
-  - template: expand-template.yml
 
 - job: WrapUp
   dependsOn:

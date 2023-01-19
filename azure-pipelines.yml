@@ -3,7 +3,6 @@ trigger:
   branches:
     include:
     - main
-    - microbuild
     - 'validate/*'
   paths:
     exclude:
@@ -27,7 +26,7 @@ variables:
   MSBuildTreatWarningsAsErrors: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   BuildConfiguration: Release
-  # codecov_token: 4dc9e7e2-6b01-4932-a180-847b52b43d35 # Get a new one from https://codecov.io/
+  # #codecov_token: # Get a new one from https://codecov.io/
   NUGET_PACKAGES: $(Agent.TempDirectory)/.nuget/packages/
 
 jobs:
