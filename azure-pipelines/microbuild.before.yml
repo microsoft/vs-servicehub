@@ -8,6 +8,20 @@ steps:
     outputfile: $(System.DefaultWorkingDirectory)/obj/NOTICE
     outputformat: text
 
+- task: MicroBuildOptProfPlugin@6
+  inputs:
+    ProfilingInputsDropName: ProfilingInputs/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+    OptimizationInputsLookupMethod: DropPrefix
+    DropNamePrefix: OptimizationInputs/$(System.TeamProject)/$(Build.Repository.Name)
+    ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
+    AccessToken: $(System.AccessToken)
+  displayName: 🔧 Install OptProf Plugin
+
+- task: MicroBuildLocalizationPlugin@3
+  inputs:
+    languages: $(LocLanguages)
+  displayName: 🔧 Install MicroBuild Localization Plugin
+
 - task: MicroBuildSigningPlugin@3
   inputs:
     signType: $(SignType)

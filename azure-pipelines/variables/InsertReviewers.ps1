@@ -6,6 +6,8 @@ if (Test-Path "$PSScriptRoot\TeamEmail.ps1") {
     $contacts += & "$PSScriptRoot\TeamEmail.ps1"
 }
 
+$contacts += 'Andrew Arnott'
+
 $contacts = $contacts |? { $_ }
 if ($contacts) {
     [string]::Join(',', $contacts)
