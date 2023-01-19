@@ -1,0 +1,23 @@
+{
+	"extends": "@tsconfig/node16",
+	"compilerOptions": {
+		"alwaysStrict": true,
+		"declaration": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"outDir": "js",
+		"rootDir": "./",
+		"sourceMap": true,
+		"strict": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"target": "ES2022"
+	},
+	"exclude": [
+		"node_modules",
+		"js",
+		"jest.config.ts"
+	]
+}

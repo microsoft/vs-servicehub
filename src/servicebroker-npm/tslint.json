@@ -1,0 +1,30 @@
+{
+	"defaultSeverity": "error",
+	"extends": [
+		"tslint:recommended"
+	],
+	"jsRules": {},
+	"rules": {
+		"no-bitwise": false,
+		"no-empty": true,
+		"variable-name": true,
+		"no-conditional-assignment": true,
+		"no-string-literal": true,
+		"only-arrow-functions": false,
+		"semicolon": false,
+		"max-classes-per-file": true,
+		"no-namespace": true,
+		"quotemark": [
+			false,
+			"avoid-escape"
+		],
+		"max-line-length": false
+	},
+	"rulesDirectory": [],
+	"linterOptions": {
+		"exclude": [
+			"node_modules/**",
+			"js/**"
+		]
+	}
+}

@@ -1,0 +1,12 @@
+.vscode/
+test/
+.editorconfig
+jest.config.js
+*.*proj
+*.sln
+tsconfig.json
+tslint.json
+*.ps1
+*.binlog
+*.log
+*.tgz

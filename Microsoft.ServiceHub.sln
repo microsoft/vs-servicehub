@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33317.419
@@ -47,6 +46,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.ServiceHub.Analyz
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExternalTestAssembly", "test\ExternalTestAssembly\ExternalTestAssembly.csproj", "{61F7D8BF-F0A7-4C62-A56E-D4E9B6F73518}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBrokerTest", "test\ServiceBrokerTest\ServiceBrokerTest.csproj", "{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +74,10 @@ Global
 		{61F7D8BF-F0A7-4C62-A56E-D4E9B6F73518}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61F7D8BF-F0A7-4C62-A56E-D4E9B6F73518}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61F7D8BF-F0A7-4C62-A56E-D4E9B6F73518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,6 +90,7 @@ Global
 		{1023E5C7-8118-43E8-9E65-3DA094698FA6} = {4441D57D-78BF-441F-A530-6B1C5C321C1B}
 		{3AD30282-F09F-449A-892A-27F9D6140BC0} = {EE7199AA-408F-4AD6-847D-190FCBFD4D9B}
 		{61F7D8BF-F0A7-4C62-A56E-D4E9B6F73518} = {EE7199AA-408F-4AD6-847D-190FCBFD4D9B}
+		{C8E35A08-3C30-40E9-BE9B-8ABFBC0195C9} = {EE7199AA-408F-4AD6-847D-190FCBFD4D9B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E3944F6A-384B-4B0F-B93F-3BD513DC57BD}

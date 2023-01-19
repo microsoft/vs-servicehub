@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <OutDir>js</OutDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <FilesToSign Include="js\**\*.js">
+      <Authenticode>MicrosoftSHA2</Authenticode>
+    </FilesToSign>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="microsoft.visualstudioeng.microbuild.core" Version="1.0.0" />
+  </ItemGroup>
+</Project>
