@@ -1,0 +1,297 @@
+﻿#nullable enable
+Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs
+Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs.BrokeredServicesChangedEventArgs(System.Collections.Immutable.IImmutableSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>! impactedServices) -> void
+Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs.BrokeredServicesChangedEventArgs(System.Collections.Immutable.IImmutableSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>! impactedServices, bool otherServicesImpacted) -> void
+Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs.ImpactedServices.get -> System.Collections.Immutable.IImmutableSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs.OtherServicesImpacted.get -> bool
+Microsoft.ServiceHub.Framework.FrameworkServices
+Microsoft.ServiceHub.Framework.IDiscoveryService
+Microsoft.ServiceHub.Framework.IDiscoveryService.DiscoverServiceAsync(string! serviceName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
+Microsoft.ServiceHub.Framework.IJsonRpcLocalProxy
+Microsoft.ServiceHub.Framework.IJsonRpcLocalProxy.ConstructLocalProxy<T>() -> T?
+Microsoft.ServiceHub.Framework.IMultiVersionedServiceFactory
+Microsoft.ServiceHub.Framework.IMultiVersionedServiceFactory.CreateAsync(System.IServiceProvider! hostProvidedServices, Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions serviceActivationOptions, Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient! authorizationServiceClient, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<object!>!
+Microsoft.ServiceHub.Framework.IMultiVersionedServiceFactory.GetServiceDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.ServiceHub.Framework.INotifyDisposable
+Microsoft.ServiceHub.Framework.INotifyDisposable.Disposed -> System.EventHandler!
+Microsoft.ServiceHub.Framework.IRemoteServiceBroker
+Microsoft.ServiceHub.Framework.IRemoteServiceBroker.CancelServiceRequestAsync(System.Guid serviceRequestId) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IServiceHubServiceFactory
+Microsoft.ServiceHub.Framework.IRemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>!
+Microsoft.ServiceHub.Framework.IRemoteServiceBroker.HandshakeAsync(Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata clientMetadata, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IRemoteServiceBroker.RequestServiceChannelAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo>!
+Microsoft.ServiceHub.Framework.IServiceBroker
+Microsoft.ServiceHub.Framework.IServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.ServiceHub.Framework.IServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.ServiceHub.Framework.IServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.ServiceHub.Framework.IServiceHubServiceFactory.CreateAsync(System.IO.Stream! stream, System.IServiceProvider! hostProvidedServices, Microsoft.ServiceHub.Framework.ServiceActivationOptions serviceActivationOptions, Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient! authorizationServiceClient) -> System.Threading.Tasks.Task<object!>!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.CancelServiceRequestAsync(System.Guid serviceRequestId) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.HandshakeAsync(Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata clientMetadata, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.IpcRelayServiceBroker(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker) -> void
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.RequestServiceChannelAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions serviceActivationOptions, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo>!
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.CancelServiceRequestAsync(System.Guid serviceRequestId) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.HandshakeAsync(Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata clientMetadata, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.MultiplexingRelayServiceBroker(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Nerdbank.Streams.MultiplexingStream! multiplexingStreamWithClient) -> void
+Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.RequestServiceChannelAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo>!
+Microsoft.ServiceHub.Framework.RemoteServiceBroker
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.OfferLocalServiceHostAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.SetAuthorizationService(Microsoft.ServiceHub.Framework.Services.IAuthorizationService? authorizationService) -> void
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.SetAuthorizationService(Microsoft.ServiceHub.Framework.Services.IAuthorizationService? authorizationService, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory) -> void
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.TraceSource.get -> System.Diagnostics.TraceSource!
+Microsoft.ServiceHub.Framework.RemoteServiceBroker.TraceSource.set -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.ClrActivation.get -> Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.LocalCLRServiceActivation!
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.ClrActivation.set -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.IsEmpty.get -> bool
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.IsOneOf(Microsoft.ServiceHub.Framework.RemoteServiceConnections connections) -> bool
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.LocalCLRServiceActivation
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.LocalCLRServiceActivation.AssemblyPath.get -> string!
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.LocalCLRServiceActivation.FullTypeName.get -> string!
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.LocalCLRServiceActivation.LocalCLRServiceActivation(string! assemblyPath, string! fullTypeName) -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.MultiplexingChannelId.get -> ulong?
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.MultiplexingChannelId.set -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.PipeName.get -> string?
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.PipeName.set -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.RemoteServiceConnectionInfo() -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.RequestId.get -> System.Guid?
+Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo.RequestId.set -> void
+Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.RemoteServiceConnections.ClrActivation = 4 -> Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.RemoteServiceConnections.IpcPipe = 2 -> Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.RemoteServiceConnections.Multiplexing = 1 -> Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.RemoteServiceConnections.None = 0 -> Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.SHostServiceBrokerFactory
+Microsoft.ServiceHub.Framework.ServiceActivationFailedException
+Microsoft.ServiceHub.Framework.ServiceActivationFailedException.ServiceActivationFailedException(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Exception? inner) -> void
+Microsoft.ServiceHub.Framework.ServiceActivationFailedException.ServiceActivationFailedException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ActivationArguments.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ActivationArguments.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ApplyCultureToCurrentContext() -> Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientCredentials.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientCulture.get -> System.Globalization.CultureInfo?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientCulture.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientRpcTarget.get -> object?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientRpcTarget.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientUICulture.get -> System.Globalization.CultureInfo?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ClientUICulture.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.Equals(Microsoft.ServiceHub.Framework.ServiceActivationOptions other) -> bool
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.MultiplexingStream.get -> Nerdbank.Streams.MultiplexingStream?
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.MultiplexingStream.set -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.ServiceActivationOptions() -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.SetClientDefaults() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerAggregator
+Microsoft.ServiceHub.Framework.ServiceBrokerClient
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.ClientProxiesInvalidatedEventHandler
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceRpcDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T!>>
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceRpcDescriptor, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T!>>
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Invalidated -> Microsoft.ServiceHub.Framework.ServiceBrokerClient.ClientProxiesInvalidatedEventHandler?
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.InvalidationSemaphore.get -> Microsoft.VisualStudio.Threading.ReentrantSemaphore!
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.IsDisposed.get -> bool
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.IsInitialized.get -> bool
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Proxy.get -> T?
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental(Microsoft.ServiceHub.Framework.ServiceBrokerClient! client, Microsoft.VisualStudio.Threading.AsyncLazy<object?>! proxy, T? value) -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.ServiceBrokerClient(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory = null) -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata.LocalServiceHost.get -> Microsoft.ServiceHub.Framework.ServiceHostInformation
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata.LocalServiceHost.set -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata.ServiceBrokerClientMetadata() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata.SupportedConnections.get -> Microsoft.ServiceHub.Framework.RemoteServiceConnections
+Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata.SupportedConnections.set -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerExtensions
+Microsoft.ServiceHub.Framework.ServiceCompositionException
+Microsoft.ServiceHub.Framework.ServiceCompositionException.ServiceCompositionException() -> void
+Microsoft.ServiceHub.Framework.ServiceCompositionException.ServiceCompositionException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+Microsoft.ServiceHub.Framework.ServiceCompositionException.ServiceCompositionException(string? message) -> void
+Microsoft.ServiceHub.Framework.ServiceCompositionException.ServiceCompositionException(string? message, System.Exception? inner) -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation
+Microsoft.ServiceHub.Framework.ServiceHostInformation.OperatingSystem.get -> Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem?
+Microsoft.ServiceHub.Framework.ServiceHostInformation.OperatingSystem.set -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation.OperatingSystemVersion.get -> System.Version?
+Microsoft.ServiceHub.Framework.ServiceHostInformation.OperatingSystemVersion.set -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation.ProcessArchitecture.get -> System.Runtime.InteropServices.Architecture?
+Microsoft.ServiceHub.Framework.ServiceHostInformation.ProcessArchitecture.set -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation.Runtime.get -> Microsoft.ServiceHub.Framework.ServiceHostRuntime?
+Microsoft.ServiceHub.Framework.ServiceHostInformation.Runtime.set -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation.RuntimeVersion.get -> System.Version?
+Microsoft.ServiceHub.Framework.ServiceHostInformation.RuntimeVersion.set -> void
+Microsoft.ServiceHub.Framework.ServiceHostInformation.ServiceHostInformation() -> void
+Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem
+Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem.Linux = 1 -> Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem
+Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem.OSX = 2 -> Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem
+Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem.Windows = 0 -> Microsoft.ServiceHub.Framework.ServiceHostOperatingSystem
+Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceHostRuntime.Mono = 3 -> Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceHostRuntime.NETCore = 2 -> Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceHostRuntime.NETFramework = 1 -> Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceHostRuntime.NodeJS = 4 -> Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceHostRuntime.None = 0 -> Microsoft.ServiceHub.Framework.ServiceHostRuntime
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Equals(Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor? other) -> bool
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ExceptionStrategy.get -> StreamJsonRpc.ExceptionProcessing
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatter.get -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters.MessagePack = 1 -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters.UTF8 = 0 -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpc.get -> StreamJsonRpc.JsonRpc!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpcConnection(StreamJsonRpc.JsonRpc! jsonRpc) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.LocalRpcProxyOptions.get -> StreamJsonRpc.JsonRpcProxyOptions!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.LocalRpcProxyOptions.set -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.LocalRpcTargetOptions.get -> StreamJsonRpc.JsonRpcTargetOptions!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.LocalRpcTargetOptions.set -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiter.get -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader = 1 -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders = 0 -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MultiplexingStreamOptions.get -> Nerdbank.Streams.MultiplexingStream.Options?
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor! copyFrom) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Type? clientInterface, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Type? clientInterface, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter, Nerdbank.Streams.MultiplexingStream.Options? multiplexingStreamOptions) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithExceptionStrategy(StreamJsonRpc.ExceptionProcessing exceptionStrategy) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithMultiplexingStream(Nerdbank.Streams.MultiplexingStream.Options? multiplexingStreamOptions) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T>
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T>.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T!>! copyFrom) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T>.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T>.ServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Type? clientInterface, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter) -> void
+Microsoft.ServiceHub.Framework.ServiceMoniker
+Microsoft.ServiceHub.Framework.ServiceMoniker.Equals(Microsoft.ServiceHub.Framework.ServiceMoniker? other) -> bool
+Microsoft.ServiceHub.Framework.ServiceMoniker.Name.get -> string!
+Microsoft.ServiceHub.Framework.ServiceMoniker.ServiceMoniker(string! name) -> void
+Microsoft.ServiceHub.Framework.ServiceMoniker.ServiceMoniker(string! name, System.Version? version) -> void
+Microsoft.ServiceHub.Framework.ServiceMoniker.Version.get -> System.Version?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ClientInterface.get -> System.Type?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ConstructRpc(object! rpcTarget, System.IO.Pipelines.IDuplexPipe! pipe) -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ConstructRpc<T>(System.IO.Pipelines.IDuplexPipe! pipe) -> T!
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ConstructRpc<T>(object? rpcTarget, System.IO.Pipelines.IDuplexPipe! pipe) -> T!
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.Moniker.get -> Microsoft.ServiceHub.Framework.ServiceMoniker!
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.MultiplexingStream.get -> Nerdbank.Streams.MultiplexingStream?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.RpcConnection() -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.RpcOrderPreservingSynchronizationContext() -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.UnhandledException -> System.EventHandler<System.Exception!>?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ServiceRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Type? clientInterface) -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ServiceRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! copyFrom) -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.TraceSource.get -> System.Diagnostics.TraceSource?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithServiceMoniker(Microsoft.ServiceHub.Framework.ServiceMoniker! moniker) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithTraceSource(System.Diagnostics.TraceSource? traceSource) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.AuthorizationService.get -> Microsoft.ServiceHub.Framework.Services.IAuthorizationService!
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.AuthorizationServiceClient(Microsoft.ServiceHub.Framework.Services.IAuthorizationService! authorizationService, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory, bool ownsAuthorizationService = true) -> void
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.AuthorizationServiceClient(Microsoft.ServiceHub.Framework.Services.IAuthorizationService! authorizationService, bool ownsAuthorizationService = true) -> void
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.AuthorizeOrThrowAsync(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! operation, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.CheckAuthorizationAsync(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! operation, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.Dispose() -> void
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.GetCredentialsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>!
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient.IsDisposed.get -> bool
+Microsoft.ServiceHub.Framework.Services.AuthorizationServiceExtensions
+Microsoft.ServiceHub.Framework.Services.IAuthorizationService
+Microsoft.ServiceHub.Framework.Services.IAuthorizationService.AuthorizationChanged -> System.EventHandler!
+Microsoft.ServiceHub.Framework.Services.IAuthorizationService.CheckAuthorizationAsync(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! operation, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Microsoft.ServiceHub.Framework.Services.IAuthorizationService.CredentialsChanged -> System.EventHandler!
+Microsoft.ServiceHub.Framework.Services.IAuthorizationService.GetCredentialsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.OperationMoniker.get -> string!
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.OperationMoniker.set -> void
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.ProtectedOperation() -> void
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.ProtectedOperation(string! operationMoniker) -> void
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.ProtectedOperation(string! operationMoniker, int requiredTrustLevel) -> void
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.RequiredTrustLevel.get -> int?
+Microsoft.ServiceHub.Framework.Services.ProtectedOperation.RequiredTrustLevel.set -> void
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.Clone() -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ConstructRpcConnection(System.IO.Pipelines.IDuplexPipe! pipe) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.Protocol.get -> string!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.AddLocalRpcTarget(object! rpcTarget) -> void
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.Completion.get -> System.Threading.Tasks.Task!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.ConstructRpcClient<T>() -> T!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.Dispose() -> void
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.IsDisposed.get -> bool
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.StartListening() -> void
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.TraceSource.get -> System.Diagnostics.TraceSource!
+abstract Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.TraceSource.set -> void
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Clone() -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ConstructLocalProxy<T>(T? target) -> T?
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.ConstructRpcConnection(System.IO.Pipelines.IDuplexPipe! pipe) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Equals(object? obj) -> bool
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.GetHashCode() -> int
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.AddLocalRpcTarget(object! rpcTarget) -> void
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.Completion.get -> System.Threading.Tasks.Task!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.ConstructRpcClient<T>() -> T!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.Dispose() -> void
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.IsDisposed.get -> bool
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.StartListening() -> void
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.TraceSource.get -> System.Diagnostics.TraceSource!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.TraceSource.set -> void
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Protocol.get -> string!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithMultiplexingStream(Nerdbank.Streams.MultiplexingStream? multiplexingStream) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+override Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T>.Clone() -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+override Microsoft.ServiceHub.Framework.ServiceMoniker.Equals(object? obj) -> bool
+override Microsoft.ServiceHub.Framework.ServiceMoniker.GetHashCode() -> int
+override Microsoft.ServiceHub.Framework.ServiceMoniker.ToString() -> string!
+override Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.CreateCopy() -> System.Threading.SynchronizationContext!
+override Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.Post(System.Threading.SendOrPostCallback! d, object? state) -> void
+override Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcOrderPreservingSynchronizationContext.Send(System.Threading.SendOrPostCallback! d, object? state) -> void
+override Microsoft.ServiceHub.Framework.Services.ProtectedOperation.Equals(object? obj) -> bool
+override Microsoft.ServiceHub.Framework.Services.ProtectedOperation.GetHashCode() -> int
+static Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.ConnectToServerAsync(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, System.IO.Stream! duplexStreamWithClient, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(Microsoft.ServiceHub.Framework.IRemoteServiceBroker! serviceBroker, Nerdbank.Streams.MultiplexingStream! multiplexingStream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(System.IO.Stream! duplexStream, Nerdbank.Streams.MultiplexingStream.Options? options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(System.IO.Stream! duplexStream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(Microsoft.ServiceHub.Framework.IRemoteServiceBroker! serviceBroker, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(System.IO.Pipelines.IDuplexPipe! pipe, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(string! pipeName, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.ForceMarshal(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.Parallel(System.Collections.Generic.IReadOnlyCollection<Microsoft.ServiceHub.Framework.IServiceBroker!>! serviceBrokers) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.Sequential(System.Collections.Generic.IReadOnlyList<Microsoft.ServiceHub.Framework.IServiceBroker!>! serviceBrokers) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+static Microsoft.ServiceHub.Framework.ServiceBrokerExtensions.GetPipeAsync(this Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+static Microsoft.ServiceHub.Framework.ServiceBrokerExtensions.GetProxyAsync<T>(this Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor<T!>! serviceDescriptor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+static Microsoft.ServiceHub.Framework.ServiceBrokerExtensions.GetProxyAsync<T>(this Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+static Microsoft.ServiceHub.Framework.ServiceMoniker.operator !=(Microsoft.ServiceHub.Framework.ServiceMoniker? left, Microsoft.ServiceHub.Framework.ServiceMoniker? right) -> bool
+static Microsoft.ServiceHub.Framework.ServiceMoniker.operator ==(Microsoft.ServiceHub.Framework.ServiceMoniker? left, Microsoft.ServiceHub.Framework.ServiceMoniker? right) -> bool
+static Microsoft.ServiceHub.Framework.Services.AuthorizationServiceExtensions.AuthorizeOrThrowAsync(this Microsoft.ServiceHub.Framework.Services.IAuthorizationService! authorizationService, Microsoft.ServiceHub.Framework.Services.ProtectedOperation! operation, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static readonly Microsoft.ServiceHub.Framework.FrameworkServices.Authorization -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+static readonly Microsoft.ServiceHub.Framework.FrameworkServices.RemoteServiceBroker -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+virtual Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.Dispose(bool disposing) -> void
+virtual Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.DisposeAsync() -> System.Threading.Tasks.ValueTask
+virtual Microsoft.ServiceHub.Framework.MultiplexingRelayServiceBroker.OnAvailabilityChanged(object? sender, Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs! args) -> void
+virtual Microsoft.ServiceHub.Framework.RemoteServiceBroker.DisposeAsync() -> System.Threading.Tasks.ValueTask
+virtual Microsoft.ServiceHub.Framework.ServiceBrokerClient.Dispose(bool disposing) -> void
+virtual Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.CreateConnection(StreamJsonRpc.JsonRpc! jsonRpc) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection!
+virtual Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.CreateFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
+virtual Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.CreateHandler(System.IO.Pipelines.IDuplexPipe! pipe, StreamJsonRpc.IJsonRpcMessageFormatter! formatter) -> StreamJsonRpc.IJsonRpcMessageHandler!
+virtual Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.CreateJsonRpc(StreamJsonRpc.IJsonRpcMessageHandler! handler) -> StreamJsonRpc.JsonRpc!
+virtual Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.ConstructLocalProxy<T>(T? target) -> T?
+virtual Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection.ConstructRpcClient(System.Type! interfaceType) -> object!
+virtual Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithMultiplexingStream(Nerdbank.Streams.MultiplexingStream? multiplexingStream) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.Equals(Microsoft.ServiceHub.Framework.Services.ProtectedOperation? other) -> bool
+virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.IsSupersetOf(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! other) -> bool
+Microsoft.ServiceHub.Framework.ServerFactory
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.ServiceHubHostRemoteServiceBroker(Microsoft.ServiceHub.Framework.IServiceBroker! inner) -> void
+Microsoft.ServiceHub.Framework.StreamExtensions
+static Microsoft.ServiceHub.Framework.StreamExtensions.TryGetHandle(this System.IO.Stream? stream, out Microsoft.Win32.SafeHandles.SafePipeHandle? handle) -> bool

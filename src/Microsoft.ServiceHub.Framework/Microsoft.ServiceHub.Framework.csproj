@@ -1,9 +1,40 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>The distributed ServiceHub Framework.</Description>
   </PropertyGroup>
+
   <ItemGroup>
-    <None Include="$(RepoRootPath)README.md" Pack="true" PackagePath="" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="StreamJsonRpc" />
+    <PackageReference Include="System.Collections.Immutable" PrivateAssets="compile" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\utility\Microsoft.ServiceHub.Utility.Isolated\**\*.cs" LinkBase="Isolated" />
+    <Compile Include="..\utility\Microsoft.ServiceHub.Utility.Shared\**\*.cs" LinkBase="Shared" />
+    <Compile Update="Strings.Designer.cs">
+      <DependentUpon>Strings.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" PrivateAssets="none" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Import Project="..\OptProf.targets" />
+
 </Project>

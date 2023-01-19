@@ -1,0 +1,4 @@
+﻿Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose() -> void
+static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource! logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
+virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void

@@ -1,0 +1,19 @@
+<Project>
+  <!-- Configure OptProf and select tests. Adding or removing tests requires a change to src\optprof\DevCoreOptProf.runsettingsproj. -->
+  <PropertyGroup>
+    <InstallationPath Condition="'$(InstallationPath)' == ''">Common7\IDE\CommonExtensions\Microsoft\ServiceHubClient\$(AssemblyName).dll</InstallationPath>
+  </PropertyGroup>
+  <ItemGroup Label="OptProf Configuration" Condition="'$(IncludeInOptProf)' == 'true'">
+    <OptProf Include="$(OutputPath)$(AssemblyName).dll" Condition=" '$(TargetFramework)' == '$(NetFx)' or '$(TargetFrameworks)' == '' ">
+      <Technology>IBC</Technology>
+      <InstallationPath>$(InstallationPath)</InstallationPath>
+      <InstrumentationArguments>/ExeConfig:"%VisualStudio.InstallationUnderTest.Path%\Common7\IDE\vsn.exe"</InstrumentationArguments>
+      <Scenarios>
+        <TestContainer Name="VSPE">
+          <TestCase Order="1" FullyQualifiedName="VSPE.OptProfTests.vs_env_startup_devenv" />
+          <TestCase Order="2" FullyQualifiedName="VSPE.OptProfTests.vs_perf_DesignTime_solution_loadclose_cs_picasso" />
+        </TestContainer>
+      </Scenarios>
+    </OptProf>
+  </ItemGroup>
+</Project>

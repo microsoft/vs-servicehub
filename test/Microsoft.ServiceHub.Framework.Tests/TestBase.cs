@@ -1,0 +1,81 @@
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System.Diagnostics;
+using Microsoft;
+using Microsoft.ServiceHub.Framework;
+using Microsoft.VisualStudio.Threading;
+using Nerdbank.Streams;
+using Xunit.Abstractions;
+
+public abstract class TestBase : IDisposable
+{
+	/// <summary>
+	/// A reasonable amount of time to wait for async work to reasonably complete.
+	/// </summary>
+	protected static readonly TimeSpan AsyncDelay = TimeSpan.FromMilliseconds(250);
+
+	private CancellationTokenSource timeoutTokenSource = new CancellationTokenSource(TestTimeout);
+
+	public TestBase(ITestOutputHelper logger)
+	{
+		this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+	}
+
+	protected static CancellationToken ExpectedTimeoutToken => new CancellationTokenSource(AsyncDelay).Token;
+
+	protected static CancellationToken UnexpectedTimeoutToken => Debugger.IsAttached ? CancellationToken.None : new CancellationTokenSource(TestTimeout).Token;
+
+	protected static TimeSpan TestTimeout => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(5);
+
+	protected CancellationToken TimeoutToken => this.timeoutTokenSource.Token;
+
+	protected ITestOutputHelper Logger { get; }
+
+	public void Dispose()
+	{
+		this.Dispose(true);
+	}
+
+	protected async Task HostMultiplexingServerAsync(Stream stream, Func<MultiplexingStream, IRemoteServiceBroker> serverFactory, CancellationToken cancellationToken)
+	{
+		Requires.NotNull(stream, nameof(stream));
+		Requires.NotNull(serverFactory, nameof(serverFactory));
+
+		using (MultiplexingStream mx = await MultiplexingStream.CreateAsync(stream, this.CreateTestMXStreamOptions(isServer: true), cancellationToken))
+		{
+			MultiplexingStream.Channel defaultChannel = await mx.OfferChannelAsync(string.Empty, cancellationToken);
+			FrameworkServices.RemoteServiceBroker.ConstructRpc(serverFactory(mx), defaultChannel);
+			await defaultChannel.Completion.WithCancellation(cancellationToken);
+		}
+	}
+
+	protected MultiplexingStream.Options CreateTestMXStreamOptions(bool isServer = false)
+	{
+		string role = isServer ? "Server" : "Client";
+		return new MultiplexingStream.Options
+		{
+			TraceSource = this.CreateTestTraceSource($"MX {role}"),
+			DefaultChannelTraceSourceFactoryWithQualifier = (id, name) => this.CreateTestTraceSource($"MX {role} channel {id}"),
+		};
+	}
+
+	protected TraceSource CreateTestTraceSource(string name, SourceLevels levels = SourceLevels.Information)
+	{
+		return new TraceSource(name, levels)
+		{
+			Listeners =
+			{
+				new XunitTraceListener(this.Logger),
+			},
+		};
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (disposing)
+		{
+			this.timeoutTokenSource.Dispose();
+		}
+	}
+}

@@ -53,3 +53,12 @@ dotnet_diagnostic.SA1401.severity = silent
 
 # SA1133: Do not combine attributes
 dotnet_diagnostic.SA1133.severity = silent
+
+# VSTHRD002: Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = suggestion
+
+# VSTHRD003: Avoid awaiting foreign Tasks
+dotnet_diagnostic.VSTHRD003.severity = suggestion
+
+# VSTHRD012: Provide JoinableTaskFactory where allowed
+dotnet_diagnostic.VSTHRD012.severity = suggestion
