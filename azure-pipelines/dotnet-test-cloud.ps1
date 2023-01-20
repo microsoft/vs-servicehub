@@ -44,10 +44,15 @@ if ($x86) {
   }
 }
 
+$extraFilter = ''
+if ($IsLinux -or $IsMacOS) {
+  $extraFilter += '&WindowsOnly!=true'
+}
+
 & $dotnet test $RepoRoot `
     --no-build `
     -c $Configuration `
-    --filter "TestCategory!=FailsInCloudTest" `
+    --filter "TestCategory!=FailsInCloudTest$extraFilter" `
     --collect "Code Coverage;Format=cobertura" `
     --settings "$PSScriptRoot/test.runsettings" `
     --blame-hang-timeout 60s `

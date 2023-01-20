@@ -161,9 +161,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// <returns>The value that is associated for the requested service version.</returns>
 	internal static string GetVersionInformationFromServiceActivationOptions(ServiceActivationOptions serviceActivationOptions)
 	{
-		string? keyValue = string.Empty;
+		string? keyValue = null;
 		serviceActivationOptions.ActivationArguments?.TryGetValue(Utility.Constants.ServiceHubVersionActivationArgument, out keyValue);
-
-		return keyValue;
+		return keyValue ?? string.Empty;
 	}
 }

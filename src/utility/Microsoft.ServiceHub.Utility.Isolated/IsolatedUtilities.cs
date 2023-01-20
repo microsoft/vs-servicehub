@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -136,12 +137,12 @@ internal static class IsolatedUtilities
 	/// </summary>
 	/// <returns>True if the current platform is Windows, false otherwise.</returns>
 #if NET5_0_OR_GREATER
-    [SupportedOSPlatformGuard("windows6.0.6000")]
+	[SupportedOSPlatformGuard("windows6.0.6000")]
 #endif
 	internal static bool IsWindowsPlatform()
 	{
 #if NET5_0_OR_GREATER
-        return OperatingSystem.IsWindowsVersionAtLeast(6, 0, 6000);
+		return OperatingSystem.IsWindowsVersionAtLeast(6, 0, 6000);
 #else
 		return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.OSVersion.Version > new Version(6, 0, 6000);
 #endif
@@ -152,7 +153,7 @@ internal static class IsolatedUtilities
 	/// </summary>
 	/// <returns>True if the current platform is OSX, false otherwise.</returns>
 #if NET5_0_OR_GREATER
-    [SupportedOSPlatformGuard("macos")]
+	[SupportedOSPlatformGuard("macos")]
 #endif
 	internal static bool IsMacPlatform()
 	{
@@ -164,7 +165,7 @@ internal static class IsolatedUtilities
 	/// </summary>
 	/// <returns>True if the current platform is Linux, false otherwise.</returns>
 #if NET5_0_OR_GREATER
-    [SupportedOSPlatformGuard("linux")]
+	[SupportedOSPlatformGuard("linux")]
 #endif
 	internal static bool IsLinuxPlatform()
 	{

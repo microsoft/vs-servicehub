@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -52,7 +51,7 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// <summary>
 	/// Gets the version of the service or the version expected by the client.
 	/// </summary>
-	[JsonConverter(typeof(VersionConverter))]
+	[JsonConverter(typeof(Newtonsoft.Json.Converters.VersionConverter))]
 	[DataMember]
 	public Version? Version { get; }
 
@@ -107,11 +106,11 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// </summary>
 	private class ServiceMonikerTypeConverter : TypeConverter
 	{
-		public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) => sourceType == typeof(string);
+		public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) => sourceType == typeof(string);
 
-		public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) => destinationType == typeof(string);
+		public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType) => destinationType == typeof(string);
 
-		public override object? ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object? value)
+		public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object? value)
 		{
 			if (value is null)
 			{
@@ -125,7 +124,7 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 			return version is null ? new ServiceMoniker(name) : new ServiceMoniker(name, version);
 		}
 
-		public override object? ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object? value, Type destinationType)
+		public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
 		{
 			Requires.NotNull(destinationType, nameof(destinationType));
 			if (destinationType != typeof(string))

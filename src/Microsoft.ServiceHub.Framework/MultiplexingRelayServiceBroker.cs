@@ -97,7 +97,7 @@ public class MultiplexingRelayServiceBroker : IRemoteServiceBroker, IDisposable,
 		}
 		catch
 		{
-			duplexStreamWithClient.Dispose();
+			await duplexStreamWithClient.DisposeAsync().ConfigureAwait(false);
 			throw;
 		}
 	}

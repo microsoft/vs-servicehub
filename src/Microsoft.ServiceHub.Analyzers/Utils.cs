@@ -35,16 +35,17 @@ namespace Microsoft.ServiceHub.Analyzers
 		/// <returns>The parent statement, if it can be found.</returns>
 		internal static IOperation? FindStatementParent(IOperation operation)
 		{
+			IOperation? operationLocal = operation;
 			do
 			{
-				if (operation.Parent is IBlockOperation)
+				if (operationLocal.Parent is IBlockOperation)
 				{
-					return operation;
+					return operationLocal;
 				}
 
-				operation = operation.Parent;
+				operationLocal = operationLocal.Parent;
 			}
-			while (operation is object);
+			while (operationLocal is object);
 
 			return null;
 		}

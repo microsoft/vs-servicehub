@@ -71,10 +71,12 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 					symbolStartContext =>
 					{
 						var symbol = (INamedTypeSymbol)symbolStartContext.Symbol;
-						var undisposedMembers = new HashSet<ISymbol>(symbol.GetMembers().Where(m => m is IFieldSymbol || m is IPropertySymbol));
+#pragma warning disable RS1024 // Compare symbols correctly
+						var undisposedMembers = new HashSet<ISymbol>(symbol.GetMembers().Where(m => m is IFieldSymbol or IPropertySymbol), SymbolEqualityComparer.Default);
 
 						// Arrange to find GetProxyAsync calls.
-						var membersThatMustBeDisposed = new HashSet<ISymbol>();
+						var membersThatMustBeDisposed = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+#pragma warning restore RS1024 // Compare symbols correctly
 						symbolStartContext.RegisterOperationAction(Utils.DebuggableWrapper(c => this.AnalyzeInvocation(c, getProxyAsyncMethods, membersThatMustBeDisposed, disposeMethod)), OperationKind.Invocation);
 
 						// Arrange to study all instantiations of ServiceBrokerClient.
@@ -117,7 +119,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 
 	private static bool IsDisposeMethod(IMethodSymbol invokedMethod, IMethodSymbol disposableDisposeMethod)
 	{
-		return Equals(invokedMethod, disposableDisposeMethod)
+		return SymbolEqualityComparer.Default.Equals(invokedMethod, disposableDisposeMethod)
 			|| (invokedMethod?.Name == nameof(IDisposable.Dispose) && invokedMethod.Parameters.Length == 0 && invokedMethod.DeclaredAccessibility == Accessibility.Public);
 	}
 
@@ -129,12 +131,12 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 			{
 				if (operand is ILocalReferenceOperation local)
 				{
-					return Equals(local.Local, symbol);
+					return SymbolEqualityComparer.Default.Equals(local.Local, symbol);
 				}
 
 				if (operand is IMemberReferenceOperation member)
 				{
-					return Equals(member.Member, symbol);
+					return SymbolEqualityComparer.Default.Equals(member.Member, symbol);
 				}
 			}
 
@@ -154,7 +156,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 				return CheckDisposal(invocation, operand);
 			case IUsingOperation { Resources: IConversionOperation { Operand: ILocalReferenceOperation { Local: { } local } } }:
 				// using (proxy as IDisposable)
-				return Equals(local, symbol);
+				return SymbolEqualityComparer.Default.Equals(local, symbol);
 			default:
 				return false;
 		}
@@ -269,16 +271,16 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 					{
 						if (IsNullConstant(binaryOperation.LeftOperand) && binaryOperation.RightOperand is IConversionOperation { Operand: IMemberReferenceOperation { Member: { } memberRight } })
 						{
-							conditioned |= Equals(memberRight, assignedMember);
+							conditioned |= SymbolEqualityComparer.Default.Equals(memberRight, assignedMember);
 						}
 						else if (IsNullConstant(binaryOperation.RightOperand) && binaryOperation.LeftOperand is IConversionOperation { Operand: IMemberReferenceOperation { Member: { } memberLeft } })
 						{
-							conditioned |= Equals(memberLeft, assignedMember);
+							conditioned |= SymbolEqualityComparer.Default.Equals(memberLeft, assignedMember);
 						}
 					}
 					else if (conditionBlock.Condition is IIsPatternOperation { Pattern: { Type: null }, Value: IMemberReferenceOperation { Member: { } member } })
 					{
-						conditioned |= Equals(member, assignedMember);
+						conditioned |= SymbolEqualityComparer.Default.Equals(member, assignedMember);
 					}
 
 					if (conditioned)
@@ -314,7 +316,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		var operation = (IObjectCreationOperation)context.Operation;
 
 		// Is this "new ServiceBrokerClient"?
-		if (Equals(operation.Type, serviceBrokerClientSymbol))
+		if (SymbolEqualityComparer.Default.Equals(operation.Type, serviceBrokerClientSymbol))
 		{
 			EnsureAssignedValueIsDisposed(context, membersThatMustBeDisposed, disposeMethod, operation);
 		}

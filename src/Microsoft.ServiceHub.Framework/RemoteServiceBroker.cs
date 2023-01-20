@@ -182,7 +182,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		}
 		catch
 		{
-			duplexStream.Dispose();
+			await duplexStream.DisposeAsync().ConfigureAwait(false);
 			throw;
 		}
 	}
@@ -634,7 +634,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 			}
 			catch
 			{
-				pipeStream.Dispose();
+				await pipeStream.DisposeAsync().ConfigureAwait(false);
 				throw;
 			}
 		}
@@ -650,7 +650,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		Requires.NotNull(serviceActivation, nameof(serviceActivation));
 
 		var assembly = Assembly.LoadFrom(serviceActivation.AssemblyPath);
-		Type type = assembly.GetType(serviceActivation.FullTypeName, throwOnError: true);
+		Type? type = assembly.GetType(serviceActivation.FullTypeName, throwOnError: true);
 		if (type is object)
 		{
 			object? service = Activator.CreateInstance(type);
@@ -696,8 +696,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	private static Version? GetNetCoreVersion()
 	{
 		Assembly assembly = typeof(System.Runtime.GCSettings).Assembly;
-		Assumes.NotNull(assembly.CodeBase);
-		string[] assemblyPath = assembly.CodeBase.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+		Assumes.NotNull(assembly.Location);
+		string[] assemblyPath = assembly.Location.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
 
 		int netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
 		if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)

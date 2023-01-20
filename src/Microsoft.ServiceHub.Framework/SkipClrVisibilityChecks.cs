@@ -256,7 +256,7 @@ internal class SkipClrVisibilityChecks
 		{
 		}
 
-		public bool Equals(AssemblyName x, AssemblyName y)
+		public bool Equals(AssemblyName? x, AssemblyName? y)
 		{
 			if (x == null && y == null)
 			{

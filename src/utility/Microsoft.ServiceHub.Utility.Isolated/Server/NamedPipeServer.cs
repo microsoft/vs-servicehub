@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
+using Microsoft.ServiceHub.Framework;
 #if TELEMETRY
 using Microsoft.VisualStudio.Telemetry;
 #endif
@@ -92,7 +93,7 @@ internal sealed class NamedPipeServer : Server
 							break;
 						}
 
-						pipeServer.Dispose();
+						await pipeServer.DisposeAsync().ConfigureAwait(false);
 						pipeServer = this.CreatePipe(channelName);
 						continue;
 					}
@@ -122,7 +123,7 @@ internal sealed class NamedPipeServer : Server
 			}
 			finally
 			{
-				pipeServer.Dispose();
+				await pipeServer.DisposeAsync().ConfigureAwait(false);
 			}
 		});
 	}
