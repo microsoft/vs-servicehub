@@ -27,7 +27,7 @@ parameters:
 - name: ShouldSkipOptimize
   displayName: Skip OptProf optimization
   type: boolean
-  default: false
+  default: true # set to false once optprof pipelines are running
 - name: includeMacOS
   displayName: Build on macOS
   type: boolean
