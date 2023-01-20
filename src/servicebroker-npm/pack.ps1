@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 <#
 .SYNOPSIS
     Build, sign, stamp version, and pack this NPM package.
@@ -15,9 +17,6 @@ try {
         yarn
     }
 
-    yarn clean
-    if ($lastexitcode -ne 0) { throw }
-
     yarn build # tsc
     if ($lastexitcode -ne 0) { throw }
 
@@ -25,14 +24,18 @@ try {
     if ($lastexitcode -ne 0) { throw }
 
     yarn nbgv-setversion
-    yarn prepare-for-pack
     if ($lastexitcode -ne 0) { throw }
-    yarn nbgv-setversion --reset
-    
-    Push-Location "$PSScriptRoot\js\package"
 
-    yarn pack
+    $Configuration = 'Debug'
+    if ($env:BUILDCONFIGURATION) {
+        $Configuration = $env:BUILDCONFIGURATION
+    }
+    $OutDir = "../../bin/Packages/$Configuration/npm"
+    if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
+    yarn pack --out $OutDir/%s-%v.tgz
     if ($lastexitcode -ne 0) { throw }
+
+    yarn nbgv-setversion --reset
 }
 finally {
     Pop-Location

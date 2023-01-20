@@ -2,7 +2,6 @@
 # assemblies that you build here, remove the "return" statement
 # and update the hashtable below with the T4 macro you'll use for
 # your libraries as defined in the src\ProductData\AssemblyVersions.tt file.
-return
 
 $nbgv = & "$PSScriptRoot\..\Get-nbgv.ps1"
 [string]::join(',',(@{

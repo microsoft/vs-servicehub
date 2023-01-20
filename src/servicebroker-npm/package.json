@@ -3,14 +3,13 @@
 	"version": "0.0.0-placeholder",
 	"packageManager": "yarn@3.3.1",
 	"description": "The distributed ServiceHub Framework",
-	"typings": "index.d.ts",
-	"main": "index.js",
+	"typings": "js/src/index.d.ts",
+	"main": "js/src/index.js",
 	"scripts": {
 		"build": "tsc",
 		"clean": "node ./node_modules/rimraf/bin.js ./js",
 		"watch": "tsc -w",
 		"test": "jest",
-		"prepare-for-pack": "node ./js/scripts/prepare-for-pack.js",
 		"lint": "eslint src test --ext ts"
 	},
 	"nyc": {

@@ -6,6 +6,7 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
+using Xunit;
 using Xunit.Abstractions;
 
 public abstract class TestBase : IDisposable
@@ -22,6 +23,11 @@ public abstract class TestBase : IDisposable
 		this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 
+	/// <summary>
+	/// Gets a value indicating whether the test is running on the Mono runtime.
+	/// </summary>
+	protected internal static bool IsOnMono => Type.GetType("Mono.Runtime") != null;
+
 	protected static CancellationToken ExpectedTimeoutToken => new CancellationTokenSource(AsyncDelay).Token;
 
 	protected static CancellationToken UnexpectedTimeoutToken => Debugger.IsAttached ? CancellationToken.None : new CancellationTokenSource(TestTimeout).Token;
@@ -35,6 +41,15 @@ public abstract class TestBase : IDisposable
 	public void Dispose()
 	{
 		this.Dispose(true);
+	}
+
+	/// <summary>
+	/// Causes a <see cref="SkippableFactAttribute"/> based test to skip if <see cref="IsOnMono"/>.
+	/// </summary>
+	/// <param name="unsupportedFeature">Names the feature that fails on mono so the skipped test can log about the reason.</param>
+	protected static void SkipOnMono(string unsupportedFeature)
+	{
+		Skip.If(IsOnMono, "Test marked as skipped on Mono runtime due to feature: " + unsupportedFeature);
 	}
 
 	protected async Task HostMultiplexingServerAsync(Stream stream, Func<MultiplexingStream, IRemoteServiceBroker> serverFactory, CancellationToken cancellationToken)

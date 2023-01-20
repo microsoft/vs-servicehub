@@ -6,7 +6,13 @@ jest.config.js
 *.sln
 tsconfig.json
 tslint.json
+pack.cmd
 *.ps1
 *.binlog
 *.log
 *.tgz
+.yarn/
+coverage/
+jest.config.ts
+.eslintrc.json
+*/test/
