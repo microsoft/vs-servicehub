@@ -32,6 +32,10 @@ jobs:
     inputs:
       packageType: sdk
       version: 6.x
+  - task: NodeTool@0
+    inputs:
+      versionSpec: 16.x
+    displayName: ⚙️ Install Node.js
   - download: CI
     artifact: deployables-Windows
     displayName: 🔻 Download deployables-Windows artifact
@@ -39,7 +43,7 @@ jobs:
   - task: GitHubRelease@1
     displayName: 📢 GitHub release (create)
     inputs:
-      gitHubConnection: # TODO: fill in service connection here
+      gitHubConnection: AArnott
       repositoryName: $(Build.Repository.Name)
       target: $(resources.pipeline.CI.sourceCommit)
       tagSource: userSpecifiedTag
@@ -59,3 +63,14 @@ jobs:
   - script: dotnet nuget push $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg -s https://api.nuget.org/v3/index.json --api-key $(NuGetOrgApiKey) --skip-duplicate
     displayName: 📦 Push packages to nuget.org
     condition: and(succeeded(), ne(variables['NuGetOrgApiKey'], ''))
+
+  - task: npmAuthenticate@0
+    inputs:
+      workingFile: azure-pipelines/.npmrc
+      customEndpoint: npmjs.org (andrewarnott)
+  - powershell: |
+      Get-ChildItem '$(Pipeline.Workspace)/CI/deployables-Windows/npm/*.tgz' |% {
+        npm publish $_
+      }
+    displayName: 📦 Push packages to npmjs.org
+    workingDirectory: azure-pipelines/.npmrc

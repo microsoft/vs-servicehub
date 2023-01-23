@@ -58,8 +58,8 @@ public class ISB002AvoidStoringRentalsInFieldsAnalyzer : DiagnosticAnalyzer
 
 		static void InspectSymbol(SymbolAnalysisContext context, ISymbol typeSymbol, ISymbol memberSymbol, INamedTypeSymbol rentalType, INamedTypeSymbol? nullableType)
 		{
-			if (Equals(typeSymbol.OriginalDefinition, rentalType) ||
-				(Equals(typeSymbol.OriginalDefinition, nullableType) && typeSymbol is INamedTypeSymbol namedType && Equals(namedType.TypeArguments.FirstOrDefault()?.OriginalDefinition, rentalType)))
+			if (SymbolEqualityComparer.Default.Equals(typeSymbol.OriginalDefinition, rentalType) ||
+				(SymbolEqualityComparer.Default.Equals(typeSymbol.OriginalDefinition, nullableType) && typeSymbol is INamedTypeSymbol namedType && SymbolEqualityComparer.Default.Equals(namedType.TypeArguments.FirstOrDefault()?.OriginalDefinition, rentalType)))
 			{
 				context.ReportDiagnostic(
 					Diagnostic.Create(

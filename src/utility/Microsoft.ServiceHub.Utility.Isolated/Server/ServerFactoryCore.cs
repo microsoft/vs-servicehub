@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace Microsoft.ServiceHub.Utility;
 
@@ -24,7 +25,7 @@ internal static class ServerFactoryCore
 	/// </returns>
 	/// <remarks>This method should only ever be used on Windows platforms.</remarks>
 #if NET5_0_OR_GREATER
-    [SupportedOSPlatform("windows")]
+	[SupportedOSPlatform("windows")]
 #endif
 	internal static IDisposable Create(string pipeName, TraceSource logger, Func<Stream, Task> createAndConfigureService)
 	{
@@ -43,8 +44,8 @@ internal static class ServerFactoryCore
 	/// <param name="createAndConfigureService">Callback function to be run whenever a client connects to the server.</param>
 	/// <returns>The server that is to be disposed when it is no longer needed.</returns>
 #if NET5_0_OR_GREATER
-    [SupportedOSPlatform("linux")]
-    [SupportedOSPlatform("macos")]
+	[SupportedOSPlatform("linux")]
+	[SupportedOSPlatform("macos")]
 #endif
 	internal static async Task<(IDisposable Server, string ServerPath)> CreateOnNonWindowsAsync(string channelName, string locationServiceChannelName, TraceSource logger, Func<Stream, Task> createAndConfigureService)
 	{

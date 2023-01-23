@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.CommandLine;
+using System.Runtime.InteropServices;
+using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 
@@ -39,6 +41,11 @@ public class Program
 
 			if (useNamedPipes)
 			{
+				if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				{
+					throw new NotSupportedException("Only supported on Windows.");
+				}
+
 				IpcRelayServiceBroker relayBroker = new(serviceBroker);
 				FrameworkServices.RemoteServiceBroker.ConstructRpc(relayBroker, channel);
 

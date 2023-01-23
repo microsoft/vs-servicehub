@@ -24,6 +24,10 @@ parameters:
   type: string
   default: Test
   values: [ 'Test', 'Real' ]
+- name: ShouldSkipOptimize
+  displayName: Skip OptProf optimization
+  type: boolean
+  default: true # set to false once optprof pipelines are running
 - name: includeMacOS
   displayName: Build on macOS
   type: boolean
@@ -59,6 +63,7 @@ stages:
       EnableCompliance: ${{ parameters.EnableCompliance }}
       EnableAPIScan: ${{ parameters.EnableAPIScan }}
       windowsPool: VSEngSS-MicroBuild2022-1ES
+      ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
       includeMacOS: ${{ parameters.includeMacOS }}
       RunTests: ${{ parameters.RunTests }}
 

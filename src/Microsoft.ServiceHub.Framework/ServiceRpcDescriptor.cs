@@ -297,7 +297,7 @@ public abstract partial class ServiceRpcDescriptor
 		{
 			Requires.NotNull(interfaceType, nameof(interfaceType));
 
-			MethodInfo genericOverload = this.GetType().GetTypeInfo().GetRuntimeMethod(nameof(this.ConstructRpcClient), Type.EmptyTypes);
+			MethodInfo? genericOverload = this.GetType().GetTypeInfo().GetRuntimeMethod(nameof(this.ConstructRpcClient), Type.EmptyTypes);
 			Assumes.NotNull(genericOverload);
 			MethodInfo closedGenericOverload = genericOverload.MakeGenericMethod(interfaceType);
 			return closedGenericOverload.Invoke(this, Array.Empty<object>())!;

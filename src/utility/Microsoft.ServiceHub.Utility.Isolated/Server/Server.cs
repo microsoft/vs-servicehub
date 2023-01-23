@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using Microsoft.ServiceHub.Framework;
 
 namespace Microsoft.ServiceHub.Utility;
 
@@ -120,7 +121,7 @@ internal abstract class Server : IDisposable
 			await this.createAndConfigureService(stream).ConfigureAwait(false);
 			if (!stream.IsConnected)
 			{
-				stream.Dispose();
+				await stream.DisposeAsync().ConfigureAwait(false);
 				this.ClientDisconnected(stream);
 				return;
 			}
@@ -134,7 +135,7 @@ internal abstract class Server : IDisposable
 		}
 		catch (Exception exception)
 		{
-			stream.Dispose();
+			await stream.DisposeAsync().ConfigureAwait(false);
 
 			if (exception is ClientConnectionCanceledException)
 			{

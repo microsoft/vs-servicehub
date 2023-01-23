@@ -5,6 +5,7 @@ using System.Buffers;
 using System.Collections.Immutable;
 using System.IO.Pipelines;
 using System.IO.Pipes;
+using System.Runtime.Versioning;
 using Microsoft.ServiceHub.Utility;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
@@ -16,6 +17,9 @@ namespace Microsoft.ServiceHub.Framework;
 /// An <see cref="IRemoteServiceBroker"/> which proffers all services from another <see cref="IServiceBroker"/>
 /// over named pipes on Windows or Unix domain sockets on other operating systems.
 /// </summary>
+#if NET5_0_OR_GREATER
+[SupportedOSPlatform("Windows")]
+#endif
 public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 {
 	private readonly IServiceBroker serviceBroker;

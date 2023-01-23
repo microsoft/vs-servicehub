@@ -9,6 +9,12 @@ schedules:
       - main
     always: true # we must keep data fresh since optimizationdata drops are purged after 30 days
 
+parameters:
+- name: InsertTargetBranch
+  displayName: VS repo target branch
+  type: string
+  default: main
+
 # Avoid errant CI builds: https://developercommunity.visualstudio.com/content/problem/1154409/azure-pipeline-is-triggering-due-to-events-that-ne.html
 #resources:
 #  repositories:
@@ -44,13 +50,16 @@ stages:
       windowsPool: VSEngSS-MicroBuild2022-1ES
       includeMacOS: false
       ShouldSkipOptimize: true
+      IsProfilingRun: true
+      EnableCompliance: false
 - stage: QueueVSBuild
   jobs:
   - job: QueueOptProf
     pool: VSEngSS-MicroBuild2022-1ES
     variables:
-      InsertPayloadName: vs-threading
-      InsertTopicBranch: team/VS-IDE/vs-threading-OptProf-run-$(Build.BuildId)
+      InsertPayloadName: vs-servicehub
+      InsertTopicBranch: team/VS-IDE/vs-servicehub-OptProf-run-$(Build.BuildId)
+      InsertTargetBranch: ${{ parameters.InsertTargetBranch }}
     steps:
     - checkout: none # We don't need source from our own repo
       clean: true
@@ -107,8 +116,8 @@ stages:
         filePath: $(Agent.TempDirectory)/DeploymentScripts/Scripts/Insertion/WriteArtifact.ps1
         arguments: '-oldBuildID $(Build.BuildId) -newBuildID $(TriggeredBuildIds) -artifactName "InsertionOutputs" -accessToken $(System.AccessToken)'
     - task: PowerShell@2
-      displayName: Tag the build with vs-threading-insertion
+      displayName: Tag the build with vs-servicehub-insertion
       inputs:
         targetType: filePath
         filePath: $(Agent.TempDirectory)/DeploymentScripts/Scripts/Insertion/TagBuild.ps1
-        arguments: '-buildID $(TriggeredBuildIds) -tagName "vs-threading-insertion" -accessToken $(System.AccessToken)'
+        arguments: '-buildID $(TriggeredBuildIds) -tagName "vs-servicehub-insertion" -accessToken $(System.AccessToken)'

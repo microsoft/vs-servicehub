@@ -106,6 +106,16 @@ try {
         }
     }
 
+    if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
+        Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
+        Set-Location 'src/servicebroker-npm'
+        yarn
+        Set-Location ../..
+        if ($lastexitcode -ne 0) {
+            throw "Failure while restoring packages."
+        }
+    }
+
     $InstallNuGetPkgScriptPath = ".\azure-pipelines\Install-NuGetPackage.ps1"
     $nugetVerbosity = 'quiet'
     if ($Verbose) { $nugetVerbosity = 'normal' }

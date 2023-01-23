@@ -29,9 +29,27 @@ See [.NET Core Versioning](https://docs.microsoft.com/dotnet/core/versions/) for
 
 ## Package restore
 
+### NuGet restore
+
 The easiest way to restore packages may be to run `init.ps1` which automatically authenticates
 to the feeds that packages for this repo come from, if any.
 `dotnet restore` or `nuget restore` also work but may require extra steps to authenticate to any applicable feeds.
+
+### NPM install
+
+The NPM packages built from this repo also require dependency installation.
+`init.ps1` will install these dependencies automatically.
+
+When a new package that is not already ingested by the NPM registry we use is required, authentication is required.
+Create a `$HOME/.yarnrc.yml` file with the following content, substituting your actual personal access token from the `azure-public` AzDO account for the `PAT` placeholder in the file.
+Note that this should be the original PAT, without any base64 encoding.
+
+```yml
+npmRegistries:
+  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:
+    npmAuthIdent: devdiv:PAT
+    npmAlwaysAuth: true
+```
 
 ## Building
 

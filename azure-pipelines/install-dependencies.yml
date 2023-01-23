@@ -10,6 +10,14 @@ steps:
       nuGetServiceConnections: azure-public/msft_consumption
     forceReinstallCredentialProvider: true
 
+- task: NodeTool@0
+  inputs:
+    versionSpec: 16.x
+  displayName: ⚙️ Install Node.js
+
+- script: corepack enable
+  displayName: ⚙️ Install yarn
+
 - powershell: |
     $AccessToken = '$(System.AccessToken)' # Avoid specifying the access token directly on the init.ps1 command line to avoid it showing up in errors
     .\init.ps1 -AccessToken $AccessToken ${{ parameters['initArgs'] }} -UpgradePrerequisites -NoNuGetCredProvider

@@ -1,0 +1,12 @@
+parameters:
+  RunTests:
+
+steps:
+
+- script: yarn test
+  displayName: 🧪 yarn test
+  workingDirectory: src/servicebroker-npm
+  condition: and(succeeded(), ${{ parameters.RunTests }})
+
+- powershell: src/servicebroker-npm/pack.ps1
+  displayName: 📦 yarn pack

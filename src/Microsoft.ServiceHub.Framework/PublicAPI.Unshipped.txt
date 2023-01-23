@@ -1,4 +1,6 @@
 ﻿Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
 Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication.CultureApplication() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental() -> void
 static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource! logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
 virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void

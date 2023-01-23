@@ -30,9 +30,9 @@ public partial class ServiceJsonRpcDescriptor
 
 		private static readonly ConstructorInfo ObjectCtor = typeof(object).GetTypeInfo().DeclaredConstructors.Single();
 		private static readonly MethodInfo IDisposableDisposeMethod = typeof(IDisposable).GetTypeInfo().GetRuntimeMethod(nameof(IDisposable.Dispose), Type.EmptyTypes)!;
-		private static readonly MethodInfo IDisposableObservableIsDisposedGetterMethod = typeof(IDisposableObservable).GetTypeInfo().GetRuntimeProperty(nameof(IDisposableObservable.IsDisposed)).GetMethod;
-		private static readonly MethodInfo INotifyDisposableAddHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed)).AddMethod;
-		private static readonly MethodInfo INotifyDisposableRemoveHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed)).RemoveMethod;
+		private static readonly MethodInfo IDisposableObservableIsDisposedGetterMethod = typeof(IDisposableObservable).GetTypeInfo().GetRuntimeProperty(nameof(IDisposableObservable.IsDisposed))!.GetMethod!;
+		private static readonly MethodInfo INotifyDisposableAddHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed))!.AddMethod!;
+		private static readonly MethodInfo INotifyDisposableRemoveHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed))!.RemoveMethod!;
 		private static readonly ConstructorInfo ObjectDisposedExceptionCtor = typeof(ObjectDisposedException).GetTypeInfo().GetConstructor(new Type[] { typeof(string) })!;
 		private static readonly MethodInfo ExceptionHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ExceptionHelper), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ReturnedTaskHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedTaskHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -40,13 +40,13 @@ public partial class ServiceJsonRpcDescriptor
 		private static readonly MethodInfo ReturnedValueTaskHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedValueTaskHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ReturnedValueTaskOfTHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedValueTaskOfTHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ThrowIfCancellationRequestedMethod = typeof(CancellationToken).GetTypeInfo().GetMethod(nameof(CancellationToken.ThrowIfCancellationRequested), BindingFlags.Instance | BindingFlags.Public)!;
-		private static readonly MethodInfo DisposeMethod = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose));
-		private static readonly MethodInfo InterlockedExchangeMethod = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object).MakeByRefType(), typeof(object) }, null);
-		private static readonly MethodInfo InterlockedCompareExchangeMethod = typeof(Interlocked).GetMethod(nameof(Interlocked.CompareExchange), BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object).MakeByRefType(), typeof(object), typeof(object) }, null);
-		private static readonly FieldInfo EventArgsEmptyField = typeof(EventArgs).GetField(nameof(EventArgs.Empty));
-		private static readonly MethodInfo EventHandlerInvokeMethod = typeof(EventHandler).GetMethod(nameof(EventHandler.Invoke));
-		private static readonly MethodInfo DelegateCombineMethod = typeof(Delegate).GetMethod(nameof(Delegate.Combine), new Type[] { typeof(Delegate), typeof(Delegate) });
-		private static readonly MethodInfo DelegateRemoveMethod = typeof(Delegate).GetMethod(nameof(Delegate.Remove));
+		private static readonly MethodInfo DisposeMethod = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose))!;
+		private static readonly MethodInfo InterlockedExchangeMethod = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object).MakeByRefType(), typeof(object) }, null)!;
+		private static readonly MethodInfo InterlockedCompareExchangeMethod = typeof(Interlocked).GetMethod(nameof(Interlocked.CompareExchange), BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(object).MakeByRefType(), typeof(object), typeof(object) }, null)!;
+		private static readonly FieldInfo EventArgsEmptyField = typeof(EventArgs).GetField(nameof(EventArgs.Empty))!;
+		private static readonly MethodInfo EventHandlerInvokeMethod = typeof(EventHandler).GetMethod(nameof(EventHandler.Invoke))!;
+		private static readonly MethodInfo DelegateCombineMethod = typeof(Delegate).GetMethod(nameof(Delegate.Combine), new Type[] { typeof(Delegate), typeof(Delegate) })!;
+		private static readonly MethodInfo DelegateRemoveMethod = typeof(Delegate).GetMethod(nameof(Delegate.Remove))!;
 		private static readonly MethodInfo CreateProxyMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(CreateProxy), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ConstructLocalProxyMethod = typeof(IJsonRpcLocalProxy).GetMethod(nameof(IJsonRpcLocalProxy.ConstructLocalProxy))!;
 		private static readonly Type[] EventHandlerTypeInArray = new Type[] { typeof(EventHandler) };
@@ -127,7 +127,7 @@ public partial class ServiceJsonRpcDescriptor
 			// SHA256 produces 32-bytes hash but we need only 16-bytes of them to produce a GUID,
 			// this is not used for cryptographic purposes so we just grab the first half.
 			byte[] guidBytes = new byte[16];
-			Array.Copy(algorithm.Hash, guidBytes, guidBytes.Length);
+			Array.Copy(algorithm.Hash!, guidBytes, guidBytes.Length);
 
 			return new Guid(guidBytes);
 		}
@@ -787,8 +787,18 @@ public partial class ServiceJsonRpcDescriptor
 
 	private class ByContentEqualityComparer : IEqualityComparer<ImmutableHashSet<AssemblyName>>
 	{
-		public bool Equals(ImmutableHashSet<AssemblyName> x, ImmutableHashSet<AssemblyName> y)
+		public bool Equals(ImmutableHashSet<AssemblyName>? x, ImmutableHashSet<AssemblyName>? y)
 		{
+			if (x is null && y is null)
+			{
+				return true;
+			}
+
+			if (x is null || y is null)
+			{
+				return false;
+			}
+
 			if (x.Count != y.Count)
 			{
 				return false;

@@ -24,24 +24,27 @@ export async function hostMultiplexingServer(
 }
 
 export async function startCP(cancellationToken: CancellationToken, args?: string[]): Promise<MultiplexingStream> {
-	const configurations = ['Debug', 'Release']
-	let testBrokerPath: string | undefined
-	for (const config of configurations) {
-		testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net7.0/ServiceBrokerTest.exe`)
-		if (fs.existsSync(testBrokerPath)) {
-			break
-		}
-
-		testBrokerPath = undefined
-	}
-
-	if (!testBrokerPath) {
-		throw new Error('Could not find path to ServiceBrokerTest.exe')
-	}
-
-	const cp = child_process.spawn(`${testBrokerPath}`, args)
+	const cp = child_process.spawn(findTestExe(), args)
 	const stream = FullDuplexStream.Splice(cp.stdout, cp.stdin)
 	return await MultiplexingStream.CreateAsync(stream, undefined, cancellationToken)
+
+	function findTestExe() : string {
+		const configurations = ['Debug', 'Release']
+		const fileNames = ['ServiceBrokerTest.exe', 'ServiceBrokerTest']
+		let testBrokerPathsAttempted: string[] = []
+		for (const config of configurations) {
+			for (const fileName of fileNames) {
+				const testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net7.0/${fileName}`)
+				if (fs.existsSync(testBrokerPath)) {
+					return testBrokerPath
+				}
+
+				testBrokerPathsAttempted.push(testBrokerPath)
+			}
+		}
+
+		throw new Error('Could not find path to ServiceBrokerTest at: ' + testBrokerPathsAttempted)
+	}
 }
 
 export const calcDescriptorUtf8Http: ServiceJsonRpcDescriptor = new ServiceJsonRpcDescriptor(

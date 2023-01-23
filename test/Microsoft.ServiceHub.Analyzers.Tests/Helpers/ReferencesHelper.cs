@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Testing;
 
 internal static class ReferencesHelper
 {
-	public static ReferenceAssemblies DefaultReferences = ReferenceAssemblies.NetStandard.NetStandard20
+	public static readonly ReferenceAssemblies DefaultReferences = ReferenceAssemblies.Net.Net60
 		.WithPackages(ImmutableArray.Create(
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
 			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.1.46")));
