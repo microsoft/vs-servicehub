@@ -39,7 +39,7 @@
 		"@tsconfig/node16": "^1.0.3",
 		"@types/jest": "^29.2.6",
 		"@types/msgpack-lite": "^0.1.8",
-		"@types/node": "^16.18.11",
+		"@types/node": "^18.11.18",
 		"@types/uuid": "^9.0.0",
 		"@typescript-eslint/eslint-plugin": "^5.48.2",
 		"@typescript-eslint/parser": "^5.48.2",
