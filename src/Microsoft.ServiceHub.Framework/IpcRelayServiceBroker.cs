@@ -17,9 +17,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// An <see cref="IRemoteServiceBroker"/> which proffers all services from another <see cref="IServiceBroker"/>
 /// over named pipes on Windows or Unix domain sockets on other operating systems.
 /// </summary>
-#if NET5_0_OR_GREATER
-[SupportedOSPlatform("Windows")]
-#endif
 public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 {
 	private readonly IServiceBroker serviceBroker;
@@ -39,11 +36,6 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
 		this.serviceBroker = serviceBroker;
-
-		if (UnixDomainSocketEndPoint.IsSupported)
-		{
-			throw new NotSupportedException("Windows is the only supported operating system for this class right now.");
-		}
 	}
 
 	/// <inheritdoc/>

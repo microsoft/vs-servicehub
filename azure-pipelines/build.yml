@@ -79,7 +79,7 @@ jobs:
 
     - template: node.yml
       parameters:
-        RunTests: false # ${{ parameters.RunTests }}
+        RunTests: ${{ parameters.RunTests }}
 
     - template: post_build.yml
       parameters:
@@ -101,7 +101,7 @@ jobs:
 
     - template: node.yml
       parameters:
-        RunTests: false # ${{ parameters.RunTests }}
+        RunTests: ${{ parameters.RunTests }}
 
     - template: post_build.yml
       parameters:

@@ -90,7 +90,6 @@ public partial class RemoteServiceBrokerTests : TestBase
 	}
 
 	[Fact]
-	[Trait("WindowsOnly", "true")]
 	public async Task ConnectToServerAsync_IRemoteServiceBroker_ServerDisconnects()
 	{
 		var server = new EmptyRemoteServiceBroker();
@@ -320,7 +319,6 @@ public partial class RemoteServiceBrokerTests : TestBase
 	[Theory]
 	[InlineData(RemoteServiceBrokerKinds.LocalActivation)]
 	[InlineData(RemoteServiceBrokerKinds.Pipes)]
-	[Trait("WindowsOnly", "true")]
 	public async Task GetProxyAsync(RemoteServiceBrokerKinds kind)
 	{
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
