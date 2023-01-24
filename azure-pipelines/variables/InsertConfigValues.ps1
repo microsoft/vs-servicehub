@@ -1,8 +1,10 @@
-$InsertedPkgs = (& "$PSScriptRoot\..\artifacts\VSInsertion.ps1")
+$BinPath = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\..\bin\Packages\$env:BUILDCONFIGURATION")
 
+$dirsToSearch = "$BinPath\NuGet\*.nupkg" |? { Test-Path $_ }
 $icv=@()
-foreach ($kvp in $InsertedPkgs.GetEnumerator()) {
-    $kvp.Value |% {
+
+if ($dirsToSearch) {
+    Get-ChildItem -Path $dirsToSearch |% {
         if ($_.Name -match "^(.*?)\.(\d+\.\d+\.\d+(?:\.\d+)?(?:-.*?)?)(?:\.symbols)?\.nupkg$") {
             $id = $Matches[1]
             $version = $Matches[2]
