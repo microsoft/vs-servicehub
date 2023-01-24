@@ -34,7 +34,12 @@ public static class ServerFactory
 	/// Creates a named pipe server.
 	/// </summary>
 	/// <param name="logger">The logger for the server.</param>
-	/// <param name="onConnectedCallback">Callback function to be run whenever a client connects to the server.</param>
+	/// <param name="onConnectedCallback">
+	/// Callback function to be run whenever a client connects to the server.
+	/// This delegate is never called in parallel.
+	/// A subsequent client that attempts to connect will have to wait for a prior invocation of this delegate to complete before it can connect.
+	/// It is perfectly fine to complete the returned task while still connected to the stream with a client.
+	/// </param>
 	/// <returns>
 	/// A tuple where <c>Server</c> is disposable to shut down the pipe, and <c>ServerName</c> is the pipe name as the client will need to access it.
 	/// </returns>

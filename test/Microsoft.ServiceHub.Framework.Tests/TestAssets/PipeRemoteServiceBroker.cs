@@ -2,9 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.ServiceHub.Framework;
-using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using IPC = System.IO.Pipes;
+using IAsyncDisposable = System.IAsyncDisposable;
 
 internal class PipeRemoteServiceBroker : IRemoteServiceBroker
 {
@@ -15,21 +14,19 @@ internal class PipeRemoteServiceBroker : IRemoteServiceBroker
 		return Task.CompletedTask;
 	}
 
-	public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+	public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 	{
 		RemoteServiceConnectionInfo result = default;
 		if (serviceMoniker.Name == TestServices.Calculator.Moniker.Name)
 		{
-			result.PipeName = Guid.NewGuid().ToString("N");
-			var serverStream = new IPC.NamedPipeServerStream(result.PipeName, IPC.PipeDirection.InOut, -1, IPC.PipeTransmissionMode.Byte, IPC.PipeOptions.Asynchronous);
-			Task.Run(async delegate
+			(IAsyncDisposable server, result.PipeName) = await ServerFactory.CreateAsync(null, stream =>
 			{
-				await serverStream.WaitForConnectionAsync();
-				TestServices.Calculator.ConstructRpc(new Calculator(), serverStream.UsePipe());
-			}).Forget();
+				TestServices.Calculator.ConstructRpc(new Calculator(), stream.UsePipe());
+				return Task.CompletedTask;
+			});
 		}
 
-		return Task.FromResult(result);
+		return result;
 	}
 
 	public Task CancelServiceRequestAsync(Guid serviceRequestId)

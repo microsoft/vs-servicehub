@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using Xunit;
 using Xunit.Abstractions;
+using IAsyncDisposable = System.IAsyncDisposable;
 
 public partial class RemoteServiceBrokerTests : TestBase
 {
@@ -93,37 +94,40 @@ public partial class RemoteServiceBrokerTests : TestBase
 	public async Task ConnectToServerAsync_IRemoteServiceBroker_ServerDisconnects()
 	{
 		var server = new EmptyRemoteServiceBroker();
-		string guid = Guid.NewGuid().ToString();
 		var resetEvent = new AsyncManualResetEvent();
+		TaskCompletionSource<bool> serverConnected = new();
 
-		using (var pipe = new NamedPipeServerStream(
-				 guid,
-				 PipeDirection.InOut,
-				 -1,
-				 PipeTransmissionMode.Byte,
-				 PipeOptions.Asynchronous))
+		(IAsyncDisposable serverDisposable, string name) = await ServerFactory.CreateAsync(
+			  null,
+			  stream =>
+			  {
+				  try
+				  {
+					  var connection = (ServiceJsonRpcDescriptor.JsonRpcConnection)FrameworkServices.RemoteServiceBroker.ConstructRpcConnection(stream.UsePipe());
+					  connection.AddLocalRpcTarget(server);
+					  connection.JsonRpc.Disconnected += (sender, e) =>
+					  {
+						  resetEvent.Set();
+					  };
+					  connection.StartListening();
+					  serverConnected.TrySetResult(true);
+					  return Task.CompletedTask;
+				  }
+				  catch (Exception ex)
+				  {
+					  serverConnected.TrySetException(ex);
+					  throw;
+				  }
+			  });
+
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(name, this.TimeoutToken))
 		{
-			var serverConnectionTask = Task.Run(async () =>
-			{
-				await pipe.WaitForConnectionAsync(this.TimeoutToken);
-				var connection = (ServiceJsonRpcDescriptor.JsonRpcConnection)FrameworkServices.RemoteServiceBroker.ConstructRpcConnection(pipe.UsePipe());
-				connection.AddLocalRpcTarget(server);
-				connection.JsonRpc.Disconnected += (sender, e) =>
-				{
-					resetEvent.Set();
-				};
-				connection.StartListening();
-			});
-
-			using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(guid, this.TimeoutToken))
-			{
-			}
-
-			await serverConnectionTask;
-
-			// Verify that the server received the closing notification
-			await resetEvent.WaitAsync(this.TimeoutToken);
 		}
+
+		await serverConnected.Task.WithCancellation(this.TimeoutToken);
+
+		// Verify that the server received the closing notification
+		await resetEvent.WaitAsync(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -323,7 +327,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 	{
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		IRemoteServiceBroker server =
-			kind == RemoteServiceBrokerKinds.LocalActivation ? (IRemoteServiceBroker)new LocalActivationRemoteServiceBroker() :
+			kind == RemoteServiceBrokerKinds.LocalActivation ? new LocalActivationRemoteServiceBroker() :
 			kind == RemoteServiceBrokerKinds.Pipes ? new PipeRemoteServiceBroker() :
 			throw new NotSupportedException();
 
