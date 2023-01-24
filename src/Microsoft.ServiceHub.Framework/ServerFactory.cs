@@ -50,17 +50,19 @@ public static class ServerFactory
 		return CreateCoreAsync(Guid.NewGuid().ToString("n"), logger, onConnectedCallback);
 	}
 
-	private static async Task<(IAsyncDisposable Server, string ServerName)> CreateCoreAsync(string pipeName, TraceSource? logger, Func<Stream, Task> onConnectedCallback)
+	private static async Task<(IAsyncDisposable Server, string ServerName)> CreateCoreAsync(string channel, TraceSource? logger, Func<Stream, Task> onConnectedCallback)
 	{
 		if (IsolatedUtilities.IsWindowsPlatform())
 		{
 			// Windows uses named pipes, and allows simple names (no paths) for its named pipes.
-			return (new NamedPipeServer(pipeName, logger, onConnectedCallback), pipeName);
+			// But since *nix OS's require the prefix, it's part of our protocol.
+			string serverPath = @"\\.\pipe\" + channel;
+			return (new NamedPipeServer(channel, logger, onConnectedCallback), serverPath);
 		}
 		else if (IsolatedUtilities.IsLinuxPlatform() || IsolatedUtilities.IsMacPlatform())
 		{
 			// On *nix we use domain sockets, which requires paths to a file that will actually be created.
-			string serverPath = Path.Combine(Path.GetTempPath(), pipeName);
+			string serverPath = Path.Combine(Path.GetTempPath(), channel);
 
 			return (await UnixDomainSocketServer.CreateAsync(serverPath, logger, onConnectedCallback).ConfigureAwait(false), serverPath);
 		}

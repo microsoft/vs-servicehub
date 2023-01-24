@@ -25,6 +25,14 @@ export async function hostMultiplexingServer(
 
 export async function startCP(cancellationToken: CancellationToken, args?: string[]): Promise<MultiplexingStream> {
 	const cp = child_process.spawn(findTestExe(), args)
+	cp.stderr.on('data', (chunk: Buffer) => {
+		console.error('server STDERR: ' + chunk.toString('utf8'))
+	})
+	cp.on('exit', code => {
+		if (code !== 0) {
+			console.log('server exited with: ' + code)
+		}
+	})
 	const stream = FullDuplexStream.Splice(cp.stdout, cp.stdin)
 	return await MultiplexingStream.CreateAsync(stream, undefined, cancellationToken)
 

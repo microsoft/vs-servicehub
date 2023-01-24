@@ -49,7 +49,7 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 		}
 
 		const requestId = uuid()
-		const pipeName = uuid()
+		const pipeName = path.join(PIPE_NAME_PREFIX, uuid())
 
 		const server = createServer(serverPipe => {
 			// Drop the entry from our map once the connection has been made.
@@ -58,7 +58,7 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 			serverPipe.pipe(pipe)
 			pipe.pipe(serverPipe)
 		})
-		server.listen(path.join(PIPE_NAME_PREFIX, pipeName))
+		server.listen(pipeName)
 		this.channelsOfferedToClient[requestId] = server
 
 		return {

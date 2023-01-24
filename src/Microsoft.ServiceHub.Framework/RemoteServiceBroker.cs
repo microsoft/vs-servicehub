@@ -619,7 +619,12 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		{
-			var pipeStream = new IPC.NamedPipeClientStream(".", pipeName, IPC.PipeDirection.InOut, IPC.PipeOptions.Asynchronous);
+			const string WindowsPipePrefix = @"\\.\pipe\";
+			string leafName = pipeName.StartsWith(WindowsPipePrefix, StringComparison.OrdinalIgnoreCase)
+				? pipeName.Substring(WindowsPipePrefix.Length)
+				: pipeName;
+
+			var pipeStream = new IPC.NamedPipeClientStream(".", leafName, IPC.PipeDirection.InOut, IPC.PipeOptions.Asynchronous);
 			try
 			{
 				await pipeStream.ConnectWithRetryAsync(cancellationToken).ConfigureAwait(false);

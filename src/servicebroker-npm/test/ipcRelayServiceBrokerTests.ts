@@ -2,7 +2,7 @@ import { FullDuplexStream } from 'nerdbank-streams'
 import { connect } from 'net'
 import path from 'path'
 import { BrokeredServicesChangedArgs } from '../src/BrokeredServicesChangedArgs'
-import { PIPE_NAME_PREFIX, RemoteServiceConnections } from '../src/constants'
+import { RemoteServiceConnections } from '../src/constants'
 import { FrameworkServices } from '../src/FrameworkServices'
 import { IDisposable } from '../src/IDisposable'
 import { IpcRelayServiceBroker } from '../src/IpcRelayServiceBroker'
@@ -90,7 +90,7 @@ describe('IpcRelayServiceBroker', function () {
 				await client.cancelServiceRequest(channel.requestId!)
 
 				const connectAttempt = new Promise<void>((resolve, reject) => {
-					const socket = connect(path.join(PIPE_NAME_PREFIX, channel.pipeName!))
+					const socket = connect(channel.pipeName!)
 					socket.once('connect', () => resolve())
 					socket.once('error', err => reject(err))
 				})
