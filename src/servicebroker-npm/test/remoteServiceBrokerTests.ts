@@ -27,10 +27,20 @@ import { BrokeredServicesChangedArgs } from '../src/BrokeredServicesChangedArgs'
 import { IRemoteServiceBroker } from '../src/IRemoteServiceBroker'
 
 describe('Service Broker tests', function () {
+	let defaultTokenSource: {
+		token: CancellationToken
+		cancel: (reason?: any) => void
+	}
 	let defaultToken: CancellationToken
 
 	beforeEach(() => {
-		defaultToken = CancellationToken.timeout(3000).token
+		defaultTokenSource = CancellationToken.timeout(3000)
+		defaultToken = defaultTokenSource.token
+	})
+
+	afterEach(() => {
+		// release timer resource
+		defaultTokenSource.cancel()
 	})
 
 	// Sometimes, the first time we start ServiceBrokerTest.exe it hangs and the test throws a CancellationError
