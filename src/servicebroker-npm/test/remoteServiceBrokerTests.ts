@@ -425,27 +425,31 @@ describe('Service Broker tests', function () {
 
 		it('Should emit and listen for availabilityChanged event', async function () {
 			const broker = new TestRemoteServiceBroker()
-			const availabilityChanged: Deferred<BrokeredServicesChangedArgs> = new Deferred<BrokeredServicesChangedArgs>()
+			try {
+				const availabilityChanged: Deferred<BrokeredServicesChangedArgs> = new Deferred<BrokeredServicesChangedArgs>()
 
-			// Listen for availabilityChanged event
-			broker.on('availabilityChanged', args => {
-				availabilityChanged.resolve(args)
-			})
+				// Listen for availabilityChanged event
+				broker.on('availabilityChanged', args => {
+					availabilityChanged.resolve(args)
+				})
 
-			// Fire availabilityChanged event
-			const changedArgs: BrokeredServicesChangedArgs = {
-				impactedServices: [ServiceMoniker.create('MyService')],
+				// Fire availabilityChanged event
+				const changedArgs: BrokeredServicesChangedArgs = {
+					impactedServices: [ServiceMoniker.create('MyService')],
+				}
+				broker.emit('availabilityChanged', changedArgs)
+
+				// Assert events have fired
+				const receivedArgs = await availabilityChanged.promise
+				assert(receivedArgs, 'Should have received event arguments when event is fired.')
+				assert.strictEqual(
+					receivedArgs?.impactedServices![0].name,
+					changedArgs.impactedServices![0].name,
+					'Should have received proper availabilityChanged event'
+				)
+			} finally {
+				broker.dispose()
 			}
-			broker.emit('availabilityChanged', changedArgs)
-
-			// Assert events have fired
-			const receivedArgs = await availabilityChanged.promise
-			assert(receivedArgs, 'Should have received event arguments when event is fired.')
-			assert.strictEqual(
-				receivedArgs?.impactedServices![0].name,
-				changedArgs.impactedServices![0].name,
-				'Should have received proper availabilityChanged event'
-			)
 		})
 	})
 })
