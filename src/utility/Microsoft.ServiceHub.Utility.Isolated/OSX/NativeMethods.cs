@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Microsoft.ServiceHub.Utility.OSX;
+namespace Microsoft.ServiceHub.Framework.OSX;
 
 /// <summary>
 /// NativeMethods to be used on OSX platforms.

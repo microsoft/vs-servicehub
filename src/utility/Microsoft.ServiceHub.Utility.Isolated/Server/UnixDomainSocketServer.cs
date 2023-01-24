@@ -2,19 +2,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A socket server to be used on Unix machines that invokes a callback whenever it is connected to.
 /// </summary>
+[UnsupportedOSPlatform("windows")]
 internal sealed class UnixDomainSocketServer : Server
 {
 	private readonly string path;
 	private SocketServer? socketServer;
 	private bool disposed;
 
-	private UnixDomainSocketServer(string path, TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
+	private UnixDomainSocketServer(string path, TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
 		: base(logger, createAndConfigureService)
 	{
 		IsolatedUtilities.RequiresNotNullOrEmpty(path, nameof(path));
@@ -34,7 +36,7 @@ internal sealed class UnixDomainSocketServer : Server
 	/// <param name="logger">The trace source to be used for logging.</param>
 	/// <param name="createAndConfigureService">Callback function to be run whenever a client connects to the server.</param>
 	/// <returns>The <see cref="UnixDomainSocketServer"/> that was created.</returns>
-	public static async Task<UnixDomainSocketServer> CreateAsync(string path, TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
+	public static async Task<UnixDomainSocketServer> CreateAsync(string path, TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
 	{
 		var server = new UnixDomainSocketServer(path, logger, createAndConfigureService);
 

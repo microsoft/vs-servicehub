@@ -9,6 +9,7 @@
     <CodefixTestingVersion>1.1.1</CodefixTestingVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="IsExternalInit" Version="1.0.3" />
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />

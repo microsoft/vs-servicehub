@@ -2,19 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using Microsoft.ServiceHub.Framework;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A server that invokes a callback whenever a client connects to it.
 /// </summary>
-internal abstract class Server : IDisposable
-#if !HostStub
-#pragma warning disable SA1001 // Commas should be spaced correctly
-	, IAsyncDisposable
-#pragma warning restore SA1001 // Commas should be spaced correctly
-#endif
+internal abstract class Server : IDisposable, IAsyncDisposable
 {
 	private readonly Func<WrappedStream, Task> createAndConfigureService;
 
@@ -26,12 +20,9 @@ internal abstract class Server : IDisposable
 	/// </summary>
 	/// <param name="logger">A trace source to be used for logging.</param>
 	/// <param name="createAndConfigureService">The callback to be invoked when a client connects to the server.</param>
-	internal Server(TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
+	internal Server(TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
 	{
-		IsolatedUtilities.RequiresNotNull(logger, nameof(logger));
-		IsolatedUtilities.RequiresNotNull(createAndConfigureService, nameof(createAndConfigureService));
-
-		this.Logger = logger;
+		this.Logger = logger ?? new TraceSource("ServiceHub.Framework pipe server", SourceLevels.Off);
 		this.createAndConfigureService = createAndConfigureService;
 	}
 
@@ -67,7 +58,6 @@ internal abstract class Server : IDisposable
 #pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
 	}
 
-#if !HostStub
 	/// <summary>
 	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 	/// </summary>
@@ -76,7 +66,6 @@ internal abstract class Server : IDisposable
 	{
 		await this.DisposeAsyncCore().ConfigureAwait(false);
 	}
-#endif
 
 	/// <summary>
 	/// Implements the core disposal logic to be used by the class.

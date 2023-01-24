@@ -3,8 +3,7 @@
 
 using System.Diagnostics;
 using System.IO.Pipelines;
-using Microsoft.ServiceHub.Utility;
-using Microsoft.ServiceHub.Utility.Shared;
+using Microsoft.ServiceHub.Framework.Shared;
 
 namespace Microsoft.ServiceHub.Framework;
 

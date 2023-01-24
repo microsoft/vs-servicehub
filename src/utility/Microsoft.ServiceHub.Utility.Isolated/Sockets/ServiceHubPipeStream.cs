@@ -4,7 +4,7 @@
 using System.IO.Pipes;
 using Microsoft.Win32.SafeHandles;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Wraps a stream to augment its capabilities.

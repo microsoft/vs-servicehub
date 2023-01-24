@@ -3,7 +3,7 @@
 
 #pragma warning disable SA1310 // Avoid underscores in member names
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:Elements should be documented", Justification = "Value of string constants are self explanatory")]
 internal static class UtilityResources

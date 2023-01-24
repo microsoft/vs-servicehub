@@ -7,7 +7,7 @@ using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Contains various utility methods without any non-framework dependencies.
@@ -136,9 +136,7 @@ internal static class IsolatedUtilities
 	/// Gets whether or not the current platform is Windows.
 	/// </summary>
 	/// <returns>True if the current platform is Windows, false otherwise.</returns>
-#if NET5_0_OR_GREATER
 	[SupportedOSPlatformGuard("windows6.0.6000")]
-#endif
 	internal static bool IsWindowsPlatform()
 	{
 #if NET5_0_OR_GREATER
@@ -152,9 +150,7 @@ internal static class IsolatedUtilities
 	/// Gets whether or not the current platform is OSX.
 	/// </summary>
 	/// <returns>True if the current platform is OSX, false otherwise.</returns>
-#if NET5_0_OR_GREATER
 	[SupportedOSPlatformGuard("macos")]
-#endif
 	internal static bool IsMacPlatform()
 	{
 		return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
@@ -164,9 +160,7 @@ internal static class IsolatedUtilities
 	/// Gets whether or not the current platform is Linux.
 	/// </summary>
 	/// <returns>True if the current platform is Linux, false otherwise.</returns>
-#if NET5_0_OR_GREATER
 	[SupportedOSPlatformGuard("linux")]
-#endif
 	internal static bool IsLinuxPlatform()
 	{
 		return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
@@ -198,88 +192,5 @@ internal static class IsolatedUtilities
 		}
 
 		return false;
-	}
-
-	/// <summary>
-	/// Gets the base directory to be used by ServiceHub on *nix platforms.
-	/// </summary>
-	/// <returns>"{userhomedir}/.ServiceHub" for *nix platforms.</returns>
-	internal static string GetDevHubBaseDirForUnix()
-	{
-		return Path.Combine(GetUserHomeDirOnUnix(), ".ServiceHub");
-	}
-
-	/// <summary>
-	/// Gets a Unix socket directory.
-	/// </summary>
-	/// <param name="locationServiceChannelName">The channel to be used for the socket.</param>
-	/// <returns>The socket directory.</returns>
-	internal static string GetUnixSocketDir(string locationServiceChannelName)
-	{
-		return Path.Combine(GetDevHubBaseDirForUnix(), locationServiceChannelName);
-	}
-
-	/// <summary>
-	/// Gets a Unix socket directory.
-	/// </summary>
-	/// <param name="channelName">The multiplexing channel to be used for the socket.</param>
-	/// <param name="locationServiceChannelName">The base channel to be used for the socket.</param>
-	/// <returns>The socket directory.</returns>
-	internal static string GetUnixSocketDir(string channelName, string locationServiceChannelName)
-	{
-		return Path.Combine(GetUnixSocketDir(locationServiceChannelName), channelName);
-	}
-
-	private static string GetUserHomeDirOnUnix()
-	{
-		if (IsWindowsPlatform())
-		{
-			throw new NotImplementedException();
-		}
-
-		if (!string.IsNullOrEmpty(HomeEnvVar))
-		{
-			return HomeEnvVar;
-		}
-
-		string username = string.Empty;
-		if (!string.IsNullOrEmpty(LogNameEnvVar))
-		{
-			username = LogNameEnvVar;
-		}
-		else if (!string.IsNullOrEmpty(UserEnvVar))
-		{
-			username = UserEnvVar;
-		}
-
-		if (!string.IsNullOrEmpty(LNameEnvVar))
-		{
-			username = LNameEnvVar;
-		}
-
-		if (!string.IsNullOrEmpty(UsernameEnvVar))
-		{
-			username = UsernameEnvVar;
-		}
-
-		if (IsMacPlatform())
-		{
-			return !string.IsNullOrEmpty(username) ? Path.Combine("/Users", username) : string.Empty;
-		}
-		else if (IsLinuxPlatform())
-		{
-			if (Linux.NativeMethods.getuid() == Linux.NativeMethods.RootUserId)
-			{
-				return "/root";
-			}
-			else
-			{
-				return !string.IsNullOrEmpty(username) ? Path.Combine("/home", username) : string.Empty;
-			}
-		}
-		else
-		{
-			throw new NotImplementedException();
-		}
 	}
 }

@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Microsoft.ServiceHub.Utility.Linux;
+namespace Microsoft.ServiceHub.Framework.Linux;
 
 /// <summary>
 /// NativeMethods to be used on Linux platforms.

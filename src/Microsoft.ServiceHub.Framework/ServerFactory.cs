@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using Microsoft.ServiceHub.Utility;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -14,26 +13,51 @@ public static class ServerFactory
 	/// <summary>
 	/// Creates a named pipe server.
 	/// </summary>
-	/// <param name="pipeName">The name of the server.</param>
+	/// <param name="pipeName">The name of the server. Typically just the result of calling <see cref="Guid.ToString()"/> on the result of <see cref="Guid.NewGuid()"/>. This should <em>not</em> include path separators.</param>
 	/// <param name="logger">The logger for the server.</param>
 	/// <param name="onConnectedCallback">Callback function to be run whenever a client connects to the server.</param>
 	/// <returns>
-	/// A disposable server that should be disposed of when it is no longer needed as well as the name of the pipe or socket that the server is opened on.
-	/// This server is also castable to <see cref="IAsyncDisposable"/>.
+	/// A tuple where <c>Server</c> is disposable to shut down the pipe, and <c>ServerName</c> is the pipe name as the client will need to access it. It implements <see cref="IAsyncDisposable"/>.
+	/// <c>ServerName</c> will typically be the same as <paramref name="pipeName"/> on Windows, but on mac/linux it will have a path prepended to it.
 	/// </returns>
-	public static Task<(IDisposable Server, string ServerName)> CreateAsync(string pipeName, TraceSource logger, Func<Stream, Task> onConnectedCallback)
+	[Obsolete($"Use the overload that doesn't take a pipe name instead.")]
+	public static async Task<(IDisposable Server, string ServerName)> CreateAsync(string pipeName, TraceSource? logger, Func<Stream, Task> onConnectedCallback)
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
-		Requires.NotNull(logger, nameof(logger));
 		Requires.NotNull(onConnectedCallback, nameof(onConnectedCallback));
 
+		(IAsyncDisposable Server, string ServerName) result = await CreateCoreAsync(pipeName, logger, onConnectedCallback).ConfigureAwait(false);
+		return ((IDisposable)result.Server, result.ServerName);
+	}
+
+	/// <summary>
+	/// Creates a named pipe server.
+	/// </summary>
+	/// <param name="logger">The logger for the server.</param>
+	/// <param name="onConnectedCallback">Callback function to be run whenever a client connects to the server.</param>
+	/// <returns>
+	/// A tuple where <c>Server</c> is disposable to shut down the pipe, and <c>ServerName</c> is the pipe name as the client will need to access it.
+	/// </returns>
+	public static Task<(IAsyncDisposable Server, string ServerName)> CreateAsync(TraceSource? logger, Func<Stream, Task> onConnectedCallback)
+	{
+		Requires.NotNull(onConnectedCallback, nameof(onConnectedCallback));
+
+		return CreateCoreAsync(Guid.NewGuid().ToString("n"), logger, onConnectedCallback);
+	}
+
+	private static async Task<(IAsyncDisposable Server, string ServerName)> CreateCoreAsync(string pipeName, TraceSource? logger, Func<Stream, Task> onConnectedCallback)
+	{
 		if (IsolatedUtilities.IsWindowsPlatform())
 		{
-			return Task.FromResult((ServerFactoryCore.Create(pipeName, logger, onConnectedCallback), pipeName));
+			// Windows uses named pipes, and allows simple names (no paths) for its named pipes.
+			return (new NamedPipeServer(pipeName, logger, onConnectedCallback), pipeName);
 		}
 		else if (IsolatedUtilities.IsLinuxPlatform() || IsolatedUtilities.IsMacPlatform())
 		{
-			return ServerFactoryCore.CreateOnNonWindowsAsync(pipeName, pipeName, logger, onConnectedCallback);
+			// On *nix we use domain sockets, which requires paths to a file that will actually be created.
+			string serverPath = Path.Combine(Path.GetTempPath(), pipeName);
+
+			return (await UnixDomainSocketServer.CreateAsync(serverPath, logger, onConnectedCallback).ConfigureAwait(false), serverPath);
 		}
 
 		throw new PlatformNotSupportedException();

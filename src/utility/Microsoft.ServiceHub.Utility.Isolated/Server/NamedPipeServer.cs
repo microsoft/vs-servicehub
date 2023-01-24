@@ -4,12 +4,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
-using Microsoft.ServiceHub.Framework;
-#if TELEMETRY
-using Microsoft.VisualStudio.Telemetry;
-#endif
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A server whose backing streams are based on named pipes. Invokes a callback when a client connects to the server.
@@ -39,7 +35,7 @@ internal sealed class NamedPipeServer : Server
 	/// <param name="channelName">The name of the named pipe.</param>
 	/// <param name="logger">A trace source to be used for logging.</param>
 	/// <param name="createAndConfigureService">The callback that is invoked when a client connects to the server.</param>
-	internal NamedPipeServer(string channelName, TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
+	internal NamedPipeServer(string channelName, TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
 		: base(logger, createAndConfigureService)
 	{
 		IsolatedUtilities.RequiresNotNullOrEmpty(channelName, nameof(channelName));
@@ -73,18 +69,6 @@ internal sealed class NamedPipeServer : Server
 					{
 						string exceptionType = ex.GetType().ToString();
 						retryExceptions.AddOrUpdate(exceptionType, 1, (type, count) => count++);
-#if TELEMETRY
-                        if (retryCount != 0)
-                        {
-                            TelemetryLogger.LogAtomicOperation(
-                                TelemetryConstants.NamedPipeServerStreamConnectSuccessRetriesRequiredEvent,
-                                new Dictionary<string, object>()
-                                {
-                                    { TelemetryConstants.NamedPipeServerStreamConnectSuccessRetriesRequired_RetryCount, retryCount },
-                                    { TelemetryConstants.NamedPipeServerStreamConnectSuccessRetriesRequired_Exceptions, new TelemetryComplexProperty(retryExceptions) },
-                                });
-                        }
-#endif
 
 						// The client has disconnected prematurely before WaitForConnection could pick it up.
 						// Ignore that and wait for the next connection unless cancellation is requested.
@@ -119,7 +103,6 @@ internal sealed class NamedPipeServer : Server
 			catch (Exception exception)
 			{
 				this.Logger.TraceException(exception, "Exception running {0}.{1}", this.GetType().Name, nameof(this.serverTask));
-				LogNamedPipeServerStreamConnectFailedTelemetry(exception, retryCount, retryExceptions);
 			}
 			finally
 			{
@@ -170,24 +153,8 @@ internal sealed class NamedPipeServer : Server
 		await base.DisposeAsyncCore().ConfigureAwait(false);
 	}
 
-	private static void LogNamedPipeServerStreamConnectFailedTelemetry(Exception ex, int retryCount, ConcurrentDictionary<string, int> retryExceptions)
-	{
-#if TELEMETRY
-        TelemetryLogger.LogFaultEvent(
-            TelemetryConstants.NamedPipeServerStreamConnectFailedEvent,
-            ex,
-            new Dictionary<string, object>()
-            {
-                { TelemetryConstants.NamedPipeServerStreamConnect_Retries, retryCount },
-                { TelemetryConstants.NamedPipeServerStreamConnect_Exceptions, new TelemetryComplexProperty(retryExceptions) },
-            });
-#endif
-	}
-
 	private NamedPipeServerStream CreatePipe(string channelName)
 	{
-		// TODO: for pipe security see if we need to use a different constructor for .NET Core.
-		// Tracked by task 178897: Investigate Named Pipe and Unix Domain Socket channel security.
 		return new NamedPipeServerStream(
 			channelName,
 			PipeDirection.InOut,

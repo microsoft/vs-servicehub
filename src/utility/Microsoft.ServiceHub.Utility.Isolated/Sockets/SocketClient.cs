@@ -3,13 +3,15 @@
 
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Versioning;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Provides socket client services at a higher level
 /// of abstraction than the <see cref="System.Net.Sockets.Socket" /> class.
 /// </summary>
+[UnsupportedOSPlatform("windows")]
 internal static class SocketClient
 {
 	/// <summary>

@@ -3,7 +3,7 @@
 
 using System.Net.Sockets;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A wrapper for a socket stream to augment its capabilities.

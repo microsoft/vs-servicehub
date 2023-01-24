@@ -8,12 +8,10 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.ServiceHub.Framework.Services;
-using Microsoft.ServiceHub.Utility;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
 using IPC = System.IO.Pipes;
-using UnixDomainSocketEndPoint = Microsoft.ServiceHub.Utility.UnixDomainSocketEndPoint;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -619,12 +617,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
 
-		if (UnixDomainSocketEndPoint.IsSupported)
-		{
-			Socket socket = await SocketClient.ConnectAsync(pipeName, ChannelConnectionFlags.WaitForServerToConnect, cancellationToken).ConfigureAwait(false);
-			return new NetworkStream(socket, ownsSocket: true).UsePipe();
-		}
-		else
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		{
 			var pipeStream = new IPC.NamedPipeClientStream(".", pipeName, IPC.PipeDirection.InOut, IPC.PipeOptions.Asynchronous);
 			try
@@ -637,6 +630,11 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 				await pipeStream.DisposeAsync().ConfigureAwait(false);
 				throw;
 			}
+		}
+		else
+		{
+			Socket socket = await SocketClient.ConnectAsync(pipeName, ChannelConnectionFlags.WaitForServerToConnect, cancellationToken).ConfigureAwait(false);
+			return new NetworkStream(socket, ownsSocket: true).UsePipe();
 		}
 	}
 

@@ -4,13 +4,15 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// An <see cref="EndPoint"/> used to represent a Unix domain socket (i.e. a OSX/Linux equivalent of named pipes in Windows).
 /// </summary>
+[UnsupportedOSPlatform("windows")]
 internal sealed class UnixDomainSocketEndPoint : EndPoint
 {
 	/// <summary>
@@ -91,11 +93,6 @@ internal sealed class UnixDomainSocketEndPoint : EndPoint
 
 	/// <inheritdoc />
 	public override AddressFamily AddressFamily => EndPointAddressFamily;
-
-	/// <summary>
-	/// Gets a value indicating whether Unix domain sockets are supported on the current operating system.
-	/// </summary>
-	internal static bool IsSupported => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
 	/// <summary>
 	/// Gets the path to this socket.

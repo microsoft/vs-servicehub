@@ -4,7 +4,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Implements the connection logic for the socket server.
@@ -18,7 +18,10 @@ internal class SocketServer : IDisposable
 	private readonly Func<Socket, Task> clientConnected;
 	private readonly CancellationTokenSource disposeCts = new CancellationTokenSource();
 
-	private Socket? socket;                // The socket used to listen for incoming connection requests.
+	/// <summary>
+	/// The socket used to listen for incoming connection requests.
+	/// </summary>
+	private Socket? socket;
 	private int acceptRetryCount = MaxAcceptRetries;
 
 	private SocketServer(Func<Socket, Task> clientConnected)
