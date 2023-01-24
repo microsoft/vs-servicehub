@@ -28,7 +28,7 @@ export async function startCP(cancellationToken: CancellationToken, args?: strin
 	const stream = FullDuplexStream.Splice(cp.stdout, cp.stdin)
 	return await MultiplexingStream.CreateAsync(stream, undefined, cancellationToken)
 
-	function findTestExe() : string {
+	function findTestExe(): string {
 		const configurations = ['Debug', 'Release']
 		const fileNames = ['ServiceBrokerTest.exe', 'ServiceBrokerTest']
 		let testBrokerPathsAttempted: string[] = []

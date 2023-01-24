@@ -17,6 +17,7 @@ import { ServiceRpcDescriptor } from './ServiceRpcDescriptor'
 import { isChannel, IsReadWriteStream } from './utilities'
 import { createConnection } from 'net'
 import { FrameworkServices } from './FrameworkServices'
+import path from 'path'
 
 /**
  * An {@link IServiceBroker} that provisions services from a (typically remote) {@link IRemoteServiceBroker}.
@@ -199,7 +200,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 			} else if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
 				pipe = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
 			} else if (remoteConnectionInfo.pipeName) {
-				pipe = createConnection(PIPE_NAME_PREFIX + remoteConnectionInfo.pipeName)
+				pipe = createConnection(path.join(PIPE_NAME_PREFIX, remoteConnectionInfo.pipeName))
 			} else {
 				throw new Error('Unsupported connection type')
 			}

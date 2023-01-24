@@ -10,6 +10,7 @@ import { ServiceBrokerEmitter } from '../../src/IServiceBroker'
 import { PIPE_NAME_PREFIX } from '../../src/constants'
 import { v4 as uuid } from 'uuid'
 import { createServer, Server } from 'net'
+import path from 'path'
 
 const calcMoniker = ServiceMoniker.create('Calculator')
 
@@ -26,7 +27,7 @@ export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceB
 		this.testPipeName = 'testRemoteServiceBroker' + uuid()
 
 		this.server = createServer()
-		this.server.listen(PIPE_NAME_PREFIX + this.testPipeName)
+		this.server.listen(path.join(PIPE_NAME_PREFIX + this.testPipeName))
 	}
 
 	public handshake(clientMetadata: ServiceBrokerClientMetadata, cancellationToken: CancellationToken): Promise<void> {

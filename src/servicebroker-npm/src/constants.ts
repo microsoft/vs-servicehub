@@ -62,4 +62,4 @@ export module RemoteServiceConnections {
  */
 export const availabilityChangedEvent: string = 'availabilityChanged'
 
-export const PIPE_NAME_PREFIX = '\\\\.\\pipe\\'
+export const PIPE_NAME_PREFIX = process.platform === 'win32' ? '\\\\.\\pipe\\' : '/tmp/'

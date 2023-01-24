@@ -12,6 +12,7 @@ import { v4 as uuid } from 'uuid'
 import { createServer, Server } from 'net'
 import { BrokeredServicesChangedArgs } from './BrokeredServicesChangedArgs'
 import { RpcEventServer } from './ServiceRpcDescriptor'
+import path = require('path')
 
 /**
  * An IRemoteServiceBroker which proffers all services from another IServiceBroker
@@ -57,7 +58,7 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 			serverPipe.pipe(pipe)
 			pipe.pipe(serverPipe)
 		})
-		server.listen(PIPE_NAME_PREFIX + pipeName)
+		server.listen(path.join(PIPE_NAME_PREFIX, pipeName))
 		this.channelsOfferedToClient[requestId] = server
 
 		return {
