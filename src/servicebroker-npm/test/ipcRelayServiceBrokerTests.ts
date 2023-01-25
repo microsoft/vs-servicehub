@@ -75,8 +75,16 @@ describe('IpcRelayServiceBroker', function () {
 
 		it('get a service', async function () {
 			const serviceBroker = await getServiceBroker()
-			const calc = await serviceBroker.getProxy<ICalculatorService>(calcDescriptorUtf8Http)
-			expect(await calc?.add(1, 2)).toEqual(3)
+			try {
+				const calc = await serviceBroker.getProxy<ICalculatorService>(calcDescriptorUtf8Http)
+				try {
+					expect(await calc?.add(1, 2)).toEqual(3)
+				} finally {
+					calc?.dispose()
+				}
+			} finally {
+				serviceBroker.dispose()
+			}
 		})
 	})
 
