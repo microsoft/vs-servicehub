@@ -4,6 +4,8 @@ parameters:
   default:
     vmImage: windows-2022
 - name: ShouldSkipOptimize
+  type: boolean
+  default: false
 - name: IsProfilingRun
   type: boolean
   default: false

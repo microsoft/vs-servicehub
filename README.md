@@ -3,6 +3,8 @@
 [![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Framework.svg)](https://nuget.org/packages/Microsoft.ServiceHub.Framework)
 [![NPM package](https://img.shields.io/npm/v/@microsoft/servicehub-framework)](https://www.npmjs.com/package/@microsoft/servicehub-framework)
 
+[![Build Status](https://dev.azure.com/azure-public/vside/_apis/build/status/vs-servicehub?branchName=main)](https://dev.azure.com/azure-public/vside/_build/latest?definitionId=53&branchName=main)
+
 These are the libraries that Visual Studio use for much of its intra- and inter-process exchange of services.
 
 ## Contributing
