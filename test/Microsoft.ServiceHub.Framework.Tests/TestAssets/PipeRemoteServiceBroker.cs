@@ -14,19 +14,19 @@ internal class PipeRemoteServiceBroker : IRemoteServiceBroker
 		return Task.CompletedTask;
 	}
 
-	public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+	public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 	{
 		RemoteServiceConnectionInfo result = default;
 		if (serviceMoniker.Name == TestServices.Calculator.Moniker.Name)
 		{
-			(IAsyncDisposable server, result.PipeName) = await ServerFactory.CreateAsync(null, stream =>
+			(IAsyncDisposable server, result.PipeName) = ServerFactory.Create(stream =>
 			{
 				TestServices.Calculator.ConstructRpc(new Calculator(), stream.UsePipe());
 				return Task.CompletedTask;
 			});
 		}
 
-		return result;
+		return Task.FromResult(result);
 	}
 
 	public Task CancelServiceRequestAsync(Guid serviceRequestId)

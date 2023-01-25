@@ -607,40 +607,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <param name="args">Details regarding what changes have occurred.</param>
 	protected virtual void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
 
-	/// <summary>
-	/// Connects to a named pipe.
-	/// </summary>
-	/// <param name="pipeName">The name of the pipe.</param>
-	/// <param name="cancellationToken">A cancellation token.</param>
-	/// <returns>A duplex pipe.</returns>
-	private static async ValueTask<IDuplexPipe> ConnectToPipeAsync(string pipeName, CancellationToken cancellationToken)
+	private static async Task<IDuplexPipe> ConnectToPipeAsync(string pipeName, CancellationToken cancellationToken)
 	{
-		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
-
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-		{
-			const string WindowsPipePrefix = @"\\.\pipe\";
-			string leafName = pipeName.StartsWith(WindowsPipePrefix, StringComparison.OrdinalIgnoreCase)
-				? pipeName.Substring(WindowsPipePrefix.Length)
-				: pipeName;
-
-			var pipeStream = new IPC.NamedPipeClientStream(".", leafName, IPC.PipeDirection.InOut, IPC.PipeOptions.Asynchronous);
-			try
-			{
-				await pipeStream.ConnectWithRetryAsync(cancellationToken).ConfigureAwait(false);
-				return pipeStream.UsePipe();
-			}
-			catch
-			{
-				await pipeStream.DisposeAsync().ConfigureAwait(false);
-				throw;
-			}
-		}
-		else
-		{
-			Socket socket = await SocketClient.ConnectAsync(pipeName, ChannelConnectionFlags.WaitForServerToConnect, cancellationToken).ConfigureAwait(false);
-			return new NetworkStream(socket, ownsSocket: true).UsePipe();
-		}
+		return (await ServerFactory.ConnectAsync(pipeName, cancellationToken).ConfigureAwait(false)).UsePipe();
 	}
 
 	/// <summary>

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
+using static Nerdbank.Streams.MultiplexingStream;
 using IAsyncDisposable = System.IAsyncDisposable;
 
 namespace Microsoft.ServiceHub.Framework;
@@ -89,9 +90,9 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 
 			var requestId = Guid.NewGuid();
 
-			(IAsyncDisposable server, string pipeName) = await ServerFactory.CreateAsync(
-				this.TraceSource,
-				stream => this.HandleIncomingConnectionAsync(stream, requestId, servicePipe)).ConfigureAwait(false);
+			(IAsyncDisposable server, string pipeName) = ServerFactory.Create(
+				stream => this.HandleIncomingConnectionAsync(stream, requestId, servicePipe),
+				new ServerFactory.ServerOptions { TraceSource = this.TraceSource, OneClientOnly = true });
 			Assumes.True(faultOrCancelBag.TryAddDisposable(server));
 
 			ImmutableInterlocked.TryAdd(ref this.remoteServiceRequests, requestId, faultOrCancelBag);

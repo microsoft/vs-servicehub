@@ -18,11 +18,12 @@ internal abstract class Server : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Server"/> class.
 	/// </summary>
-	/// <param name="logger">A trace source to be used for logging.</param>
+	/// <param name="options">IPC server options.</param>
 	/// <param name="createAndConfigureService">The callback to be invoked when a client connects to the server.</param>
-	internal Server(TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
+	internal Server(ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
 	{
-		this.Logger = logger ?? new TraceSource("ServiceHub.Framework pipe server", SourceLevels.Off);
+		this.Logger = options.TraceSource ?? new TraceSource("ServiceHub.Framework pipe server", SourceLevels.Off);
+		this.OneClientOnly = options.OneClientOnly;
 		this.createAndConfigureService = createAndConfigureService;
 	}
 
@@ -35,6 +36,11 @@ internal abstract class Server : IDisposable, IAsyncDisposable
 	/// Gets a trace source used for logging.
 	/// </summary>
 	protected TraceSource Logger { get; }
+
+	/// <summary>
+	/// Gets a value indicating whether the server should accept only one client.
+	/// </summary>
+	protected bool OneClientOnly { get; }
 
 	/// <summary>
 	/// Gets a value indicating whether or not clients are currently connected to the server.

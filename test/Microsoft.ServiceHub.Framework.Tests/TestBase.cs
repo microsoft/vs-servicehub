@@ -52,6 +52,30 @@ public abstract class TestBase : IDisposable
 		Skip.If(IsOnMono, "Test marked as skipped on Mono runtime due to feature: " + unsupportedFeature);
 	}
 
+	/// <summary>
+	/// Pauses until a debugger is attached when on Linux.
+	/// </summary>
+	protected async Task WaitForDebuggerAsync()
+	{
+#if NET6_0_OR_GREATER
+		if (OperatingSystem.IsLinux())
+		{
+			Console.WriteLine($"Waiting for debugger to attach to PID {Process.GetCurrentProcess().Id}...");
+			while (!Debugger.IsAttached)
+			{
+				await Task.Delay(500);
+			}
+
+			Console.WriteLine("...attached");
+
+			// Renew the TimeoutToken, which now with the debugger attached will be set to infinity.
+			this.timeoutTokenSource = new(TestTimeout);
+		}
+#else
+		await Task.Yield(); // suppress async warning
+#endif
+	}
+
 	protected async Task HostMultiplexingServerAsync(Stream stream, Func<MultiplexingStream, IRemoteServiceBroker> serverFactory, CancellationToken cancellationToken)
 	{
 		Requires.NotNull(stream, nameof(stream));

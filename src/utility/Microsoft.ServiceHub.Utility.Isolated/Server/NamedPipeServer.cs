@@ -33,10 +33,10 @@ internal sealed class NamedPipeServer : Server
 	/// Initializes a new instance of the <see cref="NamedPipeServer"/> class.
 	/// </summary>
 	/// <param name="channelName">The name of the named pipe.</param>
-	/// <param name="logger">A trace source to be used for logging.</param>
+	/// <param name="options">IPC server options.</param>
 	/// <param name="createAndConfigureService">The callback that is invoked when a client connects to the server.</param>
-	internal NamedPipeServer(string channelName, TraceSource? logger, Func<WrappedStream, Task> createAndConfigureService)
-		: base(logger, createAndConfigureService)
+	internal NamedPipeServer(string channelName, ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
+		: base(options, createAndConfigureService)
 	{
 		IsolatedUtilities.RequiresNotNullOrEmpty(channelName, nameof(channelName));
 
@@ -51,6 +51,7 @@ internal sealed class NamedPipeServer : Server
 		// to dispose of the pipe server even if it has been cancelled before it starts executing .
 		this.serverTask = Task.Run(async () =>
 		{
+			bool disposeServer = true;
 			int retryCount = 0;
 			ConcurrentDictionary<string, int> retryExceptions = new ConcurrentDictionary<string, int>();
 			try
@@ -82,11 +83,18 @@ internal sealed class NamedPipeServer : Server
 						continue;
 					}
 
-					// A client has connected. Open a stream to it and start listening for the next client
+					// A client has connected. Open a stream to it (and possibly start listening for the next client)
 					// unless cancellation is requested.
 					if (!cancellationToken.IsCancellationRequested)
 					{
-						var stream = new ServiceHubPipeStream(pipeServer);
+						ServiceHubPipeStream stream = new(pipeServer);
+
+						if (options.OneClientOnly)
+						{
+							await this.ClientConnected(stream).ConfigureAwait(false);
+							disposeServer = false;
+							break;
+						}
 
 						// Create a new pipe server before configuring the client connection
 						// so the next client doesn't wait for the first client's createAndConfigureService.
@@ -106,7 +114,10 @@ internal sealed class NamedPipeServer : Server
 			}
 			finally
 			{
-				await pipeServer.DisposeAsync().ConfigureAwait(false);
+				if (disposeServer)
+				{
+					await pipeServer.DisposeAsync().ConfigureAwait(false);
+				}
 			}
 		});
 	}

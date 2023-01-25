@@ -97,8 +97,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		var resetEvent = new AsyncManualResetEvent();
 		TaskCompletionSource<bool> serverConnected = new();
 
-		(IAsyncDisposable serverDisposable, string name) = await ServerFactory.CreateAsync(
-			  null,
+		(IAsyncDisposable serverDisposable, string name) = ServerFactory.Create(
 			  stream =>
 			  {
 				  try
@@ -118,7 +117,8 @@ public partial class RemoteServiceBrokerTests : TestBase
 					  serverConnected.TrySetException(ex);
 					  throw;
 				  }
-			  });
+			  },
+			  new ServerFactory.ServerOptions { OneClientOnly = false });
 
 		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(name, this.TimeoutToken))
 		{
