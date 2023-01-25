@@ -9,10 +9,20 @@ import { MultiplexingRemoteServiceBroker } from './testAssets/multiplexingRemote
 import { calcDescriptorUtf8Http, startCP } from './testAssets/testUtilities'
 
 describe('Activation Options tests', function () {
+	let defaultTokenSource: {
+		token: CancellationToken
+		cancel: (reason?: any) => void
+	}
 	let defaultToken: CancellationToken
 
 	beforeEach(() => {
-		defaultToken = CancellationToken.timeout(3000).token
+		defaultTokenSource = CancellationToken.timeout(3000)
+		defaultToken = defaultTokenSource.token
+	})
+
+	afterEach(() => {
+		// release timer resource
+		defaultTokenSource.cancel()
 	})
 
 	it('Should update activation options', async function () {

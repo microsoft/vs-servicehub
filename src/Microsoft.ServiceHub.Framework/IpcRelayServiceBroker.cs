@@ -3,13 +3,12 @@
 
 using System.Buffers;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO.Pipelines;
-using System.IO.Pipes;
-using System.Runtime.Versioning;
-using Microsoft.ServiceHub.Utility;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using IPC = System.IO.Pipes;
+using static Nerdbank.Streams.MultiplexingStream;
+using IAsyncDisposable = System.IAsyncDisposable;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -17,9 +16,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// An <see cref="IRemoteServiceBroker"/> which proffers all services from another <see cref="IServiceBroker"/>
 /// over named pipes on Windows or Unix domain sockets on other operating systems.
 /// </summary>
-#if NET5_0_OR_GREATER
-[SupportedOSPlatform("Windows")]
-#endif
 public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 {
 	private readonly IServiceBroker serviceBroker;
@@ -29,7 +25,7 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	/// </summary>
 	private readonly AsyncManualResetEvent disposedEvent = new AsyncManualResetEvent();
 
-	private ImmutableDictionary<Guid, IDisposable> remoteServiceRequests = ImmutableDictionary<Guid, IDisposable>.Empty;
+	private ImmutableDictionary<Guid, IAsyncDisposable> remoteServiceRequests = ImmutableDictionary<Guid, IAsyncDisposable>.Empty;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="IpcRelayServiceBroker"/> class.
@@ -39,11 +35,6 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
 		this.serviceBroker = serviceBroker;
-
-		if (UnixDomainSocketEndPoint.IsSupported)
-		{
-			throw new NotSupportedException("Windows is the only supported operating system for this class right now.");
-		}
 	}
 
 	/// <inheritdoc/>
@@ -52,6 +43,11 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 		add => this.serviceBroker.AvailabilityChanged += value;
 		remove => this.serviceBroker.AvailabilityChanged -= value;
 	}
+
+	/// <summary>
+	/// Gets the logging mechanism.
+	/// </summary>
+	public TraceSource? TraceSource { get; init; }
 
 	/// <summary>
 	/// Gets a <see cref="Task"/> that completes when this instance is disposed of.
@@ -77,7 +73,7 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	/// <inheritdoc />
 	public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken = default)
 	{
-		var faultOrCancelBag = new DisposableBag();
+		DisposableBag faultOrCancelBag = new();
 		try
 		{
 			IDuplexPipe? servicePipe = await this.serviceBroker.GetPipeAsync(serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false);
@@ -92,43 +88,14 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 				servicePipe.Output?.Complete();
 			}));
 
-			string pipeName = Guid.NewGuid().ToString();
-			var ipcPipeStream = new NamedPipeServerStream(
-				pipeName,
-				PipeDirection.InOut,
-				maxNumberOfServerInstances: 1,
-				PipeTransmissionMode.Byte,
-				IPC.PipeOptions.Asynchronous);
-			faultOrCancelBag.AddDisposable(ipcPipeStream);
-
 			var requestId = Guid.NewGuid();
+
+			(IAsyncDisposable server, string pipeName) = ServerFactory.Create(
+				stream => this.HandleIncomingConnectionAsync(stream, requestId, servicePipe),
+				new ServerFactory.ServerOptions { TraceSource = this.TraceSource, OneClientOnly = true });
+			Assumes.True(faultOrCancelBag.TryAddDisposable(server));
+
 			ImmutableInterlocked.TryAdd(ref this.remoteServiceRequests, requestId, faultOrCancelBag);
-
-			// Nothing related to responding to the named pipe call should honor the CancellationToken for this outer call,
-			// because the outer call will be long done with by the time a request comes in for this named pipe.
-			Task waitForConnectionTask = ipcPipeStream.WaitForConnectionAsync(CancellationToken.None);
-			_ = Task.Run(async delegate
-			{
-				await waitForConnectionTask.NoThrowAwaitable(false);
-
-				// Once a connection is made (or fails), it is no longer cancelable.
-				ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, requestId, out IDisposable _);
-
-				// Clean up if it failed.
-				if (waitForConnectionTask.IsFaulted)
-				{
-					faultOrCancelBag.Dispose();
-#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks (this one was created by our parent context)
-					await waitForConnectionTask.ConfigureAwait(false); // rethrow exception.
-#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
-				}
-
-				// Link the two pipes so that all incoming/outgoing calls get forwarded
-				IDuplexPipe ipcPipe = ipcPipeStream.UsePipe();
-				await Task.WhenAll(
-					LinkAsync(ipcPipe.Input, servicePipe.Output),
-					LinkAsync(servicePipe.Input, ipcPipe.Output)).ConfigureAwait(false);
-			});
 
 			return new RemoteServiceConnectionInfo
 			{
@@ -138,20 +105,18 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 		}
 		catch
 		{
-			faultOrCancelBag.Dispose();
+			await faultOrCancelBag.DisposeAsync().ConfigureAwait(false);
 			throw;
 		}
 	}
 
 	/// <inheritdoc />
-	public Task CancelServiceRequestAsync(Guid serviceRequestId)
+	public async Task CancelServiceRequestAsync(Guid serviceRequestId)
 	{
-		if (ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, serviceRequestId, out IDisposable? disposable))
+		if (ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, serviceRequestId, out IAsyncDisposable? disposable))
 		{
-			disposable.Dispose();
+			await disposable.DisposeAsync().ConfigureAwait(false);
 		}
-
-		return Task.CompletedTask;
 	}
 
 	/// <inheritdoc/>
@@ -173,40 +138,14 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 		}
 	}
 
-	/// <summary>
-	/// Copies all bytes from a <see cref="PipeReader"/> to a <see cref="PipeWriter"/>.
-	/// </summary>
-	/// <param name="reader">The reader to copy from.</param>
-	/// <param name="writer">The writer to copy to.</param>
-	/// <returns>A <see cref="Task"/> that completes on error or when the <paramref name="reader"/> has completed and all bytes have been written to the <paramref name="writer"/>.</returns>
-	private static async Task LinkAsync(PipeReader reader, PipeWriter writer)
+	private async Task HandleIncomingConnectionAsync(Stream stream, Guid requestId, IDuplexPipe servicePipe)
 	{
-		Requires.NotNull(reader, nameof(reader));
-		Requires.NotNull(writer, nameof(writer));
+		// Once a connection is made (or fails), it is no longer cancelable.
+		ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, requestId, out IAsyncDisposable _);
 
-		try
-		{
-			while (true)
-			{
-				ReadResult result = await reader.ReadAsync().ConfigureAwait(false);
-				foreach (ReadOnlyMemory<byte> sourceMemory in result.Buffer)
-				{
-					writer.Write(sourceMemory.Span);
-					await writer.FlushAsync().ConfigureAwait(false);
-				}
-
-				reader.AdvanceTo(result.Buffer.End);
-				if (result.IsCompleted)
-				{
-					break;
-				}
-			}
-
-			await writer.CompleteAsync().ConfigureAwait(false);
-		}
-		catch (Exception ex)
-		{
-			await writer.CompleteAsync(ex).ConfigureAwait(false);
-		}
+		// Link the two pipes so that all incoming/outgoing calls get forwarded
+		await Task.WhenAll(
+			stream.CopyToAsync(servicePipe.Output),
+			servicePipe.Input.CopyToAsync(stream)).ConfigureAwait(false);
 	}
 }

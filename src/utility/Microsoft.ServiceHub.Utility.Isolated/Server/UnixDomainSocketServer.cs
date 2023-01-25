@@ -1,21 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Diagnostics;
+#if NET6_0_OR_GREATER
 
-namespace Microsoft.ServiceHub.Utility;
+using System.Diagnostics;
+using System.Net.Sockets;
+using System.Runtime.Versioning;
+
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A socket server to be used on Unix machines that invokes a callback whenever it is connected to.
 /// </summary>
+[UnsupportedOSPlatform("windows")]
 internal sealed class UnixDomainSocketServer : Server
 {
 	private readonly string path;
 	private SocketServer? socketServer;
 	private bool disposed;
 
-	private UnixDomainSocketServer(string path, TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
-		: base(logger, createAndConfigureService)
+	private UnixDomainSocketServer(string path, ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
+		: base(options, createAndConfigureService)
 	{
 		IsolatedUtilities.RequiresNotNullOrEmpty(path, nameof(path));
 		this.path = path;
@@ -31,19 +36,20 @@ internal sealed class UnixDomainSocketServer : Server
 	/// Creates an instance of a <see cref="UnixDomainSocketServer"/>.
 	/// </summary>
 	/// <param name="path">The path on disk to the socket file.</param>
-	/// <param name="logger">The trace source to be used for logging.</param>
+	/// <param name="options">IPC server options.</param>
 	/// <param name="createAndConfigureService">Callback function to be run whenever a client connects to the server.</param>
 	/// <returns>The <see cref="UnixDomainSocketServer"/> that was created.</returns>
-	public static async Task<UnixDomainSocketServer> CreateAsync(string path, TraceSource logger, Func<WrappedStream, Task> createAndConfigureService)
+	internal static UnixDomainSocketServer Create(string path, ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
 	{
-		var server = new UnixDomainSocketServer(path, logger, createAndConfigureService);
+		var server = new UnixDomainSocketServer(path, options, createAndConfigureService);
 
 		var endPoint = new UnixDomainSocketEndPoint(server.path);
-		server.socketServer = await SocketServer.CreateAsync(
+		server.socketServer = SocketServer.Create(
 			endPoint,
-			UnixDomainSocketEndPoint.Stream,
-			UnixDomainSocketEndPoint.Protocol,
-			socket => server.ClientConnected(new UnixDomainSocketStream(socket))).ConfigureAwait(false);
+			SocketType.Stream,
+			ProtocolType.Unspecified,
+			options,
+			socket => server.ClientConnected(new UnixDomainSocketStream(socket)));
 
 		return server;
 	}
@@ -86,3 +92,5 @@ internal sealed class UnixDomainSocketServer : Server
 		}
 	}
 }
+
+#endif

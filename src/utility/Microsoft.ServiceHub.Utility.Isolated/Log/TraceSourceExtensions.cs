@@ -6,7 +6,7 @@ using System.Globalization;
 
 using static System.FormattableString;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A class containing extension methods for <see cref="TraceSource"/>.

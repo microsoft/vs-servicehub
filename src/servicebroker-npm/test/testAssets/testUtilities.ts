@@ -25,22 +25,28 @@ export async function hostMultiplexingServer(
 
 export async function startCP(cancellationToken: CancellationToken, args?: string[]): Promise<MultiplexingStream> {
 	const cp = child_process.spawn(findTestExe(), args)
+	cp.stderr.on('data', (chunk: Buffer) => {
+		console.error('server STDERR: ' + chunk.toString('utf8'))
+	})
+	cp.on('exit', code => {
+		if (code !== 0) {
+			console.log('server exited with: ' + code)
+		}
+	})
 	const stream = FullDuplexStream.Splice(cp.stdout, cp.stdin)
 	return await MultiplexingStream.CreateAsync(stream, undefined, cancellationToken)
 
-	function findTestExe() : string {
+	function findTestExe(): string {
 		const configurations = ['Debug', 'Release']
-		const fileNames = ['ServiceBrokerTest.exe', 'ServiceBrokerTest']
+		const fileName = process.platform === 'win32' ? 'ServiceBrokerTest.exe' : 'ServiceBrokerTest'
 		let testBrokerPathsAttempted: string[] = []
 		for (const config of configurations) {
-			for (const fileName of fileNames) {
-				const testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net7.0/${fileName}`)
-				if (fs.existsSync(testBrokerPath)) {
-					return testBrokerPath
-				}
-
-				testBrokerPathsAttempted.push(testBrokerPath)
+			const testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net7.0/${fileName}`)
+			if (fs.existsSync(testBrokerPath)) {
+				return testBrokerPath
 			}
+
+			testBrokerPathsAttempted.push(testBrokerPath)
 		}
 
 		throw new Error('Could not find path to ServiceBrokerTest at: ' + testBrokerPathsAttempted)

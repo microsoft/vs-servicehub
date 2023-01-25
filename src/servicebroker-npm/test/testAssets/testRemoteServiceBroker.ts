@@ -9,12 +9,14 @@ import { ServiceMoniker } from '../../src/ServiceMoniker'
 import { ServiceBrokerEmitter } from '../../src/IServiceBroker'
 import { PIPE_NAME_PREFIX } from '../../src/constants'
 import { v4 as uuid } from 'uuid'
-import { createServer } from 'net'
+import { createServer, Server } from 'net'
+import path from 'path'
 
 const calcMoniker = ServiceMoniker.create('Calculator')
 
 export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceBrokerEmitter) implements IDisposable, IRemoteServiceBroker {
 	private readonly testPipeName
+	private readonly server: Server
 	public isDisposed: boolean = false
 	public clientMetadata?: ServiceBrokerClientMetadata
 	public lastReceivedOptions?: ServiceActivationOptions
@@ -22,10 +24,10 @@ export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceB
 	constructor() {
 		super()
 
-		this.testPipeName = 'testRemoteServiceBroker' + uuid()
+		this.testPipeName = path.join(PIPE_NAME_PREFIX, 'testRemoteServiceBroker' + uuid())
 
-		const server = createServer()
-		server.listen(PIPE_NAME_PREFIX + this.testPipeName)
+		this.server = createServer()
+		this.server.listen(this.testPipeName)
 	}
 
 	public handshake(clientMetadata: ServiceBrokerClientMetadata, cancellationToken: CancellationToken): Promise<void> {
@@ -59,5 +61,6 @@ export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceB
 
 	public dispose(): void {
 		this.isDisposed = true
+		this.server.close()
 	}
 }

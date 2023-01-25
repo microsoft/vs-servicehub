@@ -4,7 +4,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Extension methods that help convert exceptions to formatted strings.

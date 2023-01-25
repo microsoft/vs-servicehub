@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.IO.Pipes;
 using Microsoft.VisualStudio.Threading;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Extension methods for the <see cref="NamedPipeClientStream"/> class.
@@ -57,18 +57,7 @@ internal static class NamedPipeClientStreamExtensions
 					// Connecting with anything else will consume CPU causing a spin wait.
 					await npcs.ConnectAsync(NMPWAIT_NOWAIT).ConfigureAwait(false);
 				}
-#if TELEMETRY
-                if (fileNotFoundRetryCount != 0)
-                {
-                    TelemetryLogger.LogAtomicOperation(
-                        TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequiredEvent,
-                        new Dictionary<string, object>()
-                        {
-                            { TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequired_RetryCount, fileNotFoundRetryCount },
-                            { TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequired_Exceptions, retryExceptions },
-                        });
-                }
-#endif
+
 				return;
 			}
 			catch (Exception ex)
@@ -76,41 +65,25 @@ internal static class NamedPipeClientStreamExtensions
 				string exceptionType = ex.GetType().ToString();
 				retryExceptions.AddOrUpdate(exceptionType, 1, (type, count) => count++);
 
-				try
+				if (ex is ObjectDisposedException)
 				{
-					if (ex is ObjectDisposedException)
-					{
-						// Prefer to throw OperationCanceledException if the caller requested cancellation.
-						cancellationToken.ThrowIfCancellationRequested();
-						throw;
-					}
-					else if (((ex is IOException && ex.HResult == ERROR_SEM_TIMEOUT_HRESULT) || ex is TimeoutException) && totalRetries < maxRetries)
-					{
-						// Ignore and retry.
-						totalRetries++;
-					}
-					else if (ex is FileNotFoundException && fileNotFoundRetryCount < MaxRetryAttemptsForFileNotFoundException && totalRetries < maxRetries)
-					{
-						// Ignore and retry.
-						totalRetries++;
-						fileNotFoundRetryCount++;
-					}
-					else
-					{
-						throw;
-					}
+					// Prefer to throw OperationCanceledException if the caller requested cancellation.
+					cancellationToken.ThrowIfCancellationRequested();
+					throw;
 				}
-				catch (Exception finalException)
+				else if (((ex is IOException && ex.HResult == ERROR_SEM_TIMEOUT_HRESULT) || ex is TimeoutException) && totalRetries < maxRetries)
 				{
-					if (finalException is OperationCanceledException)
-					{
-						LogNamedPipeClientStreamConnectCanceledTelemetry(totalRetries, retryExceptions);
-					}
-					else
-					{
-						LogNamedPipeClientStreamConnectFailedTelemetry(finalException, totalRetries, retryExceptions);
-					}
-
+					// Ignore and retry.
+					totalRetries++;
+				}
+				else if (ex is FileNotFoundException && fileNotFoundRetryCount < MaxRetryAttemptsForFileNotFoundException && totalRetries < maxRetries)
+				{
+					// Ignore and retry.
+					totalRetries++;
+					fileNotFoundRetryCount++;
+				}
+				else
+				{
 					throw;
 				}
 			}
@@ -125,39 +98,9 @@ internal static class NamedPipeClientStreamExtensions
 			}
 			catch (Exception ex) when (ex is OperationCanceledException || ex is TaskCanceledException)
 			{
-				LogNamedPipeClientStreamConnectCanceledTelemetry(totalRetries, retryExceptions);
 				cancellationToken.ThrowIfCancellationRequested();
 				throw;
 			}
 		}
-	}
-
-	private static void LogNamedPipeClientStreamConnectFailedTelemetry(Exception ex, int retryCount, ConcurrentDictionary<string, int> retryExceptions)
-	{
-#if TELEMETRY
-        var properties = new Dictionary<string, object>()
-        {
-            {
-                TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequired_RetryCount, retryCount
-            },
-            {
-                TelemetryConstants.NamedPipeClientStreamConnectFailedEvent, retryExceptions
-            },
-        };
-        TelemetryLogger.LogFaultEvent(TelemetryConstants.NamedPipeClientStreamConnectFailedEvent, ex, properties);
-#endif
-	}
-
-	private static void LogNamedPipeClientStreamConnectCanceledTelemetry(int retryCount, ConcurrentDictionary<string, int> retryExceptions)
-	{
-#if TELEMETRY
-        TelemetryLogger.LogAtomicOperation(
-                  TelemetryConstants.NamedPipeClientStreamConnectCanceledEvent,
-                  new Dictionary<string, object>()
-                  {
-                    { TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequired_RetryCount, retryCount },
-                    { TelemetryConstants.NamedPipeClientStreamConnectSuccessRetriesRequired_Exceptions, retryExceptions },
-                  });
-#endif
 	}
 }

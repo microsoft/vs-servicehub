@@ -9,10 +9,6 @@ using Microsoft.VisualStudio.Threading;
 using Xunit;
 using Xunit.Abstractions;
 
-[Trait("WindowsOnly", "true")]
-#if NET5_0_OR_GREATER
-[SupportedOSPlatform("Windows")]
-#endif
 public partial class IpcPipeRelayServiceBrokerTests : TestBase, IAsyncLifetime
 {
 	private MockServiceBroker innerServer = new MockServiceBroker();

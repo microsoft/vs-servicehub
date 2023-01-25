@@ -3,7 +3,7 @@
 
 using Microsoft.ServiceHub.Framework;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Contains various utility constants.

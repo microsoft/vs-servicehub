@@ -41,11 +41,6 @@ public class Program
 
 			if (useNamedPipes)
 			{
-				if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-				{
-					throw new NotSupportedException("Only supported on Windows.");
-				}
-
 				IpcRelayServiceBroker relayBroker = new(serviceBroker);
 				FrameworkServices.RemoteServiceBroker.ConstructRpc(relayBroker, channel);
 

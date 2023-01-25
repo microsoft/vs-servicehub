@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using Microsoft.Win32.SafeHandles;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// A class containing the core implementations for stream extensions. This exists so that we don't run into any type errors with types that are

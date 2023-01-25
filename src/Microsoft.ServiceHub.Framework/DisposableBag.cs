@@ -9,12 +9,15 @@ namespace Microsoft.ServiceHub.Framework;
 /// <remarks>
 /// The objects are guaranteed to be disposed exactly once when or after this collection is disposed.
 /// </remarks>
-internal class DisposableBag : IDisposableObservable
+internal class DisposableBag : IAsyncDisposable
 {
+	private List<IAsyncDisposable>? asyncDisposables = new List<IAsyncDisposable>();
 	private List<IDisposable>? disposables = new List<IDisposable>();
 
-	/// <inheritdoc/>
-	public bool IsDisposed
+	/// <summary>
+	/// Gets a value indicating whether this bag has already been disposed.
+	/// </summary>
+	internal bool IsDisposed
 	{
 		get
 		{
@@ -26,20 +29,24 @@ internal class DisposableBag : IDisposableObservable
 	}
 
 	/// <summary>
-	/// Disposes of all contained links and signals the cancellation token.
+	/// Disposes of all contained values.
 	/// </summary>
-	public void Dispose()
+	/// <returns>A task that completes after all values have been disposed.</returns>
+	public async ValueTask DisposeAsync()
 	{
+		List<IAsyncDisposable>? asyncDisposables;
 		List<IDisposable>? disposables;
 		lock (this)
 		{
 			disposables = this.disposables;
+			asyncDisposables = this.asyncDisposables;
 			this.disposables = null;
+			this.asyncDisposables = null;
 		}
 
+		List<Exception>? exceptions = null;
 		if (disposables is object)
 		{
-			List<Exception>? exceptions = null;
 			foreach (IDisposable disposable in disposables)
 			{
 				try
@@ -56,11 +63,31 @@ internal class DisposableBag : IDisposableObservable
 					exceptions.Add(ex);
 				}
 			}
+		}
 
-			if (exceptions is object)
+		if (asyncDisposables is object)
+		{
+			foreach (IAsyncDisposable disposable in asyncDisposables)
 			{
-				throw new AggregateException(exceptions);
+				try
+				{
+					await disposable.DisposeAsync().ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					if (exceptions is null)
+					{
+						exceptions = new List<Exception>();
+					}
+
+					exceptions.Add(ex);
+				}
 			}
+		}
+
+		if (exceptions is object)
+		{
+			throw new AggregateException(exceptions);
 		}
 	}
 
@@ -68,7 +95,7 @@ internal class DisposableBag : IDisposableObservable
 	/// Arranges to dispose of a value when this <see cref="DisposableBag"/> is disposed of, or immediately if the bag is already disposed.
 	/// </summary>
 	/// <param name="disposable">The value to dispose.</param>
-	public void AddDisposable(IDisposable disposable)
+	internal void AddDisposable(IDisposable disposable)
 	{
 		Requires.NotNull(disposable, nameof(disposable));
 
@@ -86,5 +113,27 @@ internal class DisposableBag : IDisposableObservable
 		{
 			disposable.Dispose();
 		}
+	}
+
+	/// <summary>
+	/// Arranges to dispose of a value when this <see cref="DisposableBag"/> is disposed of.
+	/// </summary>
+	/// <param name="disposable">The value to dispose.</param>
+	/// <returns><see langword="true"/> if the value was added to the bag; <see langword="false" /> if the bag was already disposed and the caller must dispose of this value.</returns>
+	internal bool TryAddDisposable(IAsyncDisposable disposable)
+	{
+		Requires.NotNull(disposable, nameof(disposable));
+
+		bool added = false;
+		lock (this)
+		{
+			if (this.asyncDisposables is object)
+			{
+				this.asyncDisposables.Add(disposable);
+				added = true;
+			}
+		}
+
+		return added;
 	}
 }

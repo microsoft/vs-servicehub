@@ -1,15 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#if NET6_0_OR_GREATER
+
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Versioning;
 
-namespace Microsoft.ServiceHub.Utility;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Provides socket client services at a higher level
 /// of abstraction than the <see cref="System.Net.Sockets.Socket" /> class.
 /// </summary>
+[UnsupportedOSPlatform("windows")]
 internal static class SocketClient
 {
 	/// <summary>
@@ -30,8 +34,8 @@ internal static class SocketClient
 		var endPoint = new UnixDomainSocketEndPoint(path);
 		Socket socket = await SocketClient.ConnectAsync(
 			endPoint,
-			UnixDomainSocketEndPoint.Stream,
-			UnixDomainSocketEndPoint.Protocol,
+			SocketType.Stream,
+			ProtocolType.Unspecified,
 			flags,
 			ConnectionRetryInterval,
 			cancellationToken).ConfigureAwait(false);
@@ -103,3 +107,5 @@ internal static class SocketClient
 		return socket;
 	}
 }
+
+#endif
