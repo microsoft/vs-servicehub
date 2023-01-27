@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework.Services;
 using Nerdbank.Streams;
+using Newtonsoft.Json;
 
 namespace Microsoft.ServiceHub.Framework.Extensions;
 
@@ -167,7 +168,7 @@ internal static class ServiceManagerReflectionHelpers
 	/// </summary>
 	/// <param name="options">The <see cref="ServiceActivationOptions"/> to get the pipe name from.</param>
 	/// <returns>The pipe name or an empty string if there isn't one.</returns>
-	private static string GetServiceBrokerServerPipeName(this ServiceActivationOptions options)
+	internal static string GetServiceBrokerServerPipeName(this ServiceActivationOptions options)
 	{
 		if (options.ActivationArguments != null &&
 			options.ActivationArguments.TryGetValue("__servicehub__ServiceHubRemoteServiceBrokerPipeName", out string? pipeName))
@@ -176,5 +177,47 @@ internal static class ServiceManagerReflectionHelpers
 		}
 
 		return string.Empty;
+	}
+
+	/// <summary>
+	/// Deserializes a string representing a serialized <see cref="ServiceActivationOptions"/> object.
+	/// </summary>
+	/// <param name="serializedServiceActivationOptions">Serialized <see cref="ServiceActivationOptions"/>.</param>
+	/// <returns>The deserialized <see cref="ServiceActivationOptions"/>.</returns>
+	/// <remarks>
+	/// This method is invoked through reflection from Microsoft.ServiceHub.HostStub.ServiceManager.StartService.
+	/// Having a method specifically for this avoids us having to load Newtonsoft.Json explicitly through reflection.
+	/// </remarks>
+	internal static ServiceActivationOptions DeserializeServiceActivationOptions(string serializedServiceActivationOptions)
+	{
+		return JsonConvert.DeserializeObject<ServiceActivationOptions>(serializedServiceActivationOptions);
+	}
+
+	/// <summary>
+	/// Removes the "__servicehub__ServiceHubRemoteServiceBrokerPipeName" from the ActivationArguments of
+	/// a <see cref="ServiceActivationOptions"/>.
+	/// </summary>
+	/// <param name="options">The <see cref="ServiceActivationOptions"/> to remove the service broker pipe name from.</param>
+	/// <returns>The updated <see cref="ServiceActivationOptions"/>.</returns>
+	internal static ServiceActivationOptions RemoveServiceBrokerPipeNameFromServiceActivationOptions(ServiceActivationOptions options)
+	{
+		const string ServiceHubRemoteServiceBrokerPipeNameActivationArgument = "__servicehub__ServiceHubRemoteServiceBrokerPipeName";
+
+		if (options.ActivationArguments is not null && options.ActivationArguments.ContainsKey(ServiceHubRemoteServiceBrokerPipeNameActivationArgument))
+		{
+			var activationOptions = new Dictionary<string, string>();
+			foreach (var option in options.ActivationArguments!.Keys)
+			{
+				if (!option.Equals(ServiceHubRemoteServiceBrokerPipeNameActivationArgument, StringComparison.OrdinalIgnoreCase)
+					&& options.ActivationArguments.TryGetValue(option, out string? value))
+				{
+					activationOptions.Add(option, value);
+				}
+			}
+
+			options.ActivationArguments = activationOptions;
+		}
+
+		return options;
 	}
 }
