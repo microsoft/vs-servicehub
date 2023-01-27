@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework.Services;
+using Microsoft.VisualBasic;
 using Nerdbank.Streams;
 
 namespace Microsoft.ServiceHub.Framework.Extensions;
@@ -12,6 +13,28 @@ namespace Microsoft.ServiceHub.Framework.Extensions;
 /// </summary>
 internal static class ServiceManagerReflectionHelpers
 {
+	/// <summary>
+	/// <see cref="ServiceActivationOptions"/> extension method for getting an <see cref="IServiceBroker"/>.
+	/// </summary>
+	/// <param name="options">The <see cref="ServiceActivationOptions"/> to get the <see cref="IServiceBroker"/> from.</param>
+	/// <param name="cancellationToken">A token to signal cancellation.</param>
+	/// <returns>The <see cref="IServiceBroker"/> referenced in the <see cref="ServiceActivationOptions"/> or null if one is not referenced.</returns>
+	/// <devremarks>
+	/// This is called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceBrokerFromServiceActivationOptionsAsync so that the
+	/// <see cref="IServiceBroker"/> can be passed directly to the constructor of a ServiceHub service.
+	/// </devremarks>
+	internal static async Task<IServiceBroker?> GetServiceBrokerAsync(ServiceActivationOptions options, CancellationToken cancellationToken)
+	{
+		var serverPipeName = options.GetServiceBrokerServerPipeName();
+
+		if (!string.IsNullOrEmpty(serverPipeName))
+		{
+			return await RemoteServiceBroker.ConnectToServerAsync(serverPipeName, cancellationToken).ConfigureAwait(false);
+		}
+
+		return null;
+	}
+
 	/// <summary>
 	/// <see cref="IServiceBroker"/> extension method for getting a <see cref="AuthorizationServiceClient"/>.
 	/// </summary>
@@ -125,5 +148,34 @@ internal static class ServiceManagerReflectionHelpers
 		}
 
 		return new ServiceMoniker(name, serviceVersion);
+	}
+
+	/// <summary>
+	/// Helper method for getting the version information from <see cref="ServiceActivationOptions.ActivationArguments"/>.
+	/// </summary>
+	/// <param name="serviceActivationOptions">The serviceActivationOptions.</param>
+	/// <returns>The value that is associated for the requested service version.</returns>
+	internal static string GetVersionInformationFromServiceActivationOptions(ServiceActivationOptions serviceActivationOptions)
+	{
+		var keyValue = string.Empty;
+		serviceActivationOptions.ActivationArguments?.TryGetValue(Constants.ServiceHubVersionActivationArgument, out keyValue);
+
+		return keyValue ?? string.Empty;
+	}
+
+	/// <summary>
+	/// Gets the pipe name that the <see cref="IRemoteServiceBroker"/> is available over from the <see cref="ServiceActivationOptions"/>.
+	/// </summary>
+	/// <param name="options">The <see cref="ServiceActivationOptions"/> to get the pipe name from.</param>
+	/// <returns>The pipe name or an empty string if there isn't one.</returns>
+	private static string GetServiceBrokerServerPipeName(this ServiceActivationOptions options)
+	{
+		if (options.ActivationArguments != null &&
+			options.ActivationArguments.TryGetValue(Constants.ServiceHubRemoteServiceBrokerPipeNameActivationArgument, out string? pipeName))
+		{
+			return pipeName;
+		}
+
+		return string.Empty;
 	}
 }
