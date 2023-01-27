@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework.Services;
-using Microsoft.VisualBasic;
 using Nerdbank.Streams;
 
 namespace Microsoft.ServiceHub.Framework.Extensions;
