@@ -158,7 +158,7 @@ internal static class ServiceManagerReflectionHelpers
 	internal static string GetVersionInformationFromServiceActivationOptions(ServiceActivationOptions serviceActivationOptions)
 	{
 		var keyValue = string.Empty;
-		serviceActivationOptions.ActivationArguments?.TryGetValue(Constants.ServiceHubVersionActivationArgument, out keyValue);
+		serviceActivationOptions.ActivationArguments?.TryGetValue("__servicehub__RequestedServiceVersion", out keyValue);
 
 		return keyValue ?? string.Empty;
 	}
@@ -171,7 +171,7 @@ internal static class ServiceManagerReflectionHelpers
 	private static string GetServiceBrokerServerPipeName(this ServiceActivationOptions options)
 	{
 		if (options.ActivationArguments != null &&
-			options.ActivationArguments.TryGetValue(Constants.ServiceHubRemoteServiceBrokerPipeNameActivationArgument, out string? pipeName))
+			options.ActivationArguments.TryGetValue("__servicehub__ServiceHubRemoteServiceBrokerPipeName", out string? pipeName))
 		{
 			return pipeName;
 		}
