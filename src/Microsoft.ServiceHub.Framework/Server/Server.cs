@@ -92,7 +92,7 @@ internal abstract class Server : IDisposable, IAsyncDisposable
 	/// <param name="stream">The stream that was disconnected from.</param>
 	protected virtual void ClientDisconnected(Stream stream)
 	{
-		IsolatedUtilities.RequiresNotNull(stream, nameof(stream));
+		Requires.NotNull(stream, nameof(stream));
 
 		lock (this.streamsLock)
 		{
@@ -109,7 +109,7 @@ internal abstract class Server : IDisposable, IAsyncDisposable
 	protected async Task ClientConnected(WrappedStream stream)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
 	{
-		IsolatedUtilities.RequiresNotNull(stream, nameof(stream));
+		Requires.NotNull(stream, nameof(stream));
 
 		try
 		{
@@ -132,14 +132,7 @@ internal abstract class Server : IDisposable, IAsyncDisposable
 		{
 			await stream.DisposeAsync().ConfigureAwait(false);
 
-			if (exception is ClientConnectionCanceledException)
-			{
-				this.Logger.TraceInformation("A new connection was cancelled: {0}", exception.GetMessageWithInnerExceptions());
-			}
-			else
-			{
-				this.Logger.TraceException(exception);
-			}
+			this.Logger.TraceException(exception);
 		}
 	}
 

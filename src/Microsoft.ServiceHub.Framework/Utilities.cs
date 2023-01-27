@@ -1,15 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.ServiceHub.Framework;
-using Newtonsoft.Json;
-
 namespace Microsoft.ServiceHub.Framework.Shared;
 
 /// <summary>
 /// Utility methods for Microsoft.ServiceHub.Framework.
 /// </summary>
-internal static class SharedUtilities
+internal static class Utilities
 {
 	/// <summary>
 	/// Adds the key and value to the ActivationArguments of a <see cref="ServiceActivationOptions"/> provided the key does not already exist within the ActivationArguments.

@@ -26,7 +26,7 @@ internal class SocketServer : IDisposable
 
 	private SocketServer(Func<Socket, Task> clientConnected, ServerFactory.ServerOptions options)
 	{
-		IsolatedUtilities.RequiresNotNull(clientConnected, nameof(clientConnected));
+		Requires.NotNull(clientConnected, nameof(clientConnected));
 		this.clientConnected = clientConnected;
 		this.options = options;
 	}
@@ -49,7 +49,7 @@ internal class SocketServer : IDisposable
 	/// <returns>The <see cref="SocketServer"/> instance that was created.</returns>
 	internal static SocketServer Create(EndPoint endPoint, SocketType socketType, ProtocolType protocolType, ServerFactory.ServerOptions options, Func<Socket, Task> clientConnected)
 	{
-		IsolatedUtilities.RequiresNotNull(endPoint, nameof(endPoint));
+		Requires.NotNull(endPoint, nameof(endPoint));
 
 		var server = new SocketServer(clientConnected, options);
 

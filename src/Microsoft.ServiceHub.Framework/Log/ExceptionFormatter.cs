@@ -3,6 +3,7 @@
 
 using System.Globalization;
 using System.Text;
+using static System.FormattableString;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -18,7 +19,7 @@ internal static class ExceptionFormatter
 	/// <returns>The string representation fo the exception.</returns>
 	internal static string ToStringWithInnerExceptions(this Exception exception)
 	{
-		IsolatedUtilities.RequiresNotNull(exception, nameof(exception));
+		Requires.NotNull(exception, nameof(exception));
 
 		var sb = new StringBuilder();
 		sb.AppendLine(FormatException(exception));
@@ -50,7 +51,7 @@ internal static class ExceptionFormatter
 	/// <returns>A formatted string with the exception messages.</returns>
 	internal static string GetMessageWithInnerExceptions(this Exception exception)
 	{
-		IsolatedUtilities.RequiresNotNull(exception, nameof(exception));
+		Requires.NotNull(exception, nameof(exception));
 
 		AggregateException? aggregate = exception as AggregateException;
 		if (exception.InnerException == null && (aggregate == null || aggregate.InnerExceptions.Count == 0))
@@ -87,6 +88,26 @@ internal static class ExceptionFormatter
 		}
 
 		return sb.ToString();
+	}
+
+	/// <summary>
+	/// Format an exception into a readable string.
+	/// </summary>
+	/// <param name="exception">The exception to format.</param>
+	/// <param name="format">An additional string message to include in the string.</param>
+	/// <param name="args">Arguments to be used in the format string.</param>
+	/// <returns>A formatted string representing the exception.</returns>
+	internal static string FormatException(Exception exception, string format, params object?[]? args)
+	{
+		Requires.NotNull(exception, nameof(exception));
+		Requires.NotNullOrEmpty(format, nameof(format));
+
+		return Invariant($"{FormatInvariant(format, args)}: {exception.ToStringWithInnerExceptions()}");
+	}
+
+	private static string FormatInvariant(string format, object?[]? args)
+	{
+		return args == null || args.Length == 0 ? format : string.Format(CultureInfo.InvariantCulture, format, args);
 	}
 
 	private static string FormatException(Exception exception) =>

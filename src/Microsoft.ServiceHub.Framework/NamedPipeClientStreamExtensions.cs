@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using System.IO.Pipes;
 using Microsoft.VisualStudio.Threading;
+using Windows.Win32.Foundation;
+using static Windows.Win32.PInvoke;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -12,17 +14,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// </summary>
 internal static class NamedPipeClientStreamExtensions
 {
-#pragma warning disable SA1310 // Field names must not contain underscore
-	/// <summary>
-	/// Does not wait for the named pipe. If the named pipe is not available, the function returns an error.
-	/// </summary>
-	internal const int NMPWAIT_NOWAIT = 1;
-
-	/// <summary>
-	/// An HRESULT indicating a timeout after which we might retry.
-	/// </summary>
-	internal const int ERROR_SEM_TIMEOUT_HRESULT = unchecked((int)0x80070079);
-#pragma warning restore SA1310 // Field names must not contain underscore
 	private const int ConnectRetryIntervalMs = 20;
 	private const int MaxRetryAttemptsForFileNotFoundException = 3;
 
@@ -55,7 +46,7 @@ internal static class NamedPipeClientStreamExtensions
 				{
 					// Try connecting without wait.
 					// Connecting with anything else will consume CPU causing a spin wait.
-					await npcs.ConnectAsync(NMPWAIT_NOWAIT).ConfigureAwait(false);
+					await npcs.ConnectAsync((int)NMPWAIT_NOWAIT).ConfigureAwait(false);
 				}
 
 				return;
@@ -71,7 +62,7 @@ internal static class NamedPipeClientStreamExtensions
 					cancellationToken.ThrowIfCancellationRequested();
 					throw;
 				}
-				else if (((ex is IOException && ex.HResult == ERROR_SEM_TIMEOUT_HRESULT) || ex is TimeoutException) && totalRetries < maxRetries)
+				else if (((ex is IOException && ex.HResult == HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_SEM_TIMEOUT)) || ex is TimeoutException) && totalRetries < maxRetries)
 				{
 					// Ignore and retry.
 					totalRetries++;

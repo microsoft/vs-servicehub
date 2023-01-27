@@ -287,11 +287,3 @@ virtual Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithMultiplexingStre
 virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.Equals(Microsoft.ServiceHub.Framework.Services.ProtectedOperation? other) -> bool
 virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.IsSupersetOf(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! other) -> bool
 Microsoft.ServiceHub.Framework.ServerFactory
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.Dispose() -> void
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
-Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.ServiceHubHostRemoteServiceBroker(Microsoft.ServiceHub.Framework.IServiceBroker! inner) -> void
-Microsoft.ServiceHub.Framework.StreamExtensions
-static Microsoft.ServiceHub.Framework.StreamExtensions.TryGetHandle(this System.IO.Stream? stream, out Microsoft.Win32.SafeHandles.SafePipeHandle? handle) -> bool

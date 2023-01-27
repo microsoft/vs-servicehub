@@ -13,4 +13,5 @@ Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental() -> void
 static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
 static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> (System.IAsyncDisposable! Server, string! ServerName)
 static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource? logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
+static Microsoft.ServiceHub.Framework.ServerFactory.TryGetHandle(System.IO.Stream? stream, out Microsoft.Win32.SafeHandles.SafePipeHandle? handle) -> bool
 virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void
