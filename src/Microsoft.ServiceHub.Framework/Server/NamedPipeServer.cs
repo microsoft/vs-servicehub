@@ -38,7 +38,7 @@ internal sealed class NamedPipeServer : Server
 	internal NamedPipeServer(string channelName, ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
 		: base(options, createAndConfigureService)
 	{
-		IsolatedUtilities.RequiresNotNullOrEmpty(channelName, nameof(channelName));
+		Requires.NotNullOrEmpty(channelName, nameof(channelName));
 
 		this.serverTaskCts = new CancellationTokenSource();
 		CancellationToken cancellationToken = this.serverTaskCts.Token;
@@ -147,11 +147,11 @@ internal sealed class NamedPipeServer : Server
 				{
 					if (!this.executingClientConnectedCallback)
 					{
-						this.Logger.TraceError("{0}.{1} timed out to finish in {2} ms.", this.GetType().Name, nameof(this.serverTask), ServerTaskShutdownTimeoutMs);
+						this.Logger.TraceEvent(TraceEventType.Error, 0, "{0}.{1} timed out to finish in {2} ms.", this.GetType().Name, nameof(this.serverTask), ServerTaskShutdownTimeoutMs);
 					}
 					else
 					{
-						this.Logger.TraceWarning("{0}.{1} timed out to finish in {2} ms waiting on the ClientConnected callback.", this.GetType().Name, nameof(this.serverTask), ServerTaskShutdownTimeoutMs);
+						this.Logger.TraceEvent(TraceEventType.Warning, 0, "{0}.{1} timed out to finish in {2} ms waiting on the ClientConnected callback.", this.GetType().Name, nameof(this.serverTask), ServerTaskShutdownTimeoutMs);
 					}
 				}
 			}

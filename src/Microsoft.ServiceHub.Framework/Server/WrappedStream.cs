@@ -22,7 +22,7 @@ internal class WrappedStream : Stream
 	/// <param name="stream">The Stream to be wrapped.</param>
 	public WrappedStream(Stream stream)
 	{
-		IsolatedUtilities.RequiresNotNull(stream, nameof(stream));
+		Requires.NotNull(stream, nameof(stream));
 		this.Stream = stream;
 	}
 

@@ -61,7 +61,7 @@ internal static class SocketClient
 		TimeSpan connectionRetryInterval,
 		CancellationToken cancellationToken = default)
 	{
-		IsolatedUtilities.RequiresNotNull(endPoint, nameof(endPoint));
+		Requires.NotNull(endPoint, nameof(endPoint));
 		var socket = new Socket(endPoint.AddressFamily, socketType, protocolType);
 		try
 		{

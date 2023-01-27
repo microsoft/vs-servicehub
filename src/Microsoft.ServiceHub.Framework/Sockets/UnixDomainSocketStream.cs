@@ -19,7 +19,7 @@ internal sealed class UnixDomainSocketStream : WrappedStream
 	public UnixDomainSocketStream(Socket socket)
 		: base(new NetworkStream(socket, ownsSocket: true))
 	{
-		IsolatedUtilities.RequiresNotNull(socket, nameof(socket));
+		Requires.NotNull(socket, nameof(socket));
 		this.socket = socket;
 		this.UpdateConnectedState();
 	}

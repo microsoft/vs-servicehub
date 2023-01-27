@@ -9,13 +9,12 @@
     <PackageReference Include="IsExternalInit" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.Collections.Immutable" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\utility\Microsoft.ServiceHub.Utility.Isolated\**\*.cs" LinkBase="Isolated" />
-    <Compile Include="..\utility\Microsoft.ServiceHub.Utility.Shared\**\*.cs" LinkBase="Shared" />
     <Compile Update="Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <DesignTime>True</DesignTime>

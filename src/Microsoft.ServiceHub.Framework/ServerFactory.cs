@@ -2,10 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Threading;
+using Microsoft.Win32.SafeHandles;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -94,16 +95,41 @@ public static class ServerFactory
 		}
 	}
 
+	/// <summary>
+	/// Attempts to get the native handle behind a stream
+	/// that was created by <see cref="ConnectAsync(string, CancellationToken)"/> or <see cref="Create(Func{Stream, Task}, ServerOptions)"/>.
+	/// </summary>
+	/// <param name="stream">The stream to get the handle of.</param>
+	/// <param name="handle">The handle of the stream if it exists, <see langword="null" /> otherwise.</param>
+	/// <returns><see langword="true" /> if the stream has a <see cref="SafePipeHandle"/>, <see langword="false" /> otherwise.</returns>
+	public static bool TryGetHandle(Stream? stream, [NotNullWhen(true)] out SafePipeHandle? handle)
+	{
+		if (stream is ServiceHubPipeStream devHubPipeStream)
+		{
+			handle = devHubPipeStream.SafePipeHandle;
+			return true;
+		}
+
+		if (stream is PipeStream pipeStream)
+		{
+			handle = pipeStream.SafePipeHandle;
+			return true;
+		}
+
+		handle = null;
+		return false;
+	}
+
 	private static (IAsyncDisposable Server, string ServerName) CreateCore(string channel, ServerOptions options, Func<Stream, Task> onConnectedCallback)
 	{
-		if (IsolatedUtilities.IsWindowsPlatform())
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		{
 			// Windows uses named pipes, and allows simple names (no paths) for its named pipes.
 			// But since *nix OS's require the prefix, it's part of our protocol.
 			string serverPath = @"\\.\pipe\" + channel;
 			return (new NamedPipeServer(channel, options, onConnectedCallback), serverPath);
 		}
-		else if (IsolatedUtilities.IsLinuxPlatform() || IsolatedUtilities.IsMacPlatform())
+		else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 		{
 #if NET6_0_OR_GREATER
 			// On *nix we use domain sockets, which requires paths to a file that will actually be created.

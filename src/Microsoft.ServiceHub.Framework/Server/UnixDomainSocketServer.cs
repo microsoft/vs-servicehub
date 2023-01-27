@@ -22,7 +22,7 @@ internal sealed class UnixDomainSocketServer : Server
 	private UnixDomainSocketServer(string path, ServerFactory.ServerOptions options, Func<WrappedStream, Task> createAndConfigureService)
 		: base(options, createAndConfigureService)
 	{
-		IsolatedUtilities.RequiresNotNullOrEmpty(path, nameof(path));
+		Requires.NotNullOrEmpty(path, nameof(path));
 		this.path = path;
 
 		string? directory = Path.GetDirectoryName(this.path);

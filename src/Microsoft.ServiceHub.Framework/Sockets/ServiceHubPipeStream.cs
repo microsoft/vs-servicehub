@@ -15,7 +15,7 @@ internal sealed class ServiceHubPipeStream : WrappedStream
 	/// Initializes a new instance of the <see cref="ServiceHubPipeStream"/> class.
 	/// </summary>
 	/// <param name="stream">The stream to be wrapped.</param>
-	public ServiceHubPipeStream(PipeStream stream)
+	internal ServiceHubPipeStream(PipeStream stream)
 		: base(stream)
 	{
 		this.UpdateConnectedState();
@@ -24,7 +24,7 @@ internal sealed class ServiceHubPipeStream : WrappedStream
 	/// <summary>
 	/// Gets the stream's <see cref="SafePipeHandle"/>.
 	/// </summary>
-	public SafePipeHandle SafePipeHandle => ((PipeStream)this.Stream).SafePipeHandle;
+	internal SafePipeHandle SafePipeHandle => ((PipeStream)this.Stream).SafePipeHandle;
 
 	/// <inheritdoc/>
 	protected override bool GetConnected() => base.GetConnected() && ((PipeStream)this.Stream).IsConnected;
