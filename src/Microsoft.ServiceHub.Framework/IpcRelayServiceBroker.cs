@@ -90,9 +90,9 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 
 			var requestId = Guid.NewGuid();
 
-			(IAsyncDisposable server, string pipeName) = ServerFactory.Create(
+			IIpcServer server = ServerFactory.Create(
 				stream => this.HandleIncomingConnectionAsync(stream, requestId, servicePipe),
-				new ServerFactory.ServerOptions { TraceSource = this.TraceSource, OneClientOnly = true });
+				new ServerFactory.ServerOptions { TraceSource = this.TraceSource });
 			Assumes.True(faultOrCancelBag.TryAddDisposable(server));
 
 			ImmutableInterlocked.TryAdd(ref this.remoteServiceRequests, requestId, faultOrCancelBag);
@@ -100,7 +100,7 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 			return new RemoteServiceConnectionInfo
 			{
 				RequestId = requestId,
-				PipeName = pipeName,
+				PipeName = server.Name,
 			};
 		}
 		catch

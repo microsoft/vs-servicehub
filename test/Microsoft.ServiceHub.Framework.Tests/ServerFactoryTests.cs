@@ -5,7 +5,6 @@ using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
 using Xunit.Abstractions;
-using IAsyncDisposable = System.IAsyncDisposable;
 
 public class ServerFactoryTests : TestBase
 {
@@ -15,14 +14,14 @@ public class ServerFactoryTests : TestBase
 	}
 
 	[Fact]
-	public async Task FactoryAllowsMultipleClients_NonconcurrentCallback()
+	public async Task FactoryAllowsMultipleClients_ConcurrentCallback()
 	{
 		int callbackInvocations = 0;
 		AsyncManualResetEvent callbackEntered1 = new();
 		AsyncManualResetEvent callbackEntered2 = new();
-		AsyncManualResetEvent releaseCallback = new();
-		(IAsyncDisposable server, string name) = ServerFactory.Create(
-			async stream =>
+		ManualResetEventSlim releaseCallback = new();
+		IIpcServer server = ServerFactory.Create(
+			stream =>
 			{
 				if (Interlocked.Increment(ref callbackInvocations) == 1)
 				{
@@ -33,21 +32,22 @@ public class ServerFactoryTests : TestBase
 					callbackEntered2.Set();
 				}
 
-				await releaseCallback;
+				releaseCallback.Wait();
 				stream.Dispose();
+				return Task.CompletedTask;
 			},
 			new ServerFactory.ServerOptions
 			{
-				TraceSource = this.CreateTestTraceSource(nameof(this.FactoryAllowsMultipleClients_NonconcurrentCallback)),
-				OneClientOnly = false,
+				TraceSource = this.CreateTestTraceSource(nameof(this.FactoryAllowsMultipleClients_ConcurrentCallback)),
+				AllowMultipleClients = true,
 			});
 		try
 		{
-			using Stream stream1 = await ServerFactory.ConnectAsync(name, this.TimeoutToken);
-			using Stream stream2 = await ServerFactory.ConnectAsync(name, this.TimeoutToken);
+			using Stream stream1 = await ServerFactory.ConnectAsync(server.Name, this.TimeoutToken);
+			using Stream stream2 = await ServerFactory.ConnectAsync(server.Name, this.TimeoutToken);
 
-			await callbackEntered1;
-			await Assert.ThrowsAsync<OperationCanceledException>(() => callbackEntered2.WaitAsync(ExpectedTimeoutToken));
+			await callbackEntered1.WaitAsync(this.TimeoutToken);
+			await callbackEntered2.WaitAsync(this.TimeoutToken);
 			releaseCallback.Set();
 			await callbackEntered2;
 		}
@@ -66,23 +66,22 @@ public class ServerFactoryTests : TestBase
 		TaskCompletionSource<Stream> serverStreamSource = new();
 		Stream? clientStream = null;
 		int callbackInvocationCount = 0;
-		(IAsyncDisposable server, string name) = ServerFactory.Create(
+		IIpcServer server = ServerFactory.Create(
 			stream =>
 			{
-				callbackInvocationCount++;
+				Interlocked.Increment(ref callbackInvocationCount);
 				serverStreamSource.TrySetResult(stream);
 				return Task.CompletedTask;
 			},
 			new ServerFactory.ServerOptions
 			{
 				TraceSource = this.CreateTestTraceSource(nameof(this.FactoryAllowsOnlyOneConnection)),
-				OneClientOnly = true,
 			});
 		Task<Stream> stream2Task;
 		try
 		{
-			clientStream = await ServerFactory.ConnectAsync(name, this.TimeoutToken);
-			stream2Task = ServerFactory.ConnectAsync(name, this.TimeoutToken);
+			clientStream = await ServerFactory.ConnectAsync(server.Name, this.TimeoutToken);
+			stream2Task = ServerFactory.ConnectAsync(server.Name, this.TimeoutToken);
 			await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
 		}
 		finally
@@ -94,7 +93,7 @@ public class ServerFactoryTests : TestBase
 		Task writeTask = clientStream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, this.TimeoutToken);
 		byte[] buffer = new byte[3];
 		Stream serverStream = await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
-		Task<int> bytesReadTask = serverStream!.ReadAsync(buffer, 0, 3, this.TimeoutToken);
+		Task<int> bytesReadTask = serverStream.ReadAsync(buffer, 0, 3, this.TimeoutToken);
 		await writeTask.WithCancellation(this.TimeoutToken);
 		Assert.NotEqual(0, await bytesReadTask.WithCancellation(this.TimeoutToken));
 
@@ -111,16 +110,24 @@ public class ServerFactoryTests : TestBase
 
 		if (stream2 is not null)
 		{
+			// On linux, .NET implements named pipes as unix domain sockets, which are impossible to allow only one connection to.
+			// It turns out that the .NET runtime never closes these unwanted connections.
+			// So all we can do is assert that the callback is only invoked once so at least it's a pointless connection attempt.
 			// Acceptable to accept the connection, provided it disconnects soon, without sending any data. Linux does this.
-			try
-			{
-				int bytesReadFromStream2 = await stream2.ReadAsync(new byte[1], 0, 1, this.TimeoutToken);
-				Assert.Equal(0, bytesReadFromStream2);
-			}
-			catch (IOException)
-			{
-				// This failure is also acceptable.
-			}
+			////try
+			////{
+			////	int bytesReadFromStream2 = await stream2.ReadAsync(new byte[1], 0, 1, this.TimeoutToken);
+			////	Assert.Equal(0, bytesReadFromStream2);
+			////}
+			////catch (OperationCanceledException)
+			////{
+			////	this.Logger.WriteLine("The second connection attempt received a pipe that didn't end by returning 0 bytes. The callback was invoked {0} times.", callbackInvocationCount);
+			////	throw;
+			////}
+			////catch (IOException)
+			////{
+			////	// This failure is also acceptable.
+			////}
 
 			stream2.Dispose();
 		}
@@ -129,10 +136,10 @@ public class ServerFactoryTests : TestBase
 	}
 
 	[Theory, PairwiseData]
-	public async Task FactoryDeniesFutureConnectionsAfterDisposal(bool onlyOneClient)
+	public async Task FactoryDeniesFutureConnectionsAfterDisposal(bool allowMultipleClients)
 	{
 		AsyncManualResetEvent callbackEntered = new();
-		(IAsyncDisposable server, string name) = ServerFactory.Create(
+		IIpcServer server = ServerFactory.Create(
 			stream =>
 			{
 				callbackEntered.Set();
@@ -142,9 +149,55 @@ public class ServerFactoryTests : TestBase
 			new ServerFactory.ServerOptions
 			{
 				TraceSource = this.CreateTestTraceSource(nameof(this.FactoryAllowsOnlyOneConnection)),
-				OneClientOnly = onlyOneClient,
+				AllowMultipleClients = allowMultipleClients,
 			});
 		await server.DisposeAsync();
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ServerFactory.ConnectAsync(name, ExpectedTimeoutToken));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ServerFactory.ConnectAsync(server.Name, ExpectedTimeoutToken));
+	}
+
+	[Theory]
+	[InlineData(true, false)]
+	[InlineData(false, false)]
+	[InlineData(false, true)]
+	public async Task ClientCallsBeforeServerIsReady(bool failFast, bool spinningWait)
+	{
+		string channelName = ServerFactory.PrependPipePrefix(nameof(this.ClientCallsBeforeServerIsReady));
+		Task<Stream> clientTask = ServerFactory.ConnectAsync(
+			channelName,
+			new ServerFactory.ClientOptions { FailFast = failFast, CpuSpinOverFirstChanceExceptions = spinningWait },
+			this.TimeoutToken);
+
+		IIpcServer? server = null;
+		if (!failFast)
+		{
+			server = ServerFactory.Create(
+				  stream =>
+				  {
+					  stream.Dispose();
+					  return Task.CompletedTask;
+				  },
+				  new ServerFactory.ServerOptions
+				  {
+					  Name = channelName,
+					  TraceSource = this.CreateTestTraceSource(nameof(this.ClientCallsBeforeServerIsReady)),
+				  });
+		}
+
+		try
+		{
+			using Stream clientStream = await clientTask.WithCancellation(this.TimeoutToken);
+			Assert.False(failFast);
+		}
+		catch (TimeoutException ex)
+		{
+			this.Logger.WriteLine(ex.ToString());
+			Assert.True(failFast);
+		}
+
+		if (server is not null)
+		{
+			await server.DisposeAsync();
+			await server.Completion.WithCancellation(this.TimeoutToken);
+		}
 	}
 }
