@@ -13,7 +13,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// </summary>
 internal class IpcServer : IDisposable, IIpcServer
 {
-	private static readonly string PipePrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\\.\pipe" : Path.GetTempPath();
 	private readonly CancellationTokenSource disposalTokenSource = new();
 	private readonly Task listeningTask;
 	private readonly Func<Stream, Task> createAndConfigureService;
@@ -21,24 +20,28 @@ internal class IpcServer : IDisposable, IIpcServer
 	/// <summary>
 	/// Initializes a new instance of the <see cref="IpcServer"/> class.
 	/// </summary>
-	/// <param name="channelName">The name of the pipe to serve. This should <em>not</em> include the <c>\\.\pipe</c> prefix on Windows.</param>
 	/// <param name="options">IPC server options.</param>
 	/// <param name="createAndConfigureService">The callback that is invoked when a client connects to the server.</param>
-	internal IpcServer(string channelName, ServerFactory.ServerOptions options, Func<Stream, Task> createAndConfigureService)
+	internal IpcServer(ServerFactory.ServerOptions options, Func<Stream, Task> createAndConfigureService)
 	{
+		if (options.Name is null)
+		{
+			options = options with { Name = ServerFactory.PrependPipePrefix(Guid.NewGuid().ToString("n")) };
+		}
+		else
+		{
+			Requires.Argument(options.Name.Length > 0, nameof(options), "A non-empty pipe name is required.");
+		}
+
 		// We always prefix the channel name with a path. On Windows this might be optional on .NET, but other platforms like Node.js require it.
 		// And when we're running off Windows, we need to specify the path so that we can tell other platforms where the pipe is.
-		this.Name = Path.Combine(PipePrefix, channelName);
-
-		// For our own pipe though, we only use the fully-qualified names away from Windows.
-		// Otherwise, our \\.\pipe prefix will be concatenated to the implied prefix, causing a mismatch when connected to from another platform like node.js.
-		string pipeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? channelName : this.Name;
+		this.Name = options.Name;
 
 		this.TraceSource = options.TraceSource ?? new TraceSource("ServiceHub.Framework pipe server", SourceLevels.Off);
 		this.Options = options;
 		this.createAndConfigureService = createAndConfigureService;
 
-		this.listeningTask = this.ListenForIncomingRequestsAsync(pipeName, this.disposalTokenSource.Token);
+		this.listeningTask = this.ListenForIncomingRequestsAsync(this.disposalTokenSource.Token);
 	}
 
 	/// <inheritdoc/>
@@ -100,8 +103,12 @@ internal class IpcServer : IDisposable, IIpcServer
 		}
 	}
 
-	private async Task ListenForIncomingRequestsAsync(string pipeName, CancellationToken cancellationToken)
+	private async Task ListenForIncomingRequestsAsync(CancellationToken cancellationToken)
 	{
+		// For our own pipe, we only use the fully-qualified names on *nix.
+		// Otherwise, our \\.\pipe\ prefix will be concatenated to the implied prefix, causing a mismatch when connected to from another platform like node.js.
+		string pipeName = ServerFactory.TrimWindowsPrefixForDotNet(this.Name);
+
 		Dictionary<Type, int> retryExceptions = new();
 		NamedPipeServerStream? pipeServer = CreatePipe(pipeName);
 		try

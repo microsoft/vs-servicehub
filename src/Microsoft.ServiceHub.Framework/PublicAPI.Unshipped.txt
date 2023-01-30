@@ -8,11 +8,15 @@ Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.get -> System.D
 Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.init -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions
 Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ClientOptions() -> void
-Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.WaitForServerToConnect.get -> bool
-Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.WaitForServerToConnect.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.CpuSpinOverFirstChanceExceptions.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.CpuSpinOverFirstChanceExceptions.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.FailFast.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.FailFast.init -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.get -> bool
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Name.get -> string?
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Name.init -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.ServerOptions() -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.get -> System.Diagnostics.TraceSource?
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.init -> void
@@ -22,4 +26,5 @@ static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeNam
 static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
 static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> Microsoft.ServiceHub.Framework.IIpcServer!
 static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource? logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
+static Microsoft.ServiceHub.Framework.ServerFactory.PrependPipePrefix(string! leafPipeName) -> string!
 virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void

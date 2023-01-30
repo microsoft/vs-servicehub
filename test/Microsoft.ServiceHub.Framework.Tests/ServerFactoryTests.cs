@@ -154,4 +154,50 @@ public class ServerFactoryTests : TestBase
 		await server.DisposeAsync();
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ServerFactory.ConnectAsync(server.Name, ExpectedTimeoutToken));
 	}
+
+	[Theory]
+	[InlineData(true, false)]
+	[InlineData(false, false)]
+	[InlineData(false, true)]
+	public async Task ClientCallsBeforeServerIsReady(bool failFast, bool spinningWait)
+	{
+		string channelName = ServerFactory.PrependPipePrefix(nameof(this.ClientCallsBeforeServerIsReady));
+		Task<Stream> clientTask = ServerFactory.ConnectAsync(
+			channelName,
+			new ServerFactory.ClientOptions { FailFast = failFast, CpuSpinOverFirstChanceExceptions = spinningWait },
+			this.TimeoutToken);
+
+		IIpcServer? server = null;
+		if (!failFast)
+		{
+			server = ServerFactory.Create(
+				  stream =>
+				  {
+					  stream.Dispose();
+					  return Task.CompletedTask;
+				  },
+				  new ServerFactory.ServerOptions
+				  {
+					  Name = channelName,
+					  TraceSource = this.CreateTestTraceSource(nameof(this.ClientCallsBeforeServerIsReady)),
+				  });
+		}
+
+		try
+		{
+			using Stream clientStream = await clientTask.WithCancellation(this.TimeoutToken);
+			Assert.False(failFast);
+		}
+		catch (TimeoutException ex)
+		{
+			this.Logger.WriteLine(ex.ToString());
+			Assert.True(failFast);
+		}
+
+		if (server is not null)
+		{
+			await server.DisposeAsync();
+			await server.Completion.WithCancellation(this.TimeoutToken);
+		}
+	}
 }
