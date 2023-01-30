@@ -3,7 +3,6 @@
 
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
-using IAsyncDisposable = System.IAsyncDisposable;
 
 internal class PipeRemoteServiceBroker : IRemoteServiceBroker
 {
@@ -19,11 +18,12 @@ internal class PipeRemoteServiceBroker : IRemoteServiceBroker
 		RemoteServiceConnectionInfo result = default;
 		if (serviceMoniker.Name == TestServices.Calculator.Moniker.Name)
 		{
-			(IAsyncDisposable server, result.PipeName) = ServerFactory.Create(stream =>
+			IIpcServer server = ServerFactory.Create(stream =>
 			{
 				TestServices.Calculator.ConstructRpc(new Calculator(), stream.UsePipe());
 				return Task.CompletedTask;
 			});
+			result.PipeName = server.Name;
 		}
 
 		return Task.FromResult(result);

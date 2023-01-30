@@ -1,17 +1,25 @@
-﻿Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
+﻿Microsoft.ServiceHub.Framework.IIpcServer
+Microsoft.ServiceHub.Framework.IIpcServer.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IIpcServer.Name.get -> string!
+Microsoft.ServiceHub.Framework.IIpcServer.TraceSource.get -> System.Diagnostics.TraceSource!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
 Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose() -> void
 Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.get -> System.Diagnostics.TraceSource?
 Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ClientOptions() -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.WaitForServerToConnect.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.WaitForServerToConnect.init -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions
-Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.OneClientOnly.get -> bool
-Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.OneClientOnly.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.init -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.ServerOptions() -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.get -> System.Diagnostics.TraceSource?
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.init -> void
 Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication.CultureApplication() -> void
 Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental() -> void
+static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
 static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
-static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> (System.IAsyncDisposable! Server, string! ServerName)
+static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> Microsoft.ServiceHub.Framework.IIpcServer!
 static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource? logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
-static Microsoft.ServiceHub.Framework.ServerFactory.TryGetHandle(System.IO.Stream? stream, out Microsoft.Win32.SafeHandles.SafePipeHandle? handle) -> bool
 virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void

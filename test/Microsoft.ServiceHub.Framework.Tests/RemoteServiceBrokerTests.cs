@@ -2,14 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Globalization;
-using System.IO.Pipes;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using Xunit;
 using Xunit.Abstractions;
-using IAsyncDisposable = System.IAsyncDisposable;
 
 public partial class RemoteServiceBrokerTests : TestBase
 {
@@ -97,7 +95,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		var resetEvent = new AsyncManualResetEvent();
 		TaskCompletionSource<bool> serverConnected = new();
 
-		(IAsyncDisposable serverDisposable, string name) = ServerFactory.Create(
+		IIpcServer ipcServer = ServerFactory.Create(
 			  stream =>
 			  {
 				  try
@@ -118,9 +116,9 @@ public partial class RemoteServiceBrokerTests : TestBase
 					  throw;
 				  }
 			  },
-			  new ServerFactory.ServerOptions { OneClientOnly = false });
+			  new ServerFactory.ServerOptions { AllowMultipleClients = true });
 
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(name, this.TimeoutToken))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(ipcServer.Name, this.TimeoutToken))
 		{
 		}
 
@@ -336,7 +334,8 @@ public partial class RemoteServiceBrokerTests : TestBase
 		{
 			this.SetupTraceListener(broker);
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
-			Assert.Equal(8, await rpc!.AddAsync(3, 5));
+			Assert.NotNull(rpc);
+			Assert.Equal(8, await rpc.AddAsync(3, 5));
 		}
 	}
 
