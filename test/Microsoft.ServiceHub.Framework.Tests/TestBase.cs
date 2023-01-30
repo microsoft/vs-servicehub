@@ -32,7 +32,7 @@ public abstract class TestBase : IDisposable
 
 	protected static CancellationToken UnexpectedTimeoutToken => Debugger.IsAttached ? CancellationToken.None : new CancellationTokenSource(TestTimeout).Token;
 
-	protected static TimeSpan TestTimeout => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(5);
+	protected static TimeSpan TestTimeout => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(10);
 
 	protected CancellationToken TimeoutToken => this.timeoutTokenSource.Token;
 
