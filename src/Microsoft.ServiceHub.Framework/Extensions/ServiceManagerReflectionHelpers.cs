@@ -29,7 +29,8 @@ internal static class ServiceManagerReflectionHelpers
 
 		if (!string.IsNullOrEmpty(serverPipeName))
 		{
-			return await RemoteServiceBroker.ConnectToServerAsync(serverPipeName, cancellationToken).ConfigureAwait(false);
+			RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(serverPipeName, cancellationToken).ConfigureAwait(false);
+			return new ServiceHubHostRemoteServiceBroker(broker);
 		}
 
 		return null;
