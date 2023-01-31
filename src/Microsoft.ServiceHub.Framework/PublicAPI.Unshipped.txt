@@ -22,6 +22,12 @@ Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.get -> Sy
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.init -> void
 Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication.CultureApplication() -> void
 Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental() -> void
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.ServiceHub.Framework.ServiceHubHostRemoteServiceBroker.ServiceHubHostRemoteServiceBroker(Microsoft.ServiceHub.Framework.IServiceBroker! inner) -> void
 static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
 static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
 static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> Microsoft.ServiceHub.Framework.IIpcServer!
