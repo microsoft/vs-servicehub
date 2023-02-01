@@ -14,6 +14,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis" />
+    <!-- Workaround https://github.com/dotnet/roslyn-sdk/issues/1053 by downgrading the VS-MEF version we deploy. -->
+    <PackageReference Include="Microsoft.VisualStudio.Composition" VersionOverride="16.1.8" />
     <PackageReference Include="NuGet.Protocol" />
   </ItemGroup>
 

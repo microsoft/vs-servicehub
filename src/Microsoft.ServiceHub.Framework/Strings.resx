@@ -120,11 +120,24 @@
   <data name="ClientProxyTypeArgumentMustBeAnInterface" xml:space="preserve">
     <value>"{0}" is not an interface.</value>
   </data>
+  <data name="CouldNotGetProcessId" xml:space="preserve">
+    <value>Failed to get the process id of the client.</value>
+  </data>
+  <data name="Error_InvalidExternalClientProcessPid" xml:space="preserve">
+    <value>{0} '{1}' was not provided in the service request or it did not contain a valid PID.</value>
+    <comment>Error message when the PID of a remote process connecting to brokered service was not provided as a ServiceActivationOption. {0} is the type ServiceActivationOption, {1} is the name of option that was missing.</comment>
+  </data>
+  <data name="FailedToValidateClient" xml:space="preserve">
+    <value>Failed to validate the client connecting.</value>
+  </data>
   <data name="FormatterNotSupported" xml:space="preserve">
     <value>The formatter "{0}" is not supported for the protocol "{1}".</value>
   </data>
   <data name="MessageDelimiterNotSupported" xml:space="preserve">
     <value>The message delimiter scheme "{0}" is not supported for the protocol "{1}".</value>
+  </data>
+  <data name="NamedPipeClientCouldNotBeValidated" xml:space="preserve">
+    <value>Named pipe client could not be validated.</value>
   </data>
   <data name="NotInitialized" xml:space="preserve">
     <value>This instance has not been initialized.</value>
@@ -135,6 +148,9 @@
   <data name="ServiceActivationFailed" xml:space="preserve">
     <value>Activating the "{0}" service failed.</value>
     <comment>{0} is a placeholder for a service moniker.</comment>
+  </data>
+  <data name="ServiceMoniker_AlreadyProffered" xml:space="preserve">
+    <value>The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.</value>
   </data>
   <data name="TooManyServices" xml:space="preserve">
     <value>More than one service found for "{0}" but at most one was allowed.</value>

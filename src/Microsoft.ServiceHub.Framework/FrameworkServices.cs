@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.ServiceHub.Framework.Services;
+using Newtonsoft.Json.Converters;
 using StreamJsonRpc;
 
 namespace Microsoft.ServiceHub.Framework;
@@ -32,6 +33,17 @@ public static class FrameworkServices
 	/// </remarks>
 	public static readonly ServiceRpcDescriptor Authorization = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.ServiceHub.Framework.AuthorizationService"),
+		ServiceJsonRpcDescriptor.Formatters.UTF8,
+		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+
+	/// <summary>
+	/// The <see cref="ServiceRpcDescriptor"/> for the manifest service which discloses information about services available at a remote source.
+	/// </summary>
+	/// <remarks>
+	/// This descriptor defines the default protocol used to communicate with an <see cref="IBrokeredServiceManifest"/>.
+	/// </remarks>
+	public static readonly ServiceRpcDescriptor RemoteBrokeredServiceManifest = new CamelCaseTransformingDescriptor(
+		new ServiceMoniker("Microsoft.VisualStudio.RemoteBrokeredServiceManifest", new Version(0, 2)),
 		ServiceJsonRpcDescriptor.Formatters.UTF8,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 
@@ -73,6 +85,29 @@ public static class FrameworkServices
 			return connection;
 		}
 
+		protected override IJsonRpcMessageFormatter CreateFormatter()
+		{
+			IJsonRpcMessageFormatter formatter = base.CreateFormatter();
+
+			// Avoid referencing any MessagePack or Newtonsoft.Json types in this method except when actually taking this code path
+			// by pushing such type references to another method. This defers loading assemblies till they're already in use.
+			switch (formatter)
+			{
+				case JsonMessageFormatter jsonFormatter:
+					ConfigureJsonFormatter(jsonFormatter);
+					break;
+				default:
+					throw new NotSupportedException("Unsupported formatter type: " + formatter.GetType().FullName);
+			}
+
+			return formatter;
+		}
+
 		protected override ServiceRpcDescriptor Clone() => new CamelCaseTransformingDescriptor(this);
+
+		private static void ConfigureJsonFormatter(JsonMessageFormatter jsonFormatter)
+		{
+			jsonFormatter.JsonSerializer.Converters.Add(new VersionConverter());
+		}
 	}
 }

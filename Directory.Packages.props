@@ -16,6 +16,11 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeCoverage" Version="17.5.0-release-20230105-01" />
+    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.4.16" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.4.9" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.4.33216.74" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.4.33216.74" />
+    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.3.37" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
@@ -25,6 +30,7 @@
     <PackageVersion Include="StreamJsonRpc" Version="2.15.3-alpha" />
     <PackageVersion Include="System.Collections.Immutable" Version="6.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="xunit" Version="2.4.2" />
     <PackageVersion Include="Xunit.Combinatorial" Version="1.5.25" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
