@@ -70,6 +70,33 @@ namespace Microsoft.ServiceHub.Framework {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to get the process id of the client..
+        /// </summary>
+        internal static string CouldNotGetProcessId {
+            get {
+                return ResourceManager.GetString("CouldNotGetProcessId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} &apos;{1}&apos; was not provided in the service request or it did not contain a valid PID..
+        /// </summary>
+        internal static string Error_InvalidExternalClientProcessPid {
+            get {
+                return ResourceManager.GetString("Error_InvalidExternalClientProcessPid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to validate the client connecting..
+        /// </summary>
+        internal static string FailedToValidateClient {
+            get {
+                return ResourceManager.GetString("FailedToValidateClient", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The formatter &quot;{0}&quot; is not supported for the protocol &quot;{1}&quot;..
         /// </summary>
         internal static string FormatterNotSupported {
@@ -84,6 +111,15 @@ namespace Microsoft.ServiceHub.Framework {
         internal static string MessageDelimiterNotSupported {
             get {
                 return ResourceManager.GetString("MessageDelimiterNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Named pipe client could not be validated..
+        /// </summary>
+        internal static string NamedPipeClientCouldNotBeValidated {
+            get {
+                return ResourceManager.GetString("NamedPipeClientCouldNotBeValidated", resourceCulture);
             }
         }
         
@@ -111,6 +147,15 @@ namespace Microsoft.ServiceHub.Framework {
         internal static string ServiceActivationFailed {
             get {
                 return ResourceManager.GetString("ServiceActivationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The service &quot;{0}&quot; has already been proffered. Dispose the result of the last proffered factory before proffering another one..
+        /// </summary>
+        internal static string ServiceMoniker_AlreadyProffered {
+            get {
+                return ResourceManager.GetString("ServiceMoniker_AlreadyProffered", resourceCulture);
             }
         }
         

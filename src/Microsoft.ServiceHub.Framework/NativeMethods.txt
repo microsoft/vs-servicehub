@@ -1,2 +1,3 @@
+GetNamedPipeClientProcessId
 HRESULT_FROM_WIN32
 NMPWAIT_NOWAIT

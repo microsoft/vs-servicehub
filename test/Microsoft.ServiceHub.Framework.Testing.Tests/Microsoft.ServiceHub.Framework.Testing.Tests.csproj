@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
+    <RootNamespace />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework.Testing\Microsoft.ServiceHub.Framework.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeCoverage" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.VisualStudio.RpcContracts" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Utilities" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Utilities.Testing" ExcludeAssets="compile" />
+    <PackageReference Include="Xunit.Combinatorial" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.SkippableFact" />
+  </ItemGroup>
+</Project>

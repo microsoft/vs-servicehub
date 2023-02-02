@@ -25,7 +25,7 @@ internal static class ServiceManagerReflectionHelpers
 	/// </devremarks>
 	internal static async Task<IServiceBroker?> GetServiceBrokerAsync(ServiceActivationOptions options, CancellationToken cancellationToken)
 	{
-		var serverPipeName = options.GetServiceBrokerServerPipeName();
+		string serverPipeName = options.GetServiceBrokerServerPipeName();
 
 		if (!string.IsNullOrEmpty(serverPipeName))
 		{
@@ -113,7 +113,7 @@ internal static class ServiceManagerReflectionHelpers
 					options.ClientRpcTarget = connection.ConstructRpcClient(serviceDescriptor.ClientInterface);
 				}
 
-				var serviceFactoryResult = await getRpcObject(options).ConfigureAwait(false);
+				object serviceFactoryResult = await getRpcObject(options).ConfigureAwait(false);
 
 				connection.AddLocalRpcTarget(serviceFactoryResult);
 				connection.StartListening();
@@ -158,7 +158,7 @@ internal static class ServiceManagerReflectionHelpers
 	/// <returns>The value that is associated for the requested service version.</returns>
 	internal static string GetVersionInformationFromServiceActivationOptions(ServiceActivationOptions serviceActivationOptions)
 	{
-		var keyValue = string.Empty;
+		string? keyValue = string.Empty;
 		serviceActivationOptions.ActivationArguments?.TryGetValue("__servicehub__RequestedServiceVersion", out keyValue);
 
 		return keyValue ?? string.Empty;
@@ -207,7 +207,7 @@ internal static class ServiceManagerReflectionHelpers
 		if (options.ActivationArguments is not null && options.ActivationArguments.ContainsKey(ServiceHubRemoteServiceBrokerPipeNameActivationArgument))
 		{
 			var activationOptions = new Dictionary<string, string>();
-			foreach (var option in options.ActivationArguments!.Keys)
+			foreach (string option in options.ActivationArguments!.Keys)
 			{
 				if (!option.Equals(ServiceHubRemoteServiceBrokerPipeNameActivationArgument, StringComparison.OrdinalIgnoreCase)
 					&& options.ActivationArguments.TryGetValue(option, out string? value))

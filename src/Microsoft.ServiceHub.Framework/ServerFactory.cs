@@ -3,10 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
 
