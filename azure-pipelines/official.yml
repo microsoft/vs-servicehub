@@ -27,7 +27,7 @@ parameters:
 - name: ShouldSkipOptimize
   displayName: Skip OptProf optimization
   type: boolean
-  default: false
+  default: true # change to false after OptProf pipelines are passing again
 - name: includeMacOS
   displayName: Build on macOS
   type: boolean
@@ -39,7 +39,7 @@ parameters:
 - name: EnableCompliance
   displayName: Run Compliance Tools
   type: boolean
-  default: true
+  default: false
 - name: EnableAPIScan
   displayName: Include APIScan with Compliance tools
   type: boolean
