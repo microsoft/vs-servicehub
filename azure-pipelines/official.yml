@@ -49,7 +49,7 @@ stages:
 
 - stage: Build
   variables:
-    MSBuildTreatWarningsAsErrors: true
+    MSBuildTreatWarningsAsErrors: false # re-enable when LCL files have been checked in, thereby eliminating the warnings about missing LCE files.
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     BuildConfiguration: Release
     NUGET_PACKAGES: $(Agent.TempDirectory)/.nuget/packages
