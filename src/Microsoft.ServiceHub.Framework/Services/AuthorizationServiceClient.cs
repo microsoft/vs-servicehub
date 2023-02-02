@@ -3,8 +3,6 @@
 
 using Microsoft.VisualStudio.Threading;
 
-#pragma warning disable SA1009 // Closing parenthesis must be spaced correctly (StyleCop.Analyzers update required)
-
 namespace Microsoft.ServiceHub.Framework.Services;
 
 /// <summary>
@@ -33,9 +31,7 @@ public class AuthorizationServiceClient : IDisposableObservable
 	/// </summary>
 	/// <param name="authorizationService">The client proxy of the authorization service that this instance will wrap. This will be disposed (if it implements <see cref="IDisposable"/>) when this <see cref="AuthorizationServiceClient"/> is disposed.</param>
 	/// <param name="ownsAuthorizationService"><see langword="true"/> to dispose of <paramref name="authorizationService"/> when this instance is disposed; otherwise <see langword="false"/>.</param>
-#pragma warning disable RS0026 // Do not add multiple public overloads with optional parameters
 	public AuthorizationServiceClient(IAuthorizationService authorizationService, bool ownsAuthorizationService = true)
-#pragma warning restore RS0026 // Do not add multiple public overloads with optional parameters
 	{
 		this.AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
 		this.ownsAuthorizationService = ownsAuthorizationService;
@@ -53,9 +49,7 @@ public class AuthorizationServiceClient : IDisposableObservable
 	/// <param name="joinableTaskFactory">A means to avoid deadlocks if the authorization service requires the main thread. May be null.</param>
 	/// <param name="ownsAuthorizationService"><see langword="true"/> to dispose of <paramref name="authorizationService"/> when this instance is disposed; otherwise <see langword="false"/>.</param>
 	[Obsolete("Use the overload that does not accept a JoinableTaskFactory instead. This overload will be removed in a future release.", error: true)]
-#pragma warning disable RS0026 // Do not add multiple public overloads with optional parameters
 	public AuthorizationServiceClient(IAuthorizationService authorizationService, JoinableTaskFactory? joinableTaskFactory, bool ownsAuthorizationService = true)
-#pragma warning restore RS0026 // Do not add multiple public overloads with optional parameters
 		: this(authorizationService, ownsAuthorizationService)
 	{
 	}

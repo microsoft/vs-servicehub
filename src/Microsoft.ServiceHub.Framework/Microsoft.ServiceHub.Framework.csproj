@@ -8,10 +8,13 @@
   <ItemGroup>
     <PackageReference Include="IsExternalInit" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <!-- Workaround https://github.com/dotnet/roslyn-sdk/issues/1053 by downgrading the VS-MEF version we deploy. -->
+    <PackageReference Include="Microsoft.VisualStudio.Composition" VersionOverride="16.1.8" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="TraceSource.ActivityTracing" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

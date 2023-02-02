@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net6.0</TargetFrameworks>
@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework.Testing\Microsoft.ServiceHub.Framework.Testing.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
     <ProjectReference Include="..\ExternalTestAssembly\ExternalTestAssembly.csproj" />
   </ItemGroup>
@@ -14,6 +15,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeCoverage" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.VisualStudio.RpcContracts" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Utilities" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Utilities.Testing" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" />
     <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="xunit" />

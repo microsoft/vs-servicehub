@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.IO.Pipelines;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -11,7 +10,6 @@ using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
-using IPC = System.IO.Pipes;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -143,7 +141,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// </param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, CancellationToken cancellationToken = default) => ConnectToMultiplexingServerAsync(duplexStream, options: null, cancellationToken: cancellationToken);
 
 	/// <summary>
@@ -161,7 +158,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <param name="options">Options to pass along to the created <see cref="MultiplexingStream"/> on creation.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(duplexStream, nameof(duplexStream));
@@ -199,7 +195,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(IRemoteServiceBroker serviceBroker, MultiplexingStream multiplexingStream, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
@@ -234,7 +229,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(pipe, nameof(pipe));
@@ -259,7 +253,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static async Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
@@ -286,7 +279,6 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public static async Task<RemoteServiceBroker> ConnectToServerAsync(IRemoteServiceBroker serviceBroker, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
