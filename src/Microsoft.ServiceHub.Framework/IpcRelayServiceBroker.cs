@@ -1,13 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
-using Nerdbank.Streams;
-using static Nerdbank.Streams.MultiplexingStream;
 using IAsyncDisposable = System.IAsyncDisposable;
 
 namespace Microsoft.ServiceHub.Framework;

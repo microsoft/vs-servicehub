@@ -18,9 +18,7 @@ public class ServiceJsonRpcDescriptor<T> : ServiceJsonRpcDescriptor
 	/// <param name="formatter">The formatter to use for the JSON-RPC message.</param>
 	/// <param name="messageDelimiter">The message delimiter scheme to use.</param>
 	public ServiceJsonRpcDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter)
-#pragma warning disable CS0618 // Type or member is obsolete. Support for legacy calls.
 		: base(serviceMoniker, formatter, messageDelimiter)
-#pragma warning restore CS0618 // Type or member is obsolete
 	{
 	}
 
@@ -32,9 +30,7 @@ public class ServiceJsonRpcDescriptor<T> : ServiceJsonRpcDescriptor
 	/// <param name="formatter">The formatter to use for the JSON-RPC message.</param>
 	/// <param name="messageDelimiter">The message delimiter scheme to use.</param>
 	public ServiceJsonRpcDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter)
-#pragma warning disable CS0618 // Type or member is obsolete. Support for legacy calls.
 		: base(serviceMoniker, clientInterface, formatter, messageDelimiter)
-#pragma warning restore CS0618 // Type or member is obsolete
 	{
 	}
 

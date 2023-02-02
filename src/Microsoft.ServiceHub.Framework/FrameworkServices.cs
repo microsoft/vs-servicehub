@@ -49,9 +49,7 @@ public static class FrameworkServices
 		/// </summary>
 		/// <inheritdoc cref="ServiceJsonRpcDescriptor(ServiceMoniker, Formatters, MessageDelimiters)" />
 		public CamelCaseTransformingDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter)
-#pragma warning disable CS0618 // Type or member is obsolete. Support for legacy calls.
 			: base(serviceMoniker, formatter, messageDelimiter)
-#pragma warning restore CS0618 // Type or member is obsolete
 		{
 		}
 

@@ -3,7 +3,6 @@
 
 using System.Collections.Immutable;
 using System.IO.Pipes;
-using System.Runtime.Versioning;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
