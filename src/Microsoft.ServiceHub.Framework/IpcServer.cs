@@ -25,7 +25,9 @@ internal class IpcServer : IDisposable, IIpcServer
 	{
 		if (options.Name is null)
 		{
-			options = options with { Name = ServerFactory.PrependPipePrefix(Guid.NewGuid().ToString("n")) };
+			// TEMPORARY: strip the \\.\pipe\ prefix from Windows pipe names to match the old IRemoteServiceBroker contract
+			// till we get all consumers updated to the new Microsoft.ServiceHub.Framework assembly which can handle that prefix.
+			options = options with { Name = ServerFactory.TrimWindowsPrefixForDotNet(ServerFactory.PrependPipePrefix(Guid.NewGuid().ToString("n"))) };
 		}
 		else
 		{
