@@ -3,7 +3,7 @@ import CancellationToken from 'cancellationtoken'
 import { EventEmitter } from 'events'
 import { Channel, MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { AuthorizationServiceClient } from './AuthorizationServiceClient'
-import { availabilityChangedEvent, RemoteServiceConnections } from './constants'
+import { availabilityChangedEvent, PIPE_NAME_PREFIX, RemoteServiceConnections } from './constants'
 import { IAuthorizationService } from './IAuthorizationService'
 import { BrokeredServicesChangedArgs } from './BrokeredServicesChangedArgs'
 import { IDisposable } from './IDisposable'
@@ -200,7 +200,12 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 			} else if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
 				pipe = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
 			} else if (remoteConnectionInfo.pipeName) {
-				pipe = createConnection(remoteConnectionInfo.pipeName)
+				// Accommodate Windows pipe names that may or may not include the requisite prefix.
+				const pipeName =
+					process.platform === 'win32' && !remoteConnectionInfo.pipeName.startsWith(PIPE_NAME_PREFIX)
+						? PIPE_NAME_PREFIX + remoteConnectionInfo.pipeName
+						: remoteConnectionInfo.pipeName
+				pipe = createConnection(pipeName)
 			} else {
 				throw new Error('Unsupported connection type')
 			}
