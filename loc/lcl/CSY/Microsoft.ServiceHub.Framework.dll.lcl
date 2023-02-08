@@ -3,6 +3,7 @@
   <OwnedComments>
     <Cmt Name="Dev" />
     <Cmt Name="LcxAdmin" />
+    <Cmt Name="Loc" />
     <Cmt Name="RCCX" />
   </OwnedComments>
   <Item ItemId=";Managed Resources" ItemType="0" PsrId="211" Leaf="true">
@@ -21,6 +22,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CouldNotGetProcessId" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to get the process id of the client.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nepodařilo se získat ID procesu klienta.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Error_InvalidExternalClientProcessPid" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{0} '{1}' was not provided in the service request or it did not contain a valid PID.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{0} „{1}“ nebyl v žádosti o službu zadán nebo neobsahoval platný identifikátor PID.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToValidateClient" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to validate the client connecting.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ověření klienta připojujícího se nezdařilo.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FormatterNotSupported" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The formatter "{0}" is not supported for the protocol "{1}".]]></Val>
@@ -35,6 +63,15 @@
           <Val><![CDATA[The message delimiter scheme "{0}" is not supported for the protocol "{1}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Schéma oddělovače zpráv {0} se pro protokol {1} nepodporuje.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NamedPipeClientCouldNotBeValidated" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Named pipe client could not be validated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Klienta pojmenovaného kanálu není možné ověřit.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -66,6 +103,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ServiceMoniker_AlreadyProffered" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Služba {0} se už nabídla. Než nabídnete nějakou novou továrnu, zahoďte výsledek poslední nabídnuté továrny.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
@@ -81,10 +127,13 @@
     <Disp Icon="Ver" Disp="true" LocTbl="false" Path=" \ ;Version \ 8 \ 0" />
     <Item ItemId=";Comments" ItemType="0" PsrId="211" Leaf="true">
       <Str Cat="Text">
-        <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        <Val><![CDATA[The distributed ServiceHub Framework.]]></Val>
         <Tgt Cat="Text" Stat="Loc" Orig="New">
-          <Val><![CDATA[Distribuované rozhraní ServiceHub Framework]]></Val>
+          <Val><![CDATA[Distribuované rozhraní ServiceHub Framework.]]></Val>
         </Tgt>
+        <Prev Cat="Text">
+          <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        </Prev>
       </Str>
       <Disp Icon="Str" />
     </Item>
