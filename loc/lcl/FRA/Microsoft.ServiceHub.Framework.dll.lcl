@@ -3,6 +3,7 @@
   <OwnedComments>
     <Cmt Name="Dev" />
     <Cmt Name="LcxAdmin" />
+    <Cmt Name="Loc" />
     <Cmt Name="RCCX" />
   </OwnedComments>
   <Item ItemId=";Managed Resources" ItemType="0" PsrId="211" Leaf="true">
@@ -21,6 +22,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CouldNotGetProcessId" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to get the process id of the client.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de l’obtention de l’ID de processus du client.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Error_InvalidExternalClientProcessPid" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{0} '{1}' was not provided in the service request or it did not contain a valid PID.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{0} '{1}' n’a pas été fourni dans la demande de service ou ne contenait pas de PID valide.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToValidateClient" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to validate the client connecting.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de la validation de la connexion du client.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FormatterNotSupported" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The formatter "{0}" is not supported for the protocol "{1}".]]></Val>
@@ -35,6 +63,15 @@
           <Val><![CDATA[The message delimiter scheme "{0}" is not supported for the protocol "{1}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Le schéma de délimiteur de message "{0}" n'est pas pris en charge pour le protocole "{1}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NamedPipeClientCouldNotBeValidated" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Named pipe client could not be validated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Impossible de valider le client de canal nommé.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -66,6 +103,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ServiceMoniker_AlreadyProffered" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Le service "{0}" a déjà été proposé. Supprimez le résultat de la dernière fabrique proposée avant d'en proposer une autre.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
@@ -81,10 +127,13 @@
     <Disp Icon="Ver" Disp="true" LocTbl="false" Path=" \ ;Version \ 8 \ 0" />
     <Item ItemId=";Comments" ItemType="0" PsrId="211" Leaf="true">
       <Str Cat="Text">
-        <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        <Val><![CDATA[The distributed ServiceHub Framework.]]></Val>
         <Tgt Cat="Text" Stat="Loc" Orig="New">
-          <Val><![CDATA[Framework ServiceHub distribué]]></Val>
+          <Val><![CDATA[Framework ServiceHub distribué.]]></Val>
         </Tgt>
+        <Prev Cat="Text">
+          <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        </Prev>
       </Str>
       <Disp Icon="Str" />
     </Item>
