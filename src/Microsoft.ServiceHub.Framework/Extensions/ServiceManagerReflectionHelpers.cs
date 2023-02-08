@@ -6,7 +6,7 @@ using Microsoft.ServiceHub.Framework.Services;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
 
-namespace Microsoft.ServiceHub.Framework.Extensions;
+namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Extension methods used via reflection in Microsoft.ServiceHub.HostStub.IServiceManager inside of the DevCore repository inside of Visual Studio.
