@@ -1,0 +1,6 @@
+export { GlobalBrokeredServiceContainer } from './GlobalBrokeredServiceContainer'
+export { IBrokeredServiceContainer } from './IBrokeredServiceContainer'
+export { ServiceAudience } from './ServiceAudience'
+export { ServiceRegistration } from './ServiceRegistration'
+export { ServiceSource } from './ServiceSource'
+export { ClientCredentialsPolicy } from './ClientCredentialsPolicy'

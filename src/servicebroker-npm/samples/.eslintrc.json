@@ -1,0 +1,16 @@
+{
+	"rules": {
+		"prettier/prettier": [
+			"error",
+			{
+				"printWidth": 80,
+				"semi": false,
+				"singleQuote": true,
+				"trailingComma": "es5",
+				"useTabs": true,
+				"endOfLine": "auto",
+				"arrowParens": "avoid"
+			}
+		]
+	}
+}
