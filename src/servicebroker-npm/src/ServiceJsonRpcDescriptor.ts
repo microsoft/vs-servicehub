@@ -199,8 +199,8 @@ const rpcProxy = {
 							const ct = arguments[arguments.length - 1]
 							const args = validateNoUndefinedElements(Array.prototype.slice.call(arguments, 0, arguments.length - 1))
 							return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
-						} else if (CancellationTokenAdapters.IsCancellationToken(arguments[arguments.length - 1])) {
-							const ct = CancellationTokenAdapters.CancellationTokenToVSCode(arguments[arguments.length - 1])
+						} else if (CancellationTokenAdapters.isCancellationToken(arguments[arguments.length - 1])) {
+							const ct = CancellationTokenAdapters.cancellationTokenToVSCode(arguments[arguments.length - 1])
 							const args = validateNoUndefinedElements(Array.prototype.slice.call(arguments, 0, arguments.length - 1))
 							return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
 						} else if (arguments[arguments.length - 1] === undefined) {
@@ -237,8 +237,8 @@ export class JsonRpcConnection extends RpcConnection {
 
 	public addLocalRpcTarget(rpcTarget: any | RpcEventServer): void {
 		function wrapCancellationTokenIfPresent(args: any[]): any[] {
-			if (args.length > 0 && CancellationTokenAdapters.IsVSCode(args[args.length - 1])) {
-				const adaptedCancellationToken = CancellationTokenAdapters.VSCodeToCancellationToken(args[args.length - 1])
+			if (args.length > 0 && CancellationTokenAdapters.isVSCode(args[args.length - 1])) {
+				const adaptedCancellationToken = CancellationTokenAdapters.vscodeToCancellationToken(args[args.length - 1])
 				args[args.length - 1] = adaptedCancellationToken
 			}
 

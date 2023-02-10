@@ -91,7 +91,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 		cancellationWaiter.constructRpc(server, pipes.first)
 		const rpc = cancellationWaiter.constructRpc<IWaitToBeCanceled>(pipes.second)
 		const cts = CancellationToken.create()
-		const rpcCall = rpc.WaitForCancellation(cts.token)
+		const rpcCall = rpc.waitForCancellation(cts.token)
 		await server.methodReached
 		cts.cancel()
 		await rpcCall
@@ -125,7 +125,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 		it('can be invoked', async () => {
 			const msg = 'my message'
-			await proxyToService.CallMeBackAsync(msg)
+			await proxyToService.callMeBack(msg)
 			expect(clientTarget.lastMessage).toEqual(msg)
 		})
 	})

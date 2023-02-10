@@ -13,20 +13,20 @@ export interface ICalculatorService {
 }
 
 export interface ICallMeBackService {
-	CallMeBackAsync(message: string, cancellationToken?: CancellationToken): Promise<void>
+	callMeBack(message: string, cancellationToken?: CancellationToken): Promise<void>
 }
 
 export interface ICallMeBackClient {
-	YouPhonedAsync(message: string): Promise<void>
+	youPhoned(message: string): Promise<void>
 }
 
 export interface IActivationService {
-	GetClientCredentialsAsync(): Promise<{ [key: string]: string }>
-	GetActivationArgumentsAsync(): Promise<{ [key: string]: string }>
+	getClientCredentials(): Promise<{ [key: string]: string }>
+	getActivationArguments(): Promise<{ [key: string]: string }>
 }
 
 export interface IWaitToBeCanceled {
-	WaitForCancellation(cancellationToken: CancellationToken): Promise<void>
+	waitForCancellation(cancellationToken: CancellationToken): Promise<void>
 }
 
 export interface ApplePickedEventArgs {

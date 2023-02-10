@@ -11,7 +11,7 @@ export class WaitToBeCanceledService implements IWaitToBeCanceled {
 		this.methodReached = this.methodReachedSource.promise
 	}
 
-	WaitForCancellation(cancellationToken: CancellationToken): Promise<void> {
+	waitForCancellation(cancellationToken: CancellationToken): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			cancellationToken.onCancelled(() => resolve())
 
