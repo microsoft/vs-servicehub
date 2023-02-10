@@ -13,7 +13,7 @@ export function constructMessageConnection(
 	assert(pipe)
 
 	let rpc: MessageConnection
-	if (IsReadWriteStream(pipe)) {
+	if (isReadWriteStream(pipe)) {
 		rpc = connectionFactory(pipe)
 		pipe.on('close', () => {
 			rpc?.dispose()
@@ -32,7 +32,7 @@ export function constructMessageConnection(
 	return rpc
 }
 
-export function IsReadWriteStream(object: any): object is NodeJS.ReadWriteStream {
+export function isReadWriteStream(object: any): object is NodeJS.ReadWriteStream {
 	return object && 'unshift' in object
 }
 

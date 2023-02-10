@@ -179,8 +179,8 @@ describe('Service Broker tests', function () {
 				}
 
 				const serviceProxy = await broker.getProxy<IActivationService>(activationDescriptor, activationOptions, defaultToken)
-				const clientCreds = await serviceProxy?.GetClientCredentialsAsync()
-				const activationArgs = await serviceProxy?.GetActivationArgumentsAsync()
+				const clientCreds = await serviceProxy?.getClientCredentials()
+				const activationArgs = await serviceProxy?.getActivationArguments()
 
 				assert.strictEqual('name', clientCreds!['test'], 'Should receive client credentials with specified values.')
 				assert.strictEqual('true', activationArgs!['start'], 'Should receive activation arguments from the server.')
@@ -253,7 +253,7 @@ describe('Service Broker tests', function () {
 				}
 				const proxy = await broker.getProxy<ICallMeBackService>(callBackDescriptor, activationOptions, defaultToken)
 				const msg = 'my message'
-				await proxy?.CallMeBackAsync(msg)
+				await proxy?.callMeBack(msg)
 				expect(client.lastMessage).toEqual(msg)
 				broker.dispose()
 				await channel.completion

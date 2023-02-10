@@ -96,6 +96,7 @@ export abstract class RpcConnection {
 	 */
 	public abstract dispose(): void
 
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	protected static IsRpcEventServer(value: any): value is RpcEventServer {
 		return value.rpcEventNames && value.on
 	}
