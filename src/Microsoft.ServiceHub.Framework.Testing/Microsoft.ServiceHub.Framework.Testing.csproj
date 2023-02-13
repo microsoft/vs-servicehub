@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
     <Description>A library that can assist in testing brokered service contracts.</Description>
+    <!-- We do not (yet) have any resx files. -->
+    <MicroBuild_LocalizeOutputAssembly>false</MicroBuild_LocalizeOutputAssembly>
   </PropertyGroup>
 
   <ItemGroup>
