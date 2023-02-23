@@ -142,6 +142,9 @@
   <data name="NotInitialized" xml:space="preserve">
     <value>This instance has not been initialized.</value>
   </data>
+  <data name="PipeNotOwnedByCurrentUser" xml:space="preserve">
+    <value>This pipe is not owned by the current user.</value>
+  </data>
   <data name="ProtocolNotSupported" xml:space="preserve">
     <value>The protocol "{0}" is not supported.</value>
   </data>
