@@ -7,15 +7,7 @@ import { ServiceBrokerClientMetadata } from '../src/ServiceBrokerClientMetadata'
 import { ServiceJsonRpcDescriptor } from '../src/ServiceJsonRpcDescriptor'
 import { ServiceMoniker } from '../src/ServiceMoniker'
 import { Calculator } from './testAssets/calculatorService'
-import {
-	IAppleTreeService,
-	ApplePickedEventArgs,
-	AppleGrownEventArgs,
-	ICalculatorService,
-	ICallMeBackClient,
-	ICallMeBackService,
-	IWaitToBeCanceled,
-} from './testAssets/interfaces'
+import { IAppleTreeService, ApplePickedEventArgs, ICalculatorService, ICallMeBackClient, ICallMeBackService, IWaitToBeCanceled } from './testAssets/interfaces'
 import { TestRemoteServiceBroker } from './testAssets/testRemoteServiceBroker'
 import { IDisposable } from '../src/IDisposable'
 import { appleTreeDescriptor, calcDescriptorUtf8Http, callBackDescriptor, cancellationWaiter } from './testAssets/testUtilities'
@@ -75,13 +67,19 @@ describe('ServiceJsonRpcDescriptor', function () {
 			appleTreeDescriptor.constructRpc(server, pipes.first)
 			const rpc = appleTreeDescriptor.constructRpc<IAppleTreeService>(pipes.second)
 
-			const receivedPickedArgs = new Promise<ApplePickedEventArgs>(resolve => rpc.once('picked', args => resolve(args)))
-			await rpc.pick({ color: 'green' })
-			assert.strictEqual((await receivedPickedArgs).color, 'green')
+			const receivedPickedArgsPromise = new Promise<ApplePickedEventArgs>(resolve => rpc.once('picked', args => resolve(args)))
+			await rpc.pick({ color: 'green', weight: 5 })
+			const receivedPickedArgs = await receivedPickedArgsPromise
+			assert.strictEqual(receivedPickedArgs.color, 'green')
+			assert.strictEqual(receivedPickedArgs.weight, 5)
 
-			const receivedGrownArgs = new Promise<AppleGrownEventArgs>(resolve => rpc.on('grown', args => resolve(args)))
-			await rpc.grow({ seeds: 8 })
-			assert.strictEqual((await receivedGrownArgs).seeds, 8)
+			const receivedGrownArgsPromise = new Promise<{ seeds: number; weight: number }>(resolve =>
+				rpc.on('grown', (seeds, weight) => resolve({ seeds, weight }))
+			)
+			await rpc.grow(8, 5)
+			const receivedGrownArgs = await receivedGrownArgsPromise
+			assert.strictEqual(receivedGrownArgs.seeds, 8)
+			assert.strictEqual(receivedGrownArgs.weight, 5)
 		})
 	})
 

@@ -46,6 +46,13 @@ describe('Service Broker tests', function () {
 	// Sometimes, the first time we start ServiceBrokerTest.exe it hangs and the test throws a CancellationError
 	// We need to catch this error and close our connection to avoid tests not finishing
 	describe('Tests that start service broker exe', function () {
+		jest.setTimeout(15000)
+
+		beforeEach(() => {
+			defaultTokenSource = CancellationToken.timeout(15000)
+			defaultToken = defaultTokenSource.token
+		})
+
 		it('Should be able to query proxy server', async function () {
 			let mx: MultiplexingStream | null = null
 			try {

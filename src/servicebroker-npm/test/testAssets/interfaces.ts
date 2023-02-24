@@ -31,20 +31,19 @@ export interface IWaitToBeCanceled {
 
 export interface ApplePickedEventArgs {
 	color: 'red' | 'green' | 'yellow'
-}
-
-export interface AppleGrownEventArgs {
-	seeds: number
+	weight: number
 }
 
 export interface AppleTreeEvents {
+	/** An event with one argument that contains two properties. */
 	picked: (args: ApplePickedEventArgs) => void
-	grown: (args: AppleGrownEventArgs) => void
+	/** An event with two arguments. */
+	grown: (seeds: number, weight: number) => void
 }
 
 export type AppleTreeEmitter = StrictEventEmitter<EventEmitter, AppleTreeEvents>
 
 export interface IAppleTreeService extends AppleTreeEmitter {
 	pick(args: ApplePickedEventArgs, cancellationToken?: CancellationToken): Promise<void>
-	grow(args: AppleGrownEventArgs, cancellationToken?: CancellationToken): Promise<void>
+	grow(seeds: number, weight: number, cancellationToken?: CancellationToken): Promise<void>
 }
