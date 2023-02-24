@@ -133,6 +133,15 @@ namespace Microsoft.ServiceHub.Framework {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This pipe is not owned by the current user..
+        /// </summary>
+        internal static string PipeNotOwnedByCurrentUser {
+            get {
+                return ResourceManager.GetString("PipeNotOwnedByCurrentUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The protocol &quot;{0}&quot; is not supported..
         /// </summary>
         internal static string ProtocolNotSupported {
