@@ -85,6 +85,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PipeNotOwnedByCurrentUser" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This pipe is not owned by the current user.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Этот канал не принадлежит текущему пользователю.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ProtocolNotSupported" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The protocol "{0}" is not supported.]]></Val>
