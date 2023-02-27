@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
 using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
+using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Nerdbank.Streams;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
@@ -10,11 +12,25 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 public abstract partial class GlobalBrokeredServiceContainer
 {
 	/// <summary>
-	/// This delegate is modeled after <see cref="ProfferedServiceFactory"/> but adds the <see cref="View"/> parameter.
+	/// A delegate that creates new instances of a service to be exposed by an <see cref="IServiceBroker" />.
 	/// </summary>
-	private delegate ValueTask<object?> ViewIntrinsicBrokeredServiceFactory(View view, ServiceMoniker moniker, ServiceActivationOptions options, IServiceBroker serviceBroker, CancellationToken cancellationToken);
+	/// <param name="view">The view that this service is being activated within.</param>
+	/// <param name="moniker">The identifier for the service that is requested.</param>
+	/// <param name="options">Additional options that alter how the service may be activated or provide additional data to the service constructor.</param>
+	/// <param name="serviceBroker">The service broker that the service returned from this delegate should use to obtain any of its own dependencies.</param>
+	/// <param name="cancellationToken">A token to indicate that the caller has lost interest in the result.</param>
+	/// <returns>A unique instance of the service. If the value implements <see cref="IDisposable" />, the value will be disposed when the client disconnects.</returns>
+	/// <seealso cref="IBrokeredServiceContainer.Proffer(ServiceRpcDescriptor, BrokeredServiceFactory)"/>
+	/// <remarks>
+	/// This delegate is modeled after <see cref="ProfferedServiceFactory"/> but adds the <see cref="View"/> parameter.
+	/// </remarks>
+	protected delegate ValueTask<object?> ViewIntrinsicBrokeredServiceFactory(View view, ServiceMoniker moniker, ServiceActivationOptions options, IServiceBroker serviceBroker, CancellationToken cancellationToken);
 
-	private class ProfferedViewIntrinsicService : ProfferedServiceFactory
+	/// <summary>
+	/// Services a brokered service that is proffered via an in-proc factory.
+	/// </summary>
+	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
+	protected class ProfferedViewIntrinsicService : ProfferedServiceFactory
 	{
 		private readonly ViewIntrinsicBrokeredServiceFactory factory;
 
@@ -24,17 +40,28 @@ public abstract partial class GlobalBrokeredServiceContainer
 			this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
 		}
 
-		public override ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+		/// <inheritdoc/>
+		[Obsolete("Use the overload that takes a View instead.", error: true)]
+#pragma warning disable CS0809 // Obsolete member overrides non-obsolete member
+		public override ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
+#pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
 		{
 			throw new NotSupportedException();
 		}
 
-		public override ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+		/// <inheritdoc/>
+		[Obsolete("Use the overload that takes a View instead.", error: true)]
+#pragma warning disable CS0809 // Obsolete member overrides non-obsolete member
+		public override ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+#pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
 			where T : class
 		{
 			throw new NotSupportedException();
 		}
 
+#pragma warning disable CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
+		/// <inheritdoc cref="GetPipeAsync(ServiceMoniker, ServiceActivationOptions, CancellationToken)"/>
+		/// <param name="view">The view used to request this service.</param>
 		public async ValueTask<IDuplexPipe?> GetPipeAsync(View view, ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 		{
 			(IDuplexPipe, IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
@@ -81,6 +108,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 			}
 		}
 
+		/// <inheritdoc cref="GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>
+		/// <param name="view">The view used to request this service.</param>
 		public async ValueTask<T?> GetProxyAsync<T>(View view, ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 			where T : class
 		{
@@ -90,19 +119,15 @@ public abstract partial class GlobalBrokeredServiceContainer
 			var liveObject = (T?)await this.factory(view, serviceDescriptor.Moniker, options, serviceBroker, cancellationToken).ConfigureAwait(false);
 			return serviceDescriptor.ConstructLocalProxy(liveObject);
 		}
+#pragma warning restore CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
 
-		public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(View view, ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken = default)
+		internal Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(View view, ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken = default)
 		{
 			return this.RemoteServiceBrokerWrapper.RequestServiceChannelAsync(
 				() => this.GetPipeAsync(view, serviceMoniker, serviceActivationOptions, cancellationToken),
 				serviceMoniker,
 				serviceActivationOptions,
 				cancellationToken);
-		}
-
-		private Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
-		{
-			throw new NotSupportedException();
 		}
 	}
 }

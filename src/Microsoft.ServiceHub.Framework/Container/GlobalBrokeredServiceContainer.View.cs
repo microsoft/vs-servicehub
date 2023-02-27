@@ -17,7 +17,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 	/// A filtered view on the services proffered to a <see cref="GlobalBrokeredServiceContainer"/>, exposed as an <see cref="IServiceBroker"/>.
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-	private class View : IServiceBroker, IRemoteServiceBroker
+	protected class View : IServiceBroker, IRemoteServiceBroker
 	{
 		/// <summary>
 		/// The owner of this view.
@@ -49,7 +49,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 		/// <param name="clientCredentialsPolicy">Specifies which client credentials prevails when the service request contains non-empty credentials.</param>
 		/// <param name="clientCulture">The value to apply to service requests when <see cref="ServiceActivationOptions.ClientCulture"/> is <see langword="null"/>.</param>
 		/// <param name="clientUICulture">The value to apply to service requests when <see cref="ServiceActivationOptions.ClientUICulture"/> is <see langword="null"/>.</param>
-		protected internal View(GlobalBrokeredServiceContainer container, ServiceAudience audience, IReadOnlyDictionary<string, string> clientCredentials, ClientCredentialsPolicy clientCredentialsPolicy, CultureInfo? clientCulture = null, CultureInfo? clientUICulture = null)
+		internal View(GlobalBrokeredServiceContainer container, ServiceAudience audience, IReadOnlyDictionary<string, string> clientCredentials, ClientCredentialsPolicy clientCredentialsPolicy, CultureInfo? clientCulture = null, CultureInfo? clientUICulture = null)
 		{
 			this.container = container ?? throw new ArgumentNullException(nameof(container));
 			this.Audience = audience;
@@ -94,7 +94,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 		/// <summary>
 		/// Gets the filter to apply to services.
 		/// </summary>
-		internal ServiceAudience Audience { get; }
+		public ServiceAudience Audience { get; }
 
 		/// <summary>
 		/// Gets an object that this class can lock on to synchronize field access.

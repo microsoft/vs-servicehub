@@ -82,14 +82,14 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 		this.traceSource = traceSource;
 
 		// Add built-in services.
-		this.registeredServices = this.registeredServices.Add(
-			FrameworkServices.RemoteBrokeredServiceManifest.Moniker,
-			new ServiceRegistration((ServiceAudience.RemoteExclusiveServer | ServiceAudience.AllClientsIncludingGuests) & ~ServiceAudience.Local, null, allowGuestClients: true));
-		this.registeredServices = this.registeredServices.Add(
-			MissingServiceDiagnostics.Moniker,
-			new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false));
-		this.Proffer(new ProfferedViewIntrinsicService(this, FrameworkServices.RemoteBrokeredServiceManifest, (view, mk, options, sb, ct) => new ValueTask<object?>(new BrokeredServiceManifest(this, view.Audience))));
-		this.Proffer(new ProfferedViewIntrinsicService(this, MissingServiceDiagnostics, (view, mk, options, sb, ct) => new ValueTask<object?>(new MissingServiceDiagnosticsService(view))));
+		this.ProfferIntrinsicService(
+			FrameworkServices.RemoteBrokeredServiceManifest,
+			new ServiceRegistration((ServiceAudience.RemoteExclusiveServer | ServiceAudience.AllClientsIncludingGuests) & ~ServiceAudience.Local, null, allowGuestClients: true),
+			(view, mk, options, sb, ct) => new ValueTask<object?>(new BrokeredServiceManifest(this, view.Audience)));
+		this.ProfferIntrinsicService(
+			MissingServiceDiagnostics,
+			new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: false),
+			(view, mk, options, sb, ct) => new ValueTask<object?>(new MissingServiceDiagnosticsService(view)));
 	}
 
 	private event EventHandler<(ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>>?, ImmutableHashSet<ServiceMoniker>)>? AvailabilityChanged;
@@ -298,17 +298,23 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 		}
 	}
 
+	/// <inheritdoc cref="ProfferIntrinsicService(ServiceRpcDescriptor, ServiceRegistration, ViewIntrinsicBrokeredServiceFactory)"/>
+	protected IDisposable ProfferIntrinsicService(ServiceRpcDescriptor serviceDescriptor, ServiceRegistration newRegistration, BrokeredServiceFactory factory)
+	{
+		return this.ProfferIntrinsicService(serviceDescriptor, newRegistration, (view, mk, options, sb, ct) => factory(mk, options, sb, ct));
+	}
+
 	/// <summary>
-	/// Proffers a new Intrinsic service. Should only be accessible to derived classes.
+	/// Proffers a very special brokered service that is intrinsic to each <see cref="View"/>.
 	/// </summary>
 	/// <param name="serviceDescriptor">The <see cref="ServiceRpcDescriptor"/> of the service.</param>
 	/// <param name="newRegistration">The <see cref="ServiceRegistration"/> representing the service being registered.</param>
-	/// <param name="factory">The <see cref="BrokeredServiceFactory"/> that generates the new service.</param>
+	/// <param name="factory">The factory that generates the new service.</param>
 	/// <returns>An <see cref="IDisposable"/> that will remove the service when disposed.</returns>
-	protected IDisposable ProfferIntrinsicService(ServiceRpcDescriptor serviceDescriptor, ServiceRegistration newRegistration, BrokeredServiceFactory factory)
+	protected IDisposable ProfferIntrinsicService(ServiceRpcDescriptor serviceDescriptor, ServiceRegistration newRegistration, ViewIntrinsicBrokeredServiceFactory factory)
 	{
 		this.registeredServices = this.registeredServices.Add(serviceDescriptor.Moniker, newRegistration);
-		return this.Proffer(new ProfferedViewIntrinsicService(this, serviceDescriptor, (view, mk, options, sb, ct) => factory(mk, options, sb, ct)));
+		return this.Proffer(new ProfferedViewIntrinsicService(this, serviceDescriptor, factory));
 	}
 
 	/// <summary>

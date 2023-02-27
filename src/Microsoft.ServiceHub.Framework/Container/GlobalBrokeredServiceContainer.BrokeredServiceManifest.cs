@@ -13,12 +13,17 @@ public partial class GlobalBrokeredServiceContainer
 	/// <summary>
 	/// Exposes details about availability of locally proffered services for clients with a specific audience.
 	/// </summary>
-	private class BrokeredServiceManifest : IBrokeredServiceManifest
+	protected class BrokeredServiceManifest : IBrokeredServiceManifest
 	{
 		private readonly GlobalBrokeredServiceContainer container;
 		private readonly ServiceAudience serviceAudience;
 
-		internal BrokeredServiceManifest(GlobalBrokeredServiceContainer container, ServiceAudience serviceAudience)
+		/// <summary>
+		/// Initializes a new instance of the <see cref="BrokeredServiceManifest"/> class.
+		/// </summary>
+		/// <param name="container">The container that owns this instance.</param>
+		/// <param name="serviceAudience">The <see cref="View.Audience"/> from the <see cref="View"/> for which this service was created.</param>
+		public BrokeredServiceManifest(GlobalBrokeredServiceContainer container, ServiceAudience serviceAudience)
 		{
 			this.container = container ?? throw new ArgumentNullException(nameof(container));
 			this.serviceAudience = serviceAudience;
