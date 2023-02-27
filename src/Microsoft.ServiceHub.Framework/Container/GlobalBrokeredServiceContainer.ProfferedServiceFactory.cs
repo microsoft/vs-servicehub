@@ -74,10 +74,13 @@ public abstract partial class GlobalBrokeredServiceContainer
 		/// </summary>
 		protected GlobalBrokeredServiceContainer Container { get; }
 
-		private protected RemoteServiceBrokerWrapper RemoteServiceBrokerWrapper { get; }
-
+		/// <summary>
+		/// Gets a reasonable value to used for the <see cref="DebuggerDisplayAttribute"/> on this or a derived type.
+		/// </summary>
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		private string DebuggerDisplay => $"{this.Descriptor.Moniker}";
+		protected string DebuggerDisplay => $"{this.Descriptor.Moniker}";
+
+		private protected RemoteServiceBrokerWrapper RemoteServiceBrokerWrapper { get; }
 
 		/// <inheritdoc/>
 		public void Dispose()
