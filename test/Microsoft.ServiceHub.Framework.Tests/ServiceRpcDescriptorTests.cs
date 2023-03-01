@@ -4,12 +4,16 @@
 using System.Diagnostics;
 using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
+using Microsoft.VisualStudio.Threading;
+using Nerdbank.Streams;
 using Xunit;
 
 public class ServiceRpcDescriptorTests
 {
 	private static readonly ServiceMoniker SomeMoniker = new ServiceMoniker("Some name");
 	private static readonly ServiceMoniker SomeOtherMoniker = new ServiceMoniker("Some other name");
+	private static readonly TraceSource SomeTraceSource = new("test");
+	private static readonly JoinableTaskFactory SomeJoinableTaskFactory = new JoinableTaskContext().Factory;
 
 	[Fact]
 	public void Ctor_ValidatesInputs()
@@ -81,6 +85,33 @@ public class ServiceRpcDescriptorTests
 		MockServiceRpcDescriptor copy2 = copy.WithServiceMoniker(SomeOtherMoniker);
 		Assert.Same(SomeOtherMoniker, copy2.Moniker);
 		Assert.True(copy2.SomeOtherSetting);
+	}
+
+	[Fact]
+	public void WithJoinableTaskFactory_ImpactsOnlyNewInstance()
+	{
+		MockServiceRpcDescriptor descriptor = new(SomeMoniker);
+		MockServiceRpcDescriptor copy = (MockServiceRpcDescriptor)descriptor.WithJoinableTaskFactory(SomeJoinableTaskFactory);
+		Assert.Same(SomeJoinableTaskFactory, copy.JoinableTaskFactory);
+		Assert.Null(descriptor.JoinableTaskFactory);
+	}
+
+	[Fact]
+	public void CopyConstructorCopiesProperties()
+	{
+		MultiplexingStream mxstream = MultiplexingStream.Create(Stream.Null);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+		MockServiceRpcDescriptor descriptor = (MockServiceRpcDescriptor)new MockServiceRpcDescriptor(SomeMoniker)
+			.WithJoinableTaskFactory(SomeJoinableTaskFactory)
+			.WithMultiplexingStream(mxstream)
+			.WithTraceSource(SomeTraceSource);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+		MockServiceRpcDescriptor copy = new(descriptor);
+		Assert.Same(mxstream, copy.MultiplexingStream);
+		Assert.Same(SomeTraceSource, copy.TraceSource);
+		Assert.Same(SomeJoinableTaskFactory, copy.JoinableTaskFactory);
 	}
 
 	private class MockServiceRpcDescriptor : ServiceRpcDescriptor
