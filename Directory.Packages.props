@@ -4,8 +4,8 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <MicroBuildVersion>2.0.108</MicroBuildVersion>
-    <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
-    <CodeAnalysisVersion>4.4.0</CodeAnalysisVersion>
+    <CodeAnalysisVersionForAnalyzers>4.5.0</CodeAnalysisVersionForAnalyzers>
+    <CodeAnalysisVersion>4.5.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2-beta1.23110.2</CodefixTestingVersion>
   </PropertyGroup>
   <ItemGroup>
