@@ -270,6 +270,23 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	public ValueTask<TraceSource?> GetTraceSourceForBrokeredServiceAsync(IServiceBroker serviceBroker, ServiceMoniker serviceMoniker, ServiceActivationOptions options, bool clientRole, CancellationToken cancellationToken) => this.GetTraceSourceForConnectionAsync(serviceBroker, serviceMoniker, options, clientRole, cancellationToken);
 
 	/// <summary>
+	/// Applies typical transformations on a descriptor fro brokered service clients and services.
+	/// </summary>
+	/// <param name="descriptor">The stock descriptor used for this service.</param>
+	/// <param name="serviceBroker">A service broker that may be used to acquire other, related services as necessary to mutate the <paramref name="descriptor"/>.</param>
+	/// <param name="serviceActivationOptions">The activation options for the service.</param>
+	/// <param name="clientRole">A value indicating whether the <paramref name="descriptor"/> is about to be used to activate a client proxy or client connection; use <see langword="false" /> when activating the service itself.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>The modified descriptor.</returns>
+	internal async ValueTask<ServiceRpcDescriptor> ApplyDescriptorSettingsAsync(ServiceRpcDescriptor descriptor, IServiceBroker serviceBroker, ServiceActivationOptions serviceActivationOptions, bool clientRole, CancellationToken cancellationToken)
+	{
+		TraceSource? traceSource = await this.GetTraceSourceForConnectionAsync(serviceBroker, descriptor.Moniker, serviceActivationOptions, clientRole, cancellationToken).ConfigureAwait(false);
+		return descriptor
+			.WithJoinableTaskFactory(this.joinableTaskFactory)
+			.WithTraceSource(traceSource);
+	}
+
+	/// <summary>
 	/// Registers a set of services with the global broker. This is separate from proffering a service. A service should be registered before it is proffered.
 	/// An <see cref="IServiceBroker.AvailabilityChanged"/> event is never
 	/// fired as a result of calling this method, but instead will be fired once the service is proffered.
