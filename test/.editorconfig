@@ -62,3 +62,6 @@ dotnet_diagnostic.VSTHRD003.severity = suggestion
 
 # VSTHRD012: Provide JoinableTaskFactory where allowed
 dotnet_diagnostic.VSTHRD012.severity = suggestion
+
+# VSSDK005: Avoid instantiating JoinableTaskContext
+dotnet_diagnostic.VSSDK005.severity = none

@@ -260,6 +260,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		jsonRpc.ExceptionStrategy = this.ExceptionStrategy;
 		jsonRpc.ActivityTracingStrategy = new CorrelationManagerTracingStrategy { TraceSource = this.TraceSource };
 		jsonRpc.SynchronizationContext = new NonConcurrentSynchronizationContext(sticky: false);
+		jsonRpc.JoinableTaskFactory = this.JoinableTaskFactory;
 
 		// Only set the TraceSource if we've been given one, so we don't set it to null (which would throw).
 		if (this.TraceSource != null)

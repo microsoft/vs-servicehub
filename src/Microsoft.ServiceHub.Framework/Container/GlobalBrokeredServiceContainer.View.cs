@@ -223,8 +223,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				(proffered, errorCode) = await this.TryGetProfferingSourceAsync(serviceDescriptor.Moniker, cancellationToken).ConfigureAwait(false);
 				if (proffered is object)
 				{
-					serviceDescriptor = serviceDescriptor
-						.WithTraceSource(await this.container.GetTraceSourceForConnectionAsync(this, serviceDescriptor.Moniker, options, clientRole: true, cancellationToken).ConfigureAwait(false));
+					serviceDescriptor = await this.container.ApplyDescriptorSettingsAsync(serviceDescriptor, this, options, clientRole: true, cancellationToken).ConfigureAwait(false);
 
 					GC.KeepAlive(typeof(ValueTask<T>)); // workaround CLR bug https://dev.azure.com/devdiv/DevDiv/_workitems/edit/1358442
 					T? proxy = proffered is ProfferedViewIntrinsicService viewIntrinsic
