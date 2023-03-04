@@ -1,5 +1,5 @@
 import { Channel } from 'nerdbank-streams'
-import { MessageConnection, CancellationToken as vscodeCancellationToken, createMessageConnection, Message, ParameterStructures } from 'vscode-jsonrpc/node'
+import { MessageConnection, CancellationToken as vscodeCancellationToken, createMessageConnection, Message, ParameterStructures } from 'vscode-jsonrpc'
 import { Formatters, MessageDelimiters } from './constants'
 import { ServiceMoniker } from './ServiceMoniker'
 import { RpcConnection, RpcEventServer, ServiceRpcDescriptor } from './ServiceRpcDescriptor'
@@ -10,6 +10,8 @@ import * as msgpack from 'msgpack-lite'
 import { CancellationTokenAdapters } from './CancellationTokenAdapter'
 import { MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { EventEmitter } from 'stream'
+import { NodeStreamMessageReader } from './NodeStreamMessageReader'
+import { NodeStreamMessageWriter } from './NodeStreamMessageWriter'
 
 /**
  * Constructs a JSON RPC message connection to a service
@@ -60,7 +62,7 @@ export class ServiceJsonRpcDescriptor extends ServiceRpcDescriptor {
 				throw new Error(`Utf8 is the only formatter supported while using HttpLikeHeaders.`)
 			}
 
-			this.connectionFactory = rw => createMessageConnection(rw, rw)
+			this.connectionFactory = rw => createMessageConnection(new NodeStreamMessageReader(rw), new NodeStreamMessageWriter(rw))
 		} else if (messageDelimiter === MessageDelimiters.BigEndianInt32LengthHeader) {
 			this.connectionFactory = rw => createMessageConnection(new BE32MessageReader(rw, contentTypeDecoder), new BE32MessageWriter(rw, contentTypeEncoder))
 		} else {
