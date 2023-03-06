@@ -10,8 +10,7 @@ import * as msgpack from 'msgpack-lite'
 import { CancellationTokenAdapters } from './CancellationTokenAdapter'
 import { MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { EventEmitter } from 'stream'
-import { NodeStreamMessageReader } from './NodeStreamMessageReader'
-import { NodeStreamMessageWriter } from './NodeStreamMessageWriter'
+import { NodeStreamMessageReader, NodeStreamMessageWriter } from './NodeStreamMessageWrappers'
 
 /**
  * Constructs a JSON RPC message connection to a service
