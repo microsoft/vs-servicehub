@@ -36,6 +36,11 @@ public class MockBrokeredServiceContainer : GlobalBrokeredServiceContainer
 		this.Proffer(FrameworkServices.Authorization, (mk, options, sb, ct) => new(new MockAuthorizationService()));
 	}
 
+	/// <summary>
+	/// Gets or sets the callback to use when <see cref="GlobalBrokeredServiceContainer.ApplyDescriptorSettings(ServiceRpcDescriptor, bool)"/> is called.
+	/// </summary>
+	public Func<ServiceRpcDescriptor, bool, ServiceRpcDescriptor>? ApplyDescriptorCallback { get; set; }
+
 	/// <inheritdoc />
 	public override IReadOnlyDictionary<string, string> LocalUserCredentials => ImmutableDictionary<string, string>.Empty;
 
@@ -44,6 +49,17 @@ public class MockBrokeredServiceContainer : GlobalBrokeredServiceContainer
 	{
 		this.RegisterServicesIfNecessary(proffered);
 		return base.Proffer(proffered);
+	}
+
+	/// <inheritdoc />
+	protected override ServiceRpcDescriptor ApplyDescriptorSettings(ServiceRpcDescriptor descriptor, bool clientRole)
+	{
+		if (this.ApplyDescriptorCallback is not null)
+		{
+			return this.ApplyDescriptorCallback(descriptor, clientRole);
+		}
+
+		return base.ApplyDescriptorSettings(descriptor, clientRole);
 	}
 
 	private static TraceSource CreateNullTraceSource()

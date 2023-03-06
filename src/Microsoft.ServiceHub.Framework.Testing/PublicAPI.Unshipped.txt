@@ -1,4 +1,7 @@
 Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer
+Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.ApplyDescriptorCallback.get -> System.Func<Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!, bool, Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!>?
+Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.ApplyDescriptorCallback.set -> void
 Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.MockBrokeredServiceContainer(System.Diagnostics.TraceSource? traceSource = null) -> void
+override Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.ApplyDescriptorSettings(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! descriptor, bool clientRole) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
 override Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.LocalUserCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 override Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.Proffer(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered! proffered) -> System.IDisposable!
