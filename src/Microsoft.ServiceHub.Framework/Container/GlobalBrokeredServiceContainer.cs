@@ -282,11 +282,11 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	{
 		TraceSource? traceSource = await this.GetTraceSourceForConnectionAsync(serviceBroker, descriptor.Moniker, serviceActivationOptions, clientRole, cancellationToken).ConfigureAwait(false);
 
-		descriptor = this.ApplyDescriptorSettings(descriptor, clientRole);
-
-		return descriptor
+		descriptor = descriptor
 			.WithJoinableTaskFactory(this.joinableTaskFactory)
 			.WithTraceSource(traceSource);
+
+		return this.ApplyDescriptorSettings(descriptor, clientRole);
 	}
 
 	/// <summary>
@@ -319,7 +319,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	}
 
 	/// <summary>
-	/// Applies typical transformations on a descriptor fro brokered service clients and services.
+	/// Applies typical transformations on a descriptor for brokered service clients and services.
 	/// </summary>
 	/// <param name="descriptor">The stock descriptor used for this service.</param>
 	/// <param name="clientRole">A value indicating whether the <paramref name="descriptor"/> is about to be used to activate a client proxy or client connection; use <see langword="false" /> when activating the service itself.</param>
