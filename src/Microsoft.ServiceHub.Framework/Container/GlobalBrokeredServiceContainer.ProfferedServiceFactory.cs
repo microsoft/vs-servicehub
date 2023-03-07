@@ -105,7 +105,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				 : this.Descriptor;
 
 			IServiceBroker serviceBroker = this.Container.GetSecureServiceBroker(options);
-			descriptor = await this.Container.ApplyDescriptorSettingsAsync(descriptor, serviceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
+			descriptor = await this.Container.ApplyDescriptorSettingsInternalAsync(descriptor, serviceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 			using (options.ApplyCultureToCurrentContext())
 			{
@@ -150,7 +150,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			cancellationToken.ThrowIfCancellationRequested();
 
 			IServiceBroker serviceBroker = this.Container.GetSecureServiceBroker(options);
-			serviceDescriptor = await this.Container.ApplyDescriptorSettingsAsync(serviceDescriptor, serviceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
+			serviceDescriptor = await this.Container.ApplyDescriptorSettingsInternalAsync(serviceDescriptor, serviceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 			object? liveObject = await this.InvokeFactoryAsync(serviceBroker, serviceDescriptor.Moniker, options, cancellationToken).ConfigureAwait(false);
 			try

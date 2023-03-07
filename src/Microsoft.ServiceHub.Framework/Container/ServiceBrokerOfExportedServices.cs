@@ -96,7 +96,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 					return null;
 				}
 
-				ServiceRpcDescriptor descriptor = await container.ApplyDescriptorSettingsAsync(brokeredService.Descriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
+				ServiceRpcDescriptor descriptor = await container.ApplyDescriptorSettingsInternalAsync(brokeredService.Descriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 				if (descriptor is ServiceJsonRpcDescriptor { MultiplexingStreamOptions: null } oldJsonRpcDescriptor)
 				{
@@ -162,7 +162,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 
 			try
 			{
-				serviceDescriptor = await container.ApplyDescriptorSettingsAsync(serviceDescriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
+				serviceDescriptor = await container.ApplyDescriptorSettingsInternalAsync(serviceDescriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 				brokeredService = await export.Value.CreateBrokeredServiceAsync(cancellationToken).ConfigureAwait(false);
 				if (brokeredService is null)
