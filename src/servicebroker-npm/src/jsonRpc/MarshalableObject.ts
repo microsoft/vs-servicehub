@@ -90,7 +90,7 @@ interface MarshaledObjectProxy extends IDisposable {
 
 module MarshaledObjectProxy {
 	export function is(value: any): value is MarshaledObjectProxy {
-		const valueCandidate = value as MarshaledObjectProxy
+		const valueCandidate = value as MarshaledObjectProxy | undefined
 		return typeof valueCandidate?._jsonrpcMarshaledHandle === 'number'
 	}
 }
@@ -130,7 +130,7 @@ export module IJsonRpcMarshaledObject {
 	 * @returns true if the object conforms to the contract.
 	 */
 	export function is(value: any): value is IJsonRpcMarshaledObject {
-		const valueCandidate = value as IJsonRpcMarshaledObject
+		const valueCandidate = value as IJsonRpcMarshaledObject | undefined
 		return typeof valueCandidate?.__jsonrpc_marshaled === 'number' && typeof valueCandidate.handle === 'number'
 	}
 
