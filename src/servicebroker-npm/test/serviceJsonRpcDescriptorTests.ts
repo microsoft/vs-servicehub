@@ -243,8 +243,10 @@ describe('ServiceJsonRpcDescriptor', function () {
 			assert.strictEqual(response, 'Hi, server. This is client.')
 		})
 
-		it('can be disposed', async function () {
-			// TODO
+		it('disposal releases memory', async function () {
+			const serverPhone = await rpc.providePhone()
+			serverPhone.dispose()
+			await assert.rejects(serverPhone.placeCall('client'))
 		})
 
 		it('lifetime is scoped to the call', async function () {
