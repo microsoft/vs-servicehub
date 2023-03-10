@@ -2,32 +2,38 @@ import { MessageConnection, CancellationToken as vscodeCancellationToken, Parame
 import { CancellationTokenAdapters } from '../CancellationTokenAdapter'
 import { IJsonRpcMarshaledObject, RpcMarshalable } from './MarshalableObject'
 
-export function invokeRpc(methodName: string, inputArgs: IArguments, messageConnection: MessageConnection): Promise<any> {
+export async function invokeRpc(methodName: string, inputArgs: IArguments, messageConnection: MessageConnection): Promise<any> {
 	if (inputArgs.length > 0) {
 		if (vscodeCancellationToken.is(inputArgs[inputArgs.length - 1])) {
 			const ct = inputArgs[inputArgs.length - 1]
-			const args = filterOutboundArguments(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
+			const args = filterOutboundArgs(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
 			return messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
 		} else if (CancellationTokenAdapters.isCancellationToken(inputArgs[inputArgs.length - 1])) {
 			const ct = CancellationTokenAdapters.cancellationTokenToVSCode(inputArgs[inputArgs.length - 1])
-			const args = filterOutboundArguments(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
+			const args = filterOutboundArgs(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
 			return messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
 		} else if (inputArgs[inputArgs.length - 1] === undefined) {
 			// The last arg is most likely a `CancellationToken?` that was propagated to the RPC call from another method that made it optional.
 			// We can't tell, but we mustn't claim it's a CancellationToken nor an ordinary argument or else an RPC server
 			// may fail to match the RPC call to a method because of an extra argument.
 			// If this truly was a value intended to propagate, they should use `null` as the argument.
-			const args = filterOutboundArguments(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
+			const args = filterOutboundArgs(Array.prototype.slice.call(inputArgs, 0, inputArgs.length - 1), messageConnection)
 			return messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args)
 		}
 	}
 
-	const validatedArgs = filterOutboundArguments(Array.prototype.slice.call(inputArgs), messageConnection)
-	return messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...validatedArgs)
+	const validatedArgs = filterOutboundArgs(Array.prototype.slice.call(inputArgs), messageConnection)
+	const result = await messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...validatedArgs)
+	return filterInboundResult(messageConnection, result)
 }
 
-function filterOutboundArguments(args: any[], connection: MessageConnection): any[] {
+function filterOutboundArgs(args: any[], connection: MessageConnection): any[] {
 	return validateNoUndefinedElements(args).map(v => filterOutboundMarshalableObject(v, connection))
+}
+
+async function filterOutboundResult(connection: MessageConnection, value: any | Promise<any>): Promise<any> {
+	const unwrappedPromiseValue = await value
+	return filterOutboundMarshalableObject(unwrappedPromiseValue, connection)
 }
 
 function filterOutboundMarshalableObject(value: any, connection: MessageConnection): any | IJsonRpcMarshaledObject {
@@ -87,14 +93,24 @@ function filterInboundMarshalableObject(connection: MessageConnection, value: an
 	}
 }
 
+function filterInboundValue(connection: MessageConnection, value: any): any {
+	return filterInboundMarshalableObject(connection, value)
+}
+
 function filterInboundArguments(connection: MessageConnection, args: any[]): any[] {
-	return wrapCancellationTokenIfPresent(args).map(v => filterInboundMarshalableObject(connection, v))
+	return wrapCancellationTokenIfPresent(args).map(v => filterInboundValue(connection, v))
+}
+
+function filterInboundResult(connection: MessageConnection, value: any): any {
+	return filterInboundValue(connection, value)
 }
 
 export function registerInstanceMethodsAsRpcTargets(rpcTarget: any, connection: MessageConnection, rpcMethodNameTransform?: (functionName: string) => string) {
 	function registerRequestAndNotification(methodName: string, method: any) {
 		const rpcMethodName = rpcMethodNameTransform ? rpcMethodNameTransform(methodName) : methodName
-		connection.onRequest(rpcMethodName, (...args: []) => method.apply(rpcTarget, filterInboundArguments(connection, args)))
+		connection.onRequest(rpcMethodName, (...args: []) =>
+			filterOutboundResult(connection, method.apply(rpcTarget, filterInboundArguments(connection, args)))
+		)
 		connection.onNotification(rpcMethodName, (...args: []) => method.apply(rpcTarget, filterInboundArguments(connection, args)))
 	}
 

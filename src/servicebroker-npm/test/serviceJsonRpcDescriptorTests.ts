@@ -159,24 +159,36 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 	describe('general marshalable objects', function () {
 		interface IPhone {
-			callMe(name: string): Promise<string>
+			placeCall(callerName: string): Promise<string>
 		}
+
 		interface IServer {
-			handOff(phone: IPhone): Promise<string>
+			callClient(clientPhone: IPhone): Promise<string>
+			providePhone(): Promise<IPhone>
 		}
 
 		class Server implements IServer {
-			async handOff(phone: IPhone): Promise<string> {
-				const response = await phone.callMe('phil')
+			private readonly serverPhone = new Phone('server', 'explicit')
+
+			async callClient(clientPhone: IPhone): Promise<string> {
+				const response = await clientPhone.placeCall('server')
 				return response
+			}
+
+			providePhone(): Promise<IPhone> {
+				return Promise.resolve(this.serverPhone)
 			}
 		}
 
 		class Phone implements IPhone, RpcMarshalable {
-			_jsonRpcMarshalableLifetime: MarshaledObjectLifetime = 'call'
+			readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
 
-			callMe(name: string): Promise<string> {
-				return Promise.resolve(`Hi, ${name}!`)
+			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
+				this._jsonRpcMarshalableLifetime = lifetime ?? 'call'
+			}
+
+			placeCall(callerName: string): Promise<string> {
+				return Promise.resolve(`Hi, ${this.owner}. This is ${callerName}.`)
 			}
 		}
 
@@ -194,12 +206,14 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('as arguments', async function () {
-			const response = await rpc.handOff(new Phone())
-			assert.strictEqual(response, 'Hi, phil!')
+			const response = await rpc.callClient(new Phone('client'))
+			assert.strictEqual(response, 'Hi, client. This is server.')
 		})
 
 		it('as return value', async function () {
-			// TODO
+			const serverPhone = await rpc.providePhone()
+			const response = await serverPhone.placeCall('client')
+			assert.strictEqual(response, 'Hi, server. This is client.')
 		})
 
 		it('can be disposed', async function () {
@@ -215,6 +229,10 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('can pass the proxy back and forth', async function () {
+			// TODO
+		})
+
+		it('lifetime of call in return value is disallowed', async function () {
 			// TODO
 		})
 	})

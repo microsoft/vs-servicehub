@@ -31,8 +31,8 @@ function constructProxyMethodName(handle: number, method: string, optionalInterf
  * An interface to be implemented by objects that should be marshaled across RPC instead of serialized.
  */
 export interface RpcMarshalable {
-	_jsonRpcMarshalableLifetime: MarshaledObjectLifetime
-	_jsonRpcOptionalInterfaces?: number[]
+	readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
+	readonly _jsonRpcOptionalInterfaces?: number[]
 }
 
 export module RpcMarshalable {
@@ -131,7 +131,7 @@ export module IJsonRpcMarshaledObject {
 	 */
 	export function is(value: any): value is IJsonRpcMarshaledObject {
 		const valueCandidate = value as IJsonRpcMarshaledObject
-		return typeof valueCandidate.__jsonrpc_marshaled === 'number' && typeof valueCandidate.handle === 'number'
+		return typeof valueCandidate?.__jsonrpc_marshaled === 'number' && typeof valueCandidate.handle === 'number'
 	}
 
 	/**
