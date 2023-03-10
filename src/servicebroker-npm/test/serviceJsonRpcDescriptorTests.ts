@@ -243,7 +243,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 			assert.strictEqual(response, 'Hi, server. This is client.')
 		})
 
-		it('disposal releases memory', async function () {
+		it('disposal of proxy releases memory', async function () {
 			const serverPhone = await rpc.providePhone()
 			serverPhone.dispose()
 			await assert.rejects(serverPhone.placeCall('client'))

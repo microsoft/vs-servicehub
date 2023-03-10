@@ -1,4 +1,4 @@
-import { MessageConnection, CancellationToken as vscodeCancellationToken, ParameterStructures } from 'vscode-jsonrpc'
+import { MessageConnection, CancellationToken as vscodeCancellationToken, ParameterStructures, Disposable } from 'vscode-jsonrpc'
 import { CancellationTokenAdapters } from '../CancellationTokenAdapter'
 import { IJsonRpcMarshaledObject, RpcMarshalable } from './MarshalableObject'
 
@@ -105,13 +105,21 @@ function filterInboundResult(connection: MessageConnection, value: any): any {
 	return filterInboundValue(connection, value)
 }
 
-export function registerInstanceMethodsAsRpcTargets(rpcTarget: any, connection: MessageConnection, rpcMethodNameTransform?: (functionName: string) => string) {
+export function registerInstanceMethodsAsRpcTargets(
+	rpcTarget: any,
+	connection: MessageConnection,
+	rpcMethodNameTransform?: (functionName: string) => string
+): Disposable {
+	const disposables: Disposable[] = []
+
 	function registerRequestAndNotification(methodName: string, method: any) {
 		const rpcMethodName = rpcMethodNameTransform ? rpcMethodNameTransform(methodName) : methodName
-		connection.onRequest(rpcMethodName, (...args: []) =>
-			filterOutboundResult(connection, method.apply(rpcTarget, filterInboundArguments(connection, args)))
+		disposables.push(
+			connection.onRequest(rpcMethodName, (...args: []) =>
+				filterOutboundResult(connection, method.apply(rpcTarget, filterInboundArguments(connection, args)))
+			)
 		)
-		connection.onNotification(rpcMethodName, (...args: []) => method.apply(rpcTarget, filterInboundArguments(connection, args)))
+		disposables.push(connection.onNotification(rpcMethodName, (...args: []) => method.apply(rpcTarget, filterInboundArguments(connection, args))))
 	}
 
 	getInstanceMethodNames(rpcTarget, Object.prototype).forEach(methodName => {
@@ -125,4 +133,6 @@ export function registerInstanceMethodsAsRpcTargets(rpcTarget: any, connection: 
 			registerRequestAndNotification(alias, method)
 		}
 	})
+
+	return Disposable.create(() => disposables.forEach(d => d.dispose()))
 }

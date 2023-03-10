@@ -1,6 +1,7 @@
 import { Channel } from 'nerdbank-streams'
 import { MessageConnection } from 'vscode-jsonrpc'
 import assert from 'assert'
+import { registerReleaseMarshaledObjectCallback } from './jsonRpc/MarshalableObject'
 
 /**
  * Constructs a message connection to a given pipe
@@ -28,6 +29,8 @@ export function constructMessageConnection(
 		rpc.onDispose(() => pipe.dispose())
 		rpc.onClose(() => pipe.dispose())
 	}
+
+	registerReleaseMarshaledObjectCallback(rpc)
 
 	return rpc
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { MessageConnection } from 'vscode-jsonrpc'
+import { Disposable, MessageConnection, ParameterStructures } from 'vscode-jsonrpc'
 import { IDisposable } from '../IDisposable'
 import { invokeRpc, registerInstanceMethodsAsRpcTargets } from './rpcUtilities'
 
@@ -17,7 +17,29 @@ const enum JsonRpcMarshaled {
 	proxyReturned = 0,
 }
 
+/** The method that releases a marshaled object. Use with {@link ReleaseMarshaledObjectArgs}. */
 const releaseMarshaledObjectMethodName = '$/releaseMarshaledObject'
+
+/** The request type to use when sending {@link releaseMarshaledObjectMethodName} notifications. */
+interface ReleaseMarshaledObjectArgs {
+	/** The `handle` named parameter (or first positional parameter) is set to the handle of the marshaled object to be released. */
+	handle: number
+	/** The `ownedBySender` named parameter (or second positional parameter) is set to a boolean value indicating whether the party sending this notification is also the party that sent the marshaled object. */
+	ownedBySender: boolean
+}
+
+export function registerReleaseMarshaledObjectCallback(connection: MessageConnection) {
+	connection.onNotification(releaseMarshaledObjectMethodName, (params: ReleaseMarshaledObjectArgs | any[]) => {
+		const releaseArgs: ReleaseMarshaledObjectArgs = Array.isArray(params) ? { handle: params[0], ownedBySender: params[1] } : params
+		const connectionExtensions = connection as MessageConnectionWithMarshaldObjectSupport
+		if (connectionExtensions._marshaledObjectTracker) {
+			const releaseByHandle = releaseArgs.ownedBySender
+				? connectionExtensions._marshaledObjectTracker.releaseTheirsByHandle
+				: connectionExtensions._marshaledObjectTracker.releaseOwnByHandle
+			releaseByHandle[releaseArgs.handle]?.dispose()
+		}
+	})
+}
 
 function constructProxyMethodName(handle: number, method: string, optionalInterface?: number) {
 	if (optionalInterface === undefined) {
@@ -40,13 +62,6 @@ export module RpcMarshalable {
 		const candidate = value as RpcMarshalable | undefined
 		return typeof candidate?._jsonRpcMarshalableLifetime === 'string'
 	}
-}
-
-interface ReleaseMarshaledObjectArgs {
-	/** The `handle` named parameter (or first positional parameter) is set to the handle of the marshaled object to be released. */
-	handle: number
-	/** The `ownedBySender` named parameter (or second positional parameter) is set to a boolean value indicating whether the party sending this notification is also the party that sent the marshaled object. */
-	ownedBySender: boolean
 }
 
 /**
@@ -80,8 +95,12 @@ export interface IJsonRpcMarshaledObject {
 	optionalInterfaces?: number[]
 }
 
-interface MessageConnectionWithMarshaldObjectCounter extends MessageConnection {
-	_marshaledObjectCounter?: number
+interface MessageConnectionWithMarshaldObjectSupport extends MessageConnection {
+	_marshaledObjectTracker?: {
+		counter: number
+		releaseOwnByHandle: { [key: number]: IDisposable }
+		releaseTheirsByHandle: { [key: number]: IDisposable }
+	}
 }
 
 interface MarshaledObjectProxy extends IDisposable {
@@ -123,6 +142,12 @@ const rpcProxy = {
 	},
 }
 
+function getJsonConnectionMarshalingTracker(messageConnection: MessageConnection) {
+	const jsonConnectionWithCounter = messageConnection as MessageConnectionWithMarshaldObjectSupport
+	jsonConnectionWithCounter._marshaledObjectTracker ??= { counter: 0, releaseOwnByHandle: {}, releaseTheirsByHandle: {} }
+	return jsonConnectionWithCounter._marshaledObjectTracker
+}
+
 export module IJsonRpcMarshaledObject {
 	/**
 	 * Tests whether a given object implements {@link IJsonRpcMarshaledObject}.
@@ -146,15 +171,17 @@ export module IJsonRpcMarshaledObject {
 			}
 		} else {
 			// Use the JSON-RPC connection itself to track the unique counter for us.
-			const jsonConnectionWithCounter = jsonConnection as MessageConnectionWithMarshaldObjectCounter
-			const handle = jsonConnectionWithCounter._marshaledObjectCounter === undefined ? 1 : jsonConnectionWithCounter._marshaledObjectCounter + 1
-			jsonConnectionWithCounter._marshaledObjectCounter = handle
+			const connectionMarshalingTracker = getJsonConnectionMarshalingTracker(jsonConnection)
+			const handle = ++connectionMarshalingTracker.counter
 
 			// Register for requests on the connection to invoke the local object when the receiving side sends requests.
-			registerInstanceMethodsAsRpcTargets(value, jsonConnection, methodName => constructProxyMethodName(handle, methodName))
+			const registration = registerInstanceMethodsAsRpcTargets(value, jsonConnection, methodName => constructProxyMethodName(handle, methodName))
 
-			// Release the object and registrations when the remote side sends the release notification.
-			// TODO: code here
+			// Arrange to release the object and registrations when the remote side sends the release notification.
+			connectionMarshalingTracker.releaseOwnByHandle[handle] = Disposable.create(() => {
+				registration.dispose()
+				delete connectionMarshalingTracker.releaseOwnByHandle[handle]
+			})
 
 			return {
 				__jsonrpc_marshaled: JsonRpcMarshaled.realObject,
@@ -174,7 +201,14 @@ export module IJsonRpcMarshaledObject {
 		const target: MarshaledObjectProxyTarget = {
 			messageConnection: jsonConnection,
 			_jsonrpcMarshaledHandle: value.handle,
-			dispose: () => {},
+			dispose: () => {
+				// We need to notify the owner of the remote object.
+				const releaseArgs: ReleaseMarshaledObjectArgs = {
+					handle: value.handle,
+					ownedBySender: false,
+				}
+				jsonConnection.sendNotification(releaseMarshaledObjectMethodName, ParameterStructures.byName, releaseArgs)
+			},
 		}
 		const proxy = new Proxy<MarshaledObjectProxyTarget>(target, rpcProxy)
 		return proxy as unknown as T & IDisposable & MarshaledObjectProxy
