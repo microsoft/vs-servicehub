@@ -158,21 +158,43 @@ describe('ServiceJsonRpcDescriptor', function () {
 	})
 
 	describe('general marshalable objects', function () {
-		interface IPhone {
+		interface IPhone extends IDisposable {
 			placeCall(callerName: string): Promise<string>
 		}
 
 		interface IServer {
-			callClient(clientPhone: IPhone): Promise<string>
+			callMeBack(clientPhone: IPhone): Promise<string>
+			callingAllPhones(...clientPhones: IPhone[]): Promise<string[]>
+			callMeLater(clientPhone: IPhone): Promise<void> | void
 			providePhone(): Promise<IPhone>
 		}
 
 		class Server implements IServer {
+			public clientReadyForCall: Promise<void> | undefined
+			public deferredClientCallResult: Promise<string> | undefined
 			private readonly serverPhone = new Phone('server', 'explicit')
 
-			async callClient(clientPhone: IPhone): Promise<string> {
+			async callMeBack(clientPhone: IPhone): Promise<string> {
 				const response = await clientPhone.placeCall('server')
 				return response
+			}
+
+			async callingAllPhones(...clientPhonesAndCT: (IPhone | CancellationToken)[]): Promise<string[]> {
+				const clientPhones = clientPhonesAndCT.slice(0, clientPhonesAndCT.length - 1) as IPhone[]
+				return Promise.all(clientPhones.map((phone, i) => phone.placeCall(`server ${i + 1}`)))
+			}
+
+			callMeLater(clientPhone: IPhone) {
+				this.deferredClientCallResult = new Promise<string>(async (resolve, reject) => {
+					try {
+						await this.clientReadyForCall
+						const result = await clientPhone.placeCall('server')
+						clientPhone.dispose()
+						resolve(result)
+					} catch (reason) {
+						reject(reason)
+					}
+				})
 			}
 
 			providePhone(): Promise<IPhone> {
@@ -182,6 +204,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 		class Phone implements IPhone, RpcMarshalable {
 			readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
+			disposed = false
 
 			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
 				this._jsonRpcMarshalableLifetime = lifetime ?? 'call'
@@ -189,6 +212,10 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 			placeCall(callerName: string): Promise<string> {
 				return Promise.resolve(`Hi, ${this.owner}. This is ${callerName}.`)
+			}
+
+			dispose() {
+				this.disposed = true
 			}
 		}
 
@@ -206,7 +233,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('as arguments', async function () {
-			const response = await rpc.callClient(new Phone('client'))
+			const response = await rpc.callMeBack(new Phone('client'))
 			assert.strictEqual(response, 'Hi, client. This is server.')
 		})
 
@@ -225,7 +252,18 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('lifetime exceeds scope of the call', async function () {
-			// TODO
+			const phone = new Phone('client', 'explicit')
+			server.clientReadyForCall = new Promise<void>(async (resolve, reject) => {
+				try {
+					await rpc.callMeLater(phone)
+					resolve()
+				} catch (reason) {
+					reject(reason)
+				}
+			})
+			await server.clientReadyForCall
+			const response = await server.deferredClientCallResult
+			assert.strictEqual(response, 'Hi, client. This is server.')
 		})
 
 		it('can pass the proxy back and forth', async function () {
@@ -234,6 +272,13 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 		it('lifetime of call in return value is disallowed', async function () {
 			// TODO
+		})
+
+		it('multiple marshaled objects', async function () {
+			const phone1 = new Phone('client 1')
+			const phone2 = new Phone('client 2')
+			const responses = await rpc.callingAllPhones(phone1, phone2)
+			assert.deepEqual(responses, ['Hi, client 1. This is server 1.', 'Hi, client 2. This is server 2.'])
 		})
 	})
 
