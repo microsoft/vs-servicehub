@@ -1,15 +1,21 @@
 import assert from 'assert'
 import CancellationToken from 'cancellationtoken'
-import { IRemoteServiceBroker } from '../src/IRemoteServiceBroker'
 import { FullDuplexStream } from 'nerdbank-streams'
-import { Formatters, MessageDelimiters, RemoteServiceConnections } from '../src/constants'
-import { ServiceBrokerClientMetadata } from '../src/ServiceBrokerClientMetadata'
-import { ServiceJsonRpcDescriptor } from '../src/ServiceJsonRpcDescriptor'
-import { ServiceMoniker } from '../src/ServiceMoniker'
+import {
+	IDisposable,
+	IRemoteServiceBroker,
+	ServiceMoniker,
+	ServiceJsonRpcDescriptor,
+	ServiceBrokerClientMetadata,
+	Formatters,
+	MessageDelimiters,
+	RemoteServiceConnections,
+	MarshaledObjectLifetime,
+	RpcMarshalable,
+} from '../src'
 import { Calculator } from './testAssets/calculatorService'
 import { IAppleTreeService, ApplePickedEventArgs, ICalculatorService, ICallMeBackClient, ICallMeBackService, IWaitToBeCanceled } from './testAssets/interfaces'
 import { TestRemoteServiceBroker } from './testAssets/testRemoteServiceBroker'
-import { IDisposable } from '../src/IDisposable'
 import { appleTreeDescriptor, calcDescriptorUtf8Http, callBackDescriptor, cancellationWaiter } from './testAssets/testUtilities'
 import { CallMeBackService } from './testAssets/callMeBackService'
 import { CallMeBackClient } from './testAssets/callMeBackClient'
@@ -150,6 +156,70 @@ describe('ServiceJsonRpcDescriptor', function () {
 		assert(!info2.equals(info3a), 'Should not be equal with different formatter and message delimiter')
 		assert(!info2.equals(info3b), 'Should not be equal with different message delimiter')
 	})
+
+	describe('general marshalable objects', function () {
+		interface IPhone {
+			callMe(name: string): Promise<string>
+		}
+		interface IServer {
+			handOff(phone: IPhone): Promise<string>
+		}
+
+		class Server implements IServer {
+			async handOff(phone: IPhone): Promise<string> {
+				const response = await phone.callMe('phil')
+				return response
+			}
+		}
+
+		class Phone implements IPhone, RpcMarshalable {
+			_jsonRpcMarshalableLifetime: MarshaledObjectLifetime = 'call'
+
+			callMe(name: string): Promise<string> {
+				return Promise.resolve(`Hi, ${name}!`)
+			}
+		}
+
+		let server: Server
+		let rpc: IServer & IDisposable
+
+		const serverDescriptor = new ServiceJsonRpcDescriptor(ServiceMoniker.create('test'), Formatters.Utf8, MessageDelimiters.HttpLikeHeaders)
+
+		beforeEach(function () {
+			server = new Server()
+
+			const pipes = FullDuplexStream.CreatePair()
+			serverDescriptor.constructRpc(server, pipes.first)
+			rpc = serverDescriptor.constructRpc<IServer>(pipes.second)
+		})
+
+		it('as arguments', async function () {
+			const response = await rpc.handOff(new Phone())
+			assert.strictEqual(response, 'Hi, phil!')
+		})
+
+		it('as return value', async function () {
+			// TODO
+		})
+
+		it('can be disposed', async function () {
+			// TODO
+		})
+
+		it('lifetime is scoped to the call', async function () {
+			// TODO
+		})
+
+		it('lifetime exceeds scope of the call', async function () {
+			// TODO
+		})
+
+		it('can pass the proxy back and forth', async function () {
+			// TODO
+		})
+	})
+
+	describe('IObserver<T>', function () {})
 })
 
 describe('Various formatters and delimiters', function () {
