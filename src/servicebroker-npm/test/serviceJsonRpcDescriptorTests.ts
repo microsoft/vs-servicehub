@@ -172,7 +172,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 		class Server implements IServer {
 			public clientReadyForCall: Promise<void> | undefined
 			public deferredClientCallResult: Promise<string> | undefined
-			private readonly serverPhone = new Phone('server', 'explicit')
+			readonly serverPhone = new Phone('server', 'explicit')
 
 			async callMeBack(clientPhone: IPhone): Promise<string> {
 				const response = await clientPhone.placeCall('server')
@@ -204,10 +204,12 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 		class Phone implements IPhone, RpcMarshalable {
 			readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
-			disposed = false
+			readonly disposed: Promise<void>
+			private disposalSource?: () => void
 
 			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
 				this._jsonRpcMarshalableLifetime = lifetime ?? 'call'
+				this.disposed = new Promise<void>(resolve => (this.disposalSource = resolve))
 			}
 
 			placeCall(callerName: string): Promise<string> {
@@ -215,7 +217,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 			}
 
 			dispose() {
-				this.disposed = true
+				this.disposalSource!()
 			}
 		}
 
@@ -247,6 +249,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 			const serverPhone = await rpc.providePhone()
 			serverPhone.dispose()
 			await assert.rejects(serverPhone.placeCall('client'))
+			await server.serverPhone.disposed
 		})
 
 		it('lifetime is scoped to the call', async function () {

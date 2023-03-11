@@ -51,6 +51,8 @@ function constructProxyMethodName(handle: number, method: string, optionalInterf
 
 /**
  * An interface to be implemented by objects that should be marshaled across RPC instead of serialized.
+ * An object that also implements {@link IDisposable} will have its {@link IDisposable.dispose} method invoked
+ * when the receiver disposes of the proxy.
  */
 export interface RpcMarshalable {
 	readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
@@ -181,6 +183,9 @@ export module IJsonRpcMarshaledObject {
 			connectionMarshalingTracker.releaseOwnByHandle[handle] = Disposable.create(() => {
 				registration.dispose()
 				delete connectionMarshalingTracker.releaseOwnByHandle[handle]
+				if ('dispose' in value && typeof value.dispose === 'function') {
+					value.dispose()
+				}
 			})
 
 			return {
