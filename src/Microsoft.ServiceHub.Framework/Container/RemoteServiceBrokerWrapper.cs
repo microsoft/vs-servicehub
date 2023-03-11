@@ -4,12 +4,9 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO.Pipelines;
-using System.IO.Pipes;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
-using Microsoft.Win32.SafeHandles;
 using Nerdbank.Streams;
-using Windows.Win32;
 using IAsyncDisposable = System.IAsyncDisposable;
 using Task = System.Threading.Tasks.Task;
 
@@ -17,9 +14,6 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 
 internal class RemoteServiceBrokerWrapper : IRemoteServiceBroker, IDisposable
 {
-	// Keep in sync with property in {DevCore repo}/src/clr/utiltity/Microsoft.ServiceHub.Utiltity.Shared/Constants.cs
-	private const string ServiceHubHostProcessIdActivationArgument = "__servicehub__HostProcessId";
-
 	private readonly IServiceBroker serviceBroker;
 	private ImmutableDictionary<Guid, IAsyncDisposable> remoteServiceRequests = ImmutableDictionary<Guid, IAsyncDisposable>.Empty;
 
@@ -76,38 +70,9 @@ internal class RemoteServiceBrokerWrapper : IRemoteServiceBroker, IDisposable
 	{
 		var requestId = Guid.NewGuid();
 
-		if (serviceActivationOptions.ActivationArguments == null ||
-			!serviceActivationOptions.ActivationArguments.TryGetValue(ServiceHubHostProcessIdActivationArgument, out string? hostProcessidString) ||
-			!int.TryParse(hostProcessidString, out int activationOptionProcessId))
-		{
-			throw new InvalidOperationException(string.Format(Strings.Error_InvalidExternalClientProcessPid, nameof(ServiceActivationOptions), ServiceHubHostProcessIdActivationArgument));
-		}
-
 		IIpcServer server = ServerFactory.Create(
 			async (stream) =>
 			{
-#if NET5_0_OR_GREATER
-				if (OperatingSystem.IsWindowsVersionAtLeast(8))
-#else
-				if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-#endif
-				{
-					if (!(stream is PipeStream { SafePipeHandle: SafePipeHandle handle }))
-					{
-						throw new InvalidOperationException(Strings.NamedPipeClientCouldNotBeValidated);
-					}
-
-					if (!PInvoke.GetNamedPipeClientProcessId(handle, out uint clientProcessId))
-					{
-						throw new InvalidOperationException(Strings.CouldNotGetProcessId);
-					}
-
-					if (clientProcessId != activationOptionProcessId)
-					{
-						throw new InvalidOperationException(string.Format(Strings.FailedToValidateClient, serviceMoniker.ToString()));
-					}
-				}
-
 				// Cancelling the service request ends up disposing the server and removing it from the list of
 				// active requests which is exactly the behavior we want here.
 				// This task is run anonymously because a server cannot be disposed if it is inside
