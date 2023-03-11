@@ -70,6 +70,53 @@ public class BrokeredServiceContainerTests
 		}
 	}
 
+	[Fact]
+	public async Task ApplyDescriptorOverrideIsCalled()
+	{
+		ServiceRpcDescriptor? callbackDescriptor = null;
+
+		bool serverRoleCalled = false;
+		bool clientRoleCalled = false;
+
+		var internalContainer = new MockBrokeredServiceContainerWithDescriptorCallback();
+
+		internalContainer.Proffer(Descriptor1_0, (mk, options, sb, ct) =>
+		{
+			return new(new MockService());
+		});
+
+		internalContainer.ApplyDescriptorCallback = (descriptor, clientRole) =>
+		{
+			// Only check the test service moniker, ignore others like authorization service.
+			if (descriptor.Moniker != Descriptor1_0.Moniker)
+			{
+				return descriptor;
+			}
+
+			if (clientRole)
+			{
+				Assert.False(clientRoleCalled); // we only expect one call.
+				clientRoleCalled = true;
+			}
+			else
+			{
+				Assert.False(serverRoleCalled); // we only expect one call.
+				serverRoleCalled = true;
+			}
+
+			return callbackDescriptor = descriptor;
+		};
+
+		using (IMockService? proxy = await internalContainer.GetFullAccessServiceBroker().GetProxyAsync<IMockService>(Descriptor1_0))
+		{
+			Assert.NotNull(proxy);
+		}
+
+		Assert.Equal(Descriptor1_0, callbackDescriptor);
+		Assert.True(clientRoleCalled);
+		Assert.True(serverRoleCalled);
+	}
+
 	private void ProfferUnversionedService()
 	{
 		this.container.Proffer(Descriptor, (mk, options, sb, ct) =>

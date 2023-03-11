@@ -278,12 +278,15 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <param name="clientRole">A value indicating whether the <paramref name="descriptor"/> is about to be used to activate a client proxy or client connection; use <see langword="false" /> when activating the service itself.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>The modified descriptor.</returns>
-	internal async ValueTask<ServiceRpcDescriptor> ApplyDescriptorSettingsAsync(ServiceRpcDescriptor descriptor, IServiceBroker serviceBroker, ServiceActivationOptions serviceActivationOptions, bool clientRole, CancellationToken cancellationToken)
+	internal async ValueTask<ServiceRpcDescriptor> ApplyDescriptorSettingsInternalAsync(ServiceRpcDescriptor descriptor, IServiceBroker serviceBroker, ServiceActivationOptions serviceActivationOptions, bool clientRole, CancellationToken cancellationToken)
 	{
 		TraceSource? traceSource = await this.GetTraceSourceForConnectionAsync(serviceBroker, descriptor.Moniker, serviceActivationOptions, clientRole, cancellationToken).ConfigureAwait(false);
-		return descriptor
+
+		descriptor = descriptor
 			.WithJoinableTaskFactory(this.joinableTaskFactory)
 			.WithTraceSource(traceSource);
+
+		return this.ApplyDescriptorSettings(descriptor, clientRole);
 	}
 
 	/// <summary>
@@ -313,6 +316,17 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 				}
 			}
 		}
+	}
+
+	/// <summary>
+	/// Applies typical transformations on a descriptor for brokered service clients and services.
+	/// </summary>
+	/// <param name="descriptor">The stock descriptor used for this service.</param>
+	/// <param name="clientRole">A value indicating whether the <paramref name="descriptor"/> is about to be used to activate a client proxy or client connection; use <see langword="false" /> when activating the service itself.</param>
+	/// <returns>The modified descriptor.</returns>
+	protected virtual ServiceRpcDescriptor ApplyDescriptorSettings(ServiceRpcDescriptor descriptor, bool clientRole)
+	{
+		return descriptor;
 	}
 
 	/// <inheritdoc cref="ProfferIntrinsicService(ServiceRpcDescriptor, ServiceRegistration, ViewIntrinsicBrokeredServiceFactory)"/>

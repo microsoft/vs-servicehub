@@ -9,6 +9,7 @@ import { BE32MessageReader, BE32MessageWriter } from './BigEndianInt32LengthHead
 import * as msgpack from 'msgpack-lite'
 import { MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { EventEmitter } from 'stream'
+import { NodeStreamMessageReader, NodeStreamMessageWriter } from './NodeStreamMessageWrappers'
 import { invokeRpc, registerInstanceMethodsAsRpcTargets } from './jsonRpc/rpcUtilities'
 
 /**
@@ -60,7 +61,7 @@ export class ServiceJsonRpcDescriptor extends ServiceRpcDescriptor {
 				throw new Error(`Utf8 is the only formatter supported while using HttpLikeHeaders.`)
 			}
 
-			this.connectionFactory = rw => createMessageConnection(rw, rw)
+			this.connectionFactory = rw => createMessageConnection(new NodeStreamMessageReader(rw), new NodeStreamMessageWriter(rw))
 		} else if (messageDelimiter === MessageDelimiters.BigEndianInt32LengthHeader) {
 			this.connectionFactory = rw => createMessageConnection(new BE32MessageReader(rw, contentTypeDecoder), new BE32MessageWriter(rw, contentTypeEncoder))
 		} else {
