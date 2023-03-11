@@ -135,6 +135,10 @@ const rpcProxy = {
 				// promises look at the return value to see if it too is a promise.
 				return undefined
 
+			case 'toJSON':
+				// Tests sometimes fail after trying to call this function, so make it clear it isn't supported.
+				return undefined
+
 			default:
 				return function () {
 					const rpcMethod = constructProxyMethodName(target._jsonrpcMarshaledHandle, property.toString())

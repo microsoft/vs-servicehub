@@ -166,7 +166,9 @@ describe('ServiceJsonRpcDescriptor', function () {
 			callMeBack(clientPhone: IPhone): Promise<string>
 			callingAllPhones(...clientPhones: IPhone[]): Promise<string[]>
 			callMeLater(clientPhone: IPhone): Promise<void> | void
-			providePhone(): Promise<IPhone>
+			providePhone(): IPhone | Promise<IPhone>
+			providePhoneWithCallLifetime(): IPhone | Promise<IPhone>
+			isThisYourPhone(phone: IPhone): IPhone | null | Promise<IPhone | null>
 		}
 
 		class Server implements IServer {
@@ -197,8 +199,17 @@ describe('ServiceJsonRpcDescriptor', function () {
 				})
 			}
 
-			providePhone(): Promise<IPhone> {
-				return Promise.resolve(this.serverPhone)
+			providePhone() {
+				return this.serverPhone
+			}
+
+			providePhoneWithCallLifetime() {
+				// This will always fail, because returning call-lifetime object is not allowed.
+				return new Phone('server', 'call')
+			}
+
+			isThisYourPhone(phone: IPhone) {
+				return phone === this.serverPhone ? phone : null
 			}
 		}
 
@@ -253,7 +264,17 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('lifetime is scoped to the call', async function () {
-			// TODO
+			const phone = new Phone('client', 'call')
+			server.clientReadyForCall = new Promise<void>(async (resolve, reject) => {
+				try {
+					await rpc.callMeLater(phone)
+					resolve()
+				} catch (reason) {
+					reject(reason)
+				}
+			})
+			await server.clientReadyForCall
+			await assert.rejects(server.deferredClientCallResult!)
 		})
 
 		it('lifetime exceeds scope of the call', async function () {
@@ -272,11 +293,13 @@ describe('ServiceJsonRpcDescriptor', function () {
 		})
 
 		it('can pass the proxy back and forth', async function () {
-			// TODO
+			const serverPhone = await rpc.providePhone()
+			const result = await rpc.isThisYourPhone(serverPhone)
+			assert.strictEqual(result, serverPhone)
 		})
 
 		it('lifetime of call in return value is disallowed', async function () {
-			// TODO
+			await assert.rejects(async () => await rpc.providePhoneWithCallLifetime())
 		})
 
 		it('multiple marshaled objects', async function () {
