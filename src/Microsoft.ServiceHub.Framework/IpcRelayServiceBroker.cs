@@ -138,7 +138,7 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	private async Task HandleIncomingConnectionAsync(Stream stream, Guid requestId, IDuplexPipe servicePipe)
 	{
 		// Once a connection is made (or fails), it is no longer cancelable.
-		ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, requestId, out IAsyncDisposable _);
+		ImmutableInterlocked.TryRemove(ref this.remoteServiceRequests, requestId, out IAsyncDisposable? _);
 
 		// Link the two pipes so that all incoming/outgoing calls get forwarded
 		await Task.WhenAll(
