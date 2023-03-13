@@ -1,6 +1,6 @@
 import { MessageConnection, CancellationToken as vscodeCancellationToken, ParameterStructures, Disposable } from 'vscode-jsonrpc'
 import { CancellationTokenAdapters } from '../CancellationTokenAdapter'
-import { IJsonRpcMarshaledObject, RpcMarshalable } from './MarshalableObject'
+import { IJsonRpcMarshaledObject, MarshaledObjectProxy, RpcMarshalable } from './MarshalableObject'
 
 export async function invokeRpc(methodName: string, inputArgs: IArguments, messageConnection: MessageConnection): Promise<any> {
 	if (inputArgs.length > 0) {
@@ -37,7 +37,7 @@ async function filterOutboundResult(connection: MessageConnection, value: any | 
 }
 
 function filterOutboundMarshalableObject(connection: MessageConnection, value: any): any | IJsonRpcMarshaledObject {
-	if (RpcMarshalable.is(value)) {
+	if (RpcMarshalable.is(value) || MarshaledObjectProxy.is(value)) {
 		return IJsonRpcMarshaledObject.wrap(value, connection)
 	} else {
 		return value
