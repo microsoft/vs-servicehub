@@ -176,6 +176,10 @@ export module IJsonRpcMarshaledObject {
 				handle: value._jsonrpcMarshaledHandle,
 			}
 		} else {
+			if (value._jsonRpcMarshalableLifetime === 'call') {
+				throw new Error('Receiving marshaled objects scoped to the lifetime of a single RPC request is not yet supported.')
+			}
+
 			// Use the JSON-RPC connection itself to track the unique counter for us.
 			const connectionMarshalingTracker = getJsonConnectionMarshalingTracker(jsonConnection)
 			const handle = ++connectionMarshalingTracker.counter
@@ -207,6 +211,10 @@ export module IJsonRpcMarshaledObject {
 	 * @returns An RPC proxy. This should be disposed of when done to release resources held by the remote party.
 	 */
 	export function unwrap<T>(value: IJsonRpcMarshaledObject, jsonConnection: MessageConnection): T & IDisposable {
+		if (value.lifetime === 'call') {
+			throw new Error('Receiving marshaled objects scoped to the lifetime of a single RPC request is not yet supported.')
+		}
+
 		const target: MarshaledObjectProxyTarget = {
 			messageConnection: jsonConnection,
 			_jsonrpcMarshaledHandle: value.handle,

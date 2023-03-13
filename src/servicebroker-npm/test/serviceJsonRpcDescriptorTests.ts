@@ -219,7 +219,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 			private disposalSource?: () => void
 
 			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
-				this._jsonRpcMarshalableLifetime = lifetime ?? 'call'
+				this._jsonRpcMarshalableLifetime = lifetime ?? 'explicit' // call lifetime isn't supported yet.
 				this.disposed = new Promise<void>(resolve => (this.disposalSource = resolve))
 			}
 
@@ -263,7 +263,12 @@ describe('ServiceJsonRpcDescriptor', function () {
 			await server.serverPhone.disposed
 		})
 
-		it('lifetime is scoped to the call', async function () {
+		it('call lifetime is not yet supported', async function () {
+			const phone = new Phone('client', 'call')
+			await assert.rejects(rpc.callMeBack(phone))
+		})
+
+		it.skip('lifetime is scoped to the call', async function () {
 			const phone = new Phone('client', 'call')
 			server.clientReadyForCall = new Promise<void>(async (resolve, reject) => {
 				try {
