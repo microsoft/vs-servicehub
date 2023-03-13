@@ -1,3 +1,5 @@
+import { MarshaledObjectLifetime, RpcMarshalable } from './MarshalableObject'
+
 /**
  * An observer of some value production.
  */
@@ -27,4 +29,33 @@ export interface IObservable<T> {
 	 * @returns A function to call to cancel the subscription.
 	 */
 	subscribe(observer: IObserver<T>): () => void
+}
+
+export class Observer<T> implements IObserver<T>, RpcMarshalable {
+	readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime = 'explicit'
+	error: any
+
+	get completed() {
+		return this.error !== undefined
+	}
+
+	constructor(private readonly next: (value: T) => void, private readonly completion?: (error?: any) => void) {}
+
+	onNext(value: T): void {
+		this.next(value)
+	}
+
+	onCompleted(): void {
+		this.error = null
+		if (this.completion) {
+			this.completion(null)
+		}
+	}
+
+	onError(reason: any): void {
+		this.error = reason
+		if (this.completion) {
+			this.completion(reason)
+		}
+	}
 }

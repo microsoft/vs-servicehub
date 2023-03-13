@@ -1,6 +1,7 @@
 import CancellationToken from 'cancellationtoken'
 import { EventEmitter } from 'events'
 import StrictEventEmitter from 'strict-event-emitter-types'
+import { IObserver } from '../../src'
 
 export interface IFakeService {
 	fakeProperty: string
@@ -10,6 +11,7 @@ export interface IFakeService {
 export interface ICalculatorService {
 	add(a: number, b: number, cancellationToken?: CancellationToken): Promise<number>
 	add5(a: number, cancellationToken?: CancellationToken): Promise<number>
+	observeNumbers(observer: IObserver<number>, length: number, failAtEnd: boolean): Promise<void>
 }
 
 export interface ICallMeBackService {
