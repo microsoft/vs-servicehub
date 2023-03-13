@@ -23,8 +23,19 @@ export async function invokeRpc(methodName: string, inputArgs: IArguments, messa
 	}
 
 	const validatedArgs = filterOutboundArgs(messageConnection, Array.prototype.slice.call(inputArgs))
-	const result = await messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...validatedArgs)
-	return filterInboundResult(messageConnection, result)
+	try {
+		const result = await messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...validatedArgs)
+		return filterInboundResult(messageConnection, result)
+	} catch (reason) {
+		// If any args were marshaled objects, dispose of them.
+		for (const arg of validatedArgs) {
+			if (IJsonRpcMarshaledObject.is(arg)) {
+				IJsonRpcMarshaledObject.cancelWrap(arg, messageConnection)
+			}
+		}
+
+		throw reason
+	}
 }
 
 function filterOutboundArgs(connection: MessageConnection, args: any[]): any[] {

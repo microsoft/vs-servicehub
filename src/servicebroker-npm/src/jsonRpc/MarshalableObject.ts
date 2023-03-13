@@ -227,6 +227,12 @@ export module IJsonRpcMarshaledObject {
 		}
 	}
 
+	export function cancelWrap(value: IJsonRpcMarshaledObject, jsonConnection: MessageConnection) {
+		const connectionMarshalingTracker = getJsonConnectionMarshalingTracker(jsonConnection)
+		const tracker = connectionMarshalingTracker.ownByHandle[value.handle]
+		tracker?.dispose()
+	}
+
 	/**
 	 * Produces a proxy for a marshaled object received over JSON-RPC.
 	 * @param value The value received over JSON-RPC that is expected to contain data for remotely invoking another object.

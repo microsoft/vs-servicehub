@@ -169,6 +169,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 			providePhone(): IPhone | Promise<IPhone>
 			providePhoneWithCallLifetime(): IPhone | Promise<IPhone>
 			isThisYourPhone(phone: IPhone): IPhone | null | Promise<IPhone | null>
+			throwInside(phone: IPhone): Promise<void>
 		}
 
 		class Server implements IServer {
@@ -210,6 +211,10 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 			isThisYourPhone(phone: IPhone) {
 				return phone === this.serverPhone ? phone : null
+			}
+
+			async throwInside() {
+				throw new Error('throwing as requested.')
 			}
 		}
 
@@ -312,6 +317,12 @@ describe('ServiceJsonRpcDescriptor', function () {
 			const phone2 = new Phone('client 2')
 			const responses = await rpc.callingAllPhones(phone1, phone2)
 			assert.deepEqual(responses, ['Hi, client 1. This is server 1.', 'Hi, client 2. This is server 2.'])
+		})
+
+		it('resources released when server throws', async function () {
+			const phone = new Phone('client')
+			await assert.rejects(rpc.throwInside(phone))
+			await phone.disposed
 		})
 	})
 
