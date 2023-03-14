@@ -1,5 +1,5 @@
 import { Channel } from 'nerdbank-streams'
-import { MessageConnection, CancellationToken as vscodeCancellationToken, createMessageConnection, Message, ParameterStructures } from 'vscode-jsonrpc'
+import { MessageConnection, createMessageConnection, Message, ParameterStructures } from 'vscode-jsonrpc/node'
 import { Formatters, MessageDelimiters } from './constants'
 import { ServiceMoniker } from './ServiceMoniker'
 import { RpcConnection, RpcEventServer, ServiceRpcDescriptor } from './ServiceRpcDescriptor'
@@ -7,10 +7,10 @@ import { clone, constructMessageConnection, isChannel } from './utilities'
 import { IDisposable } from './IDisposable'
 import { BE32MessageReader, BE32MessageWriter } from './BigEndianInt32LengthHeaderMessageHandler'
 import * as msgpack from 'msgpack-lite'
-import { CancellationTokenAdapters } from './CancellationTokenAdapter'
 import { MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { EventEmitter } from 'stream'
 import { NodeStreamMessageReader, NodeStreamMessageWriter } from './NodeStreamMessageWrappers'
+import { invokeRpc, registerInstanceMethodsAsRpcTargets } from './jsonRpc/rpcUtilities'
 
 /**
  * Constructs a JSON RPC message connection to a service
@@ -194,41 +194,10 @@ const rpcProxy = {
 			default:
 				return function () {
 					const methodName = property.toString()
-
-					if (arguments.length > 0) {
-						if (vscodeCancellationToken.is(arguments[arguments.length - 1])) {
-							const ct = arguments[arguments.length - 1]
-							const args = validateNoUndefinedElements(Array.prototype.slice.call(arguments, 0, arguments.length - 1))
-							return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
-						} else if (CancellationTokenAdapters.isCancellationToken(arguments[arguments.length - 1])) {
-							const ct = CancellationTokenAdapters.cancellationTokenToVSCode(arguments[arguments.length - 1])
-							const args = validateNoUndefinedElements(Array.prototype.slice.call(arguments, 0, arguments.length - 1))
-							return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args, ct)
-						} else if (arguments[arguments.length - 1] === undefined) {
-							// The last arg is most likely a `CancellationToken?` that was propagated to the RPC call from another method that made it optional.
-							// We can't tell, but we mustn't claim it's a CancellationToken nor an ordinary argument or else an RPC server
-							// may fail to match the RPC call to a method because of an extra argument.
-							// If this truly was a value intended to propagate, they should use `null` as the argument.
-							const args = validateNoUndefinedElements(Array.prototype.slice.call(arguments, 0, arguments.length - 1))
-							return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...args)
-						}
-					}
-
-					const validatedArgs = validateNoUndefinedElements(Array.prototype.slice.call(arguments))
-					return target.messageConnection.sendRequest(methodName, ParameterStructures.byPosition, ...validatedArgs)
+					return invokeRpc(property.toString(), arguments, target.messageConnection)
 				}
 		}
 	},
-}
-
-function validateNoUndefinedElements<T>(values: T[]): T[] {
-	for (let i = 0; i < values.length; i++) {
-		if (values[i] === undefined) {
-			throw new Error(`Argument at 0-based index ${i} is set as undefined, which is not a valid JSON value.`)
-		}
-	}
-
-	return values
 }
 
 export class JsonRpcConnection extends RpcConnection {
@@ -237,31 +206,7 @@ export class JsonRpcConnection extends RpcConnection {
 	}
 
 	public addLocalRpcTarget(rpcTarget: any | RpcEventServer): void {
-		function wrapCancellationTokenIfPresent(args: any[]): any[] {
-			if (args.length > 0 && CancellationTokenAdapters.isVSCode(args[args.length - 1])) {
-				const adaptedCancellationToken = CancellationTokenAdapters.vscodeToCancellationToken(args[args.length - 1])
-				args[args.length - 1] = adaptedCancellationToken
-			}
-
-			return args
-		}
-
-		function registerRequestAndNotification(connection: MessageConnection, methodName: string, method: any) {
-			connection.onRequest(methodName, (...args: []) => method.apply(rpcTarget, wrapCancellationTokenIfPresent(args)))
-			connection.onNotification(methodName, (...args: []) => method.apply(rpcTarget, wrapCancellationTokenIfPresent(args)))
-		}
-
-		JsonRpcConnection.getInstanceMethodNames(rpcTarget, Object.prototype).forEach(methodName => {
-			if (methodName !== 'dispose') {
-				const method = rpcTarget[methodName]
-				registerRequestAndNotification(this.messageConnection, methodName, method)
-
-				// Add an alias for the method so that we support with and without the Async suffix.
-				const suffix = 'Async'
-				const alias = methodName.endsWith(suffix) ? methodName.substring(0, methodName.length - suffix.length) : `${methodName}${suffix}`
-				registerRequestAndNotification(this.messageConnection, alias, method)
-			}
-		})
+		registerInstanceMethodsAsRpcTargets(rpcTarget, this.messageConnection)
 
 		// If the RPC target is an event emitter, hook up a handler that forwards all events across RPC.
 		if (RpcConnection.IsRpcEventServer(rpcTarget)) {
@@ -295,31 +240,9 @@ export class JsonRpcConnection extends RpcConnection {
 	}
 
 	public dispose(): void {}
-
-	private static isMethod(obj: object, name: string): boolean {
-		const desc = Object.getOwnPropertyDescriptor(obj, name)
-		return !!desc && typeof desc.value === 'function'
-	}
-
-	private static getInstanceMethodNames(obj: object, stopPrototype?: any): string[] {
-		const array: string[] = []
-		let proto = Object.getPrototypeOf(obj)
-		while (proto && proto !== stopPrototype) {
-			Object.getOwnPropertyNames(proto).forEach(name => {
-				if (name !== 'constructor') {
-					if (JsonRpcConnection.isMethod(proto, name)) {
-						array.push(name)
-					}
-				}
-			})
-			proto = Object.getPrototypeOf(proto)
-		}
-
-		return array
-	}
 }
 
-interface IProxyTarget {
+export interface IProxyTarget {
 	messageConnection: MessageConnection
 	eventEmitter: EventEmitter
 }

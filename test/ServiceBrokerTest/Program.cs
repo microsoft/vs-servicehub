@@ -2,8 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.CommandLine;
-using System.Runtime.InteropServices;
-using Microsoft;
+using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 
