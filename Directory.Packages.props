@@ -7,7 +7,7 @@
     <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
     <CodeAnalysisVersion>4.5.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2-beta1.23110.2</CodefixTestingVersion>
-    <VSThreadingVersion>17.6.29-alpha</VSThreadingVersion>
+    <VSThreadingVersion>17.6.40</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
@@ -29,7 +29,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.188-beta" />
     <PackageVersion Include="NuGet.Protocol" Version="6.4.0" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.15.16-alpha" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.15.26" />
     <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
