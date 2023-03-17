@@ -16,3 +16,4 @@ coverage/
 jest.config.ts
 .eslintrc.json
 */test/
+doc/

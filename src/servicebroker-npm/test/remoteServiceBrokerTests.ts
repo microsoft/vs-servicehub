@@ -3,12 +3,20 @@ import CancellationToken from 'cancellationtoken'
 import { CancellationToken as vscodeCancellationToken } from 'vscode-jsonrpc'
 import { Channel, FullDuplexStream, MultiplexingStream } from 'nerdbank-streams'
 import { Deferred } from 'nerdbank-streams/js/Deferred'
-import { Formatters, MessageDelimiters, RemoteServiceConnections } from '../src/constants'
-import { FrameworkServices } from '../src/FrameworkServices'
-import { RemoteServiceBroker } from '../src/RemoteServiceBroker'
-import { ServiceActivationOptions } from '../src/ServiceActivationOptions'
-import { ServiceJsonRpcDescriptor } from '../src/ServiceJsonRpcDescriptor'
-import { ServiceMoniker } from '../src/ServiceMoniker'
+import {
+	Formatters,
+	MessageDelimiters,
+	RemoteServiceConnections,
+	FrameworkServices,
+	RemoteServiceBroker,
+	ServiceActivationOptions,
+	ServiceJsonRpcDescriptor,
+	ServiceMoniker,
+	BrokeredServicesChangedArgs,
+	IRemoteServiceBroker,
+	Observer,
+	IDisposable,
+} from '../src'
 import { AlwaysThrowingRemoteBroker } from './testAssets/alwaysThrowingBroker'
 import { CallMeBackClient } from './testAssets/callMeBackClient'
 import { ICalculatorService, IActivationService, ICallMeBackService } from './testAssets/interfaces'
@@ -23,8 +31,6 @@ import {
 	calcDescriptorMsgPackBE32,
 	callBackDescriptor,
 } from './testAssets/testUtilities'
-import { BrokeredServicesChangedArgs } from '../src/BrokeredServicesChangedArgs'
-import { IRemoteServiceBroker } from '../src/IRemoteServiceBroker'
 
 describe('Service Broker tests', function () {
 	let defaultTokenSource: {
@@ -267,6 +273,82 @@ describe('Service Broker tests', function () {
 			} finally {
 				mx?.dispose()
 			}
+		})
+
+		describe('IObserver<T> interop with .NET process', () => {
+			it('with successful end', async function () {
+				let mx: MultiplexingStream | null = null
+				try {
+					mx = await startCP(defaultToken)
+					const channel = await mx.acceptChannelAsync('', undefined, defaultToken)
+					const s = new MultiplexingRemoteServiceBroker(channel)
+					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
+					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
+					const values = await new Promise<number[]>(async (resolve, reject) => {
+						const values: number[] = []
+						const observer = new Observer<number>(
+							value => values.push(value),
+							error => {
+								if (error) {
+									reject(error)
+								} else {
+									resolve(values)
+								}
+							}
+						)
+						let disposed = false
+						const disposableObservable = observer as unknown as IDisposable
+						disposableObservable.dispose = () => {
+							disposed = true
+						}
+						await proxy?.observeNumbers(observer, 3, false)
+						assert(disposed)
+					})
+					console.log(values)
+					assert.deepEqual(values, [1, 2, 3])
+					broker.dispose()
+					await channel.completion
+				} finally {
+					mx?.dispose()
+				}
+			})
+
+			it('with failure end', async function () {
+				let mx: MultiplexingStream | null = null
+				try {
+					mx = await startCP(defaultToken)
+					const channel = await mx.acceptChannelAsync('', undefined, defaultToken)
+					const s = new MultiplexingRemoteServiceBroker(channel)
+					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
+					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
+					await assert.rejects(
+						new Promise<number[]>(async (resolve, reject) => {
+							const values: number[] = []
+							const observer = new Observer<number>(
+								value => values.push(value),
+								error => {
+									if (error) {
+										reject(error)
+									} else {
+										resolve(values)
+									}
+								}
+							)
+							let disposed = false
+							const disposableObservable = observer as unknown as IDisposable
+							disposableObservable.dispose = () => {
+								disposed = true
+							}
+							await proxy?.observeNumbers(observer, 3, true)
+							assert(disposed)
+						})
+					)
+					broker.dispose()
+					await channel.completion
+				} finally {
+					mx?.dispose()
+				}
+			})
 		})
 	})
 

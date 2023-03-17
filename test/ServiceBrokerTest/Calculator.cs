@@ -18,4 +18,23 @@ public class Calculator
 		await Task.Yield();
 		return a + 5;
 	}
+
+	[StreamJsonRpc.JsonRpcMethod("observeNumbers")]
+	public async Task ObserveNumbersAsync(IObserver<long> observer, int length, bool failAtEnd)
+	{
+		for (int i = 1; i <= length; i++)
+		{
+			await Task.Yield();
+			observer.OnNext(i);
+		}
+
+		if (failAtEnd)
+		{
+			observer.OnError(new InvalidOperationException("Requested failure."));
+		}
+		else
+		{
+			observer.OnCompleted();
+		}
+	}
 }
