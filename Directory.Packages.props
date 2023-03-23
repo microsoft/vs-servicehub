@@ -19,9 +19,9 @@
     <PackageVersion Include="Microsoft.CodeCoverage" Version="17.5.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.4.16" />
     <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.4.9" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.4.33216.74" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.4.33216.74" />
-    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.3.37" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.6.36011" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.6.36011" />
+    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.6.10" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
