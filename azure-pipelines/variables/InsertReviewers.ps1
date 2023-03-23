@@ -7,6 +7,7 @@ if (Test-Path "$PSScriptRoot\TeamEmail.ps1") {
 }
 
 $contacts += 'Andrew Arnott'
+$contacts += 'VS Core - Extensibility'
 
 $contacts = $contacts |? { $_ }
 if ($contacts) {
