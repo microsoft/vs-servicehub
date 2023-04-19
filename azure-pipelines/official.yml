@@ -68,6 +68,7 @@ stages:
     parameters:
       EnableCompliance: ${{ parameters.EnableCompliance }}
       EnableAPIScan: ${{ parameters.EnableAPIScan }}
+      TSAUpload: ${{ parameters.TSAUpload }}
       windowsPool: VSEngSS-MicroBuild2022-1ES
       ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
       includeMacOS: ${{ parameters.includeMacOS }}
