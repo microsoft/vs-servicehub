@@ -1,5 +1,6 @@
 parameters:
   EnableAPIScan:
+  TSAUpload:
 
 steps:
 
@@ -60,6 +61,41 @@ steps:
     PublishProcessedResults: true
     AllTools: true
     ToolLogsNotFoundAction: Standard
+
+# Create bugs
+- task: TSAUpload@1
+  inputs:
+    tsaVersion: 'TsaV2'
+    codebase: 'NewOrUpdate'
+    tsaEnvironment: 'PROD'
+    codeBaseName: 'vs-servicehub'
+    notificationAlias: 'vsideexeng@microsoft.com'
+    notifyAlwaysV2: false
+    codeBaseAdmins: 'REDMOND\rytoth;REDMOND\anva'
+    instanceUrlForTsaV2: 'DEVDIV'
+    projectNameDEVDIV: 'DevDiv'
+    areaPath: 'DevDiv\VS Core\Extensibility\ServiceHub'
+    iterationPath: 'DevDiv'
+    uploadAPIScan: false
+    uploadBinSkim: true
+    uploadCredScan: true
+    uploadFortifySCA: true
+    uploadFxCop: true
+    uploadModernCop: true
+    uploadPoliCheck: true
+    uploadPREfast: true
+    uploadRoslyn: true
+    uploadTSLint: true
+    uploadAsync: true
+  condition: ${{ parameters.TSAUpload }}
+
+# Create bugs
+- task: TSAUpload@2
+  displayName: 'Create bugs for APIScan'
+  inputs:
+    GdnPublishTsaOnboard: false
+    GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)\azure-pipelines\compliancetools\TSAOptions.json'
+  condition: and(succeeded(), ${{ parameters.TSAUpload }}, ${{ parameters.EnableAPIScan }})
 
 - task: PostAnalysis@2
   displayName: 🏋️‍♀️ Break on compliance issues

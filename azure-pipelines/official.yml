@@ -44,6 +44,10 @@ parameters:
   displayName: Include APIScan with Compliance tools
   type: boolean
   default: true
+- name: TSAUpload
+  displayName: Enable bug filing for issues flagged from Compliance tools
+  type: boolean
+  default: false
 
 stages:
 

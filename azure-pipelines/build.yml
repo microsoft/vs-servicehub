@@ -19,6 +19,9 @@ parameters:
 - name: EnableAPIScan
   type: boolean
   default: true
+- name: TSAUpload
+  type: boolean
+  default: false
 
 jobs:
 - job: Windows
@@ -64,6 +67,7 @@ jobs:
       parameters:
         EnableCompliance: ${{ parameters.EnableCompliance }}
         EnableAPIScan: ${{ parameters.EnableAPIScan }}
+        TSAUpload: ${{ parameters.TSAUpload }}
 
 - ${{ if ne(parameters.IsProfilingRun, 'true') }}:
   - job: Linux

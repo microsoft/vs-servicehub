@@ -19,6 +19,7 @@ stages:
     parameters:
       EnableCompliance: false
       EnableAPIScan: false
+      TSAUpload: false
       windowsPool: VSEngSS-MicroBuild2022-1ES
       includeMacOS: false
       RunTests: false

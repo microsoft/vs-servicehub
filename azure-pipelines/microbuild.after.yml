@@ -1,6 +1,7 @@
 parameters:
   EnableCompliance:
   EnableAPIScan:
+  TSAUpload:
 
 steps:
 - task: MicroBuildCodesignVerify@3
@@ -50,3 +51,4 @@ steps:
   - template: secure-development-tools.yml
     parameters:
       EnableAPIScan: ${{ parameters.EnableAPIScan }}
+      TSAUpload: ${{ parameters.TSAUpload }}
