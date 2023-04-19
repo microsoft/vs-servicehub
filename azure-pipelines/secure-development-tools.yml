@@ -94,7 +94,7 @@ steps:
   displayName: 'Create bugs for APIScan'
   inputs:
     GdnPublishTsaOnboard: false
-    GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)\azure-pipelines\compliancetools\TSAOptions.json'
+    GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)\azure-pipelines\TSAOptions.json'
   condition: and(succeeded(), ${{ parameters.TSAUpload }}, ${{ parameters.EnableAPIScan }})
 
 - task: PostAnalysis@2

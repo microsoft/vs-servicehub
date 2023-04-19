@@ -1,0 +1,21 @@
+{
+    "tsaVersion": "TsaV2",
+    "codebase": "Existing",
+    "codebaseName": "vs-servicehub",
+    "tsaStamp": "DevDiv",
+    "tsaEnvironment": "PROD",
+    "notificationAliases": [
+        "vsideexeng@microsoft.com"
+    ],
+    "codebaseAdmins": [
+        "REDMOND\\rytoth", "REDMOND\\anva"
+    ],
+    "instanceUrl": "https://devdiv.visualstudio.com",
+    "projectName": "DevDiv",
+    "areaPath": "DevDiv\\VS Core\\Extensibility\\ServiceHub",
+    "iterationPath": "DevDiv",
+    "tools": [
+        "APIScan"
+    ],
+    "repositoryName": "vs-servicehub"
+}
