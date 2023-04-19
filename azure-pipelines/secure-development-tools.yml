@@ -79,8 +79,8 @@ steps:
     uploadAPIScan: false
     uploadBinSkim: true
     uploadCredScan: true
-    uploadFortifySCA: true
-    uploadFxCop: true
+    uploadFortifySCA: false
+    uploadFxCop: false
     uploadModernCop: true
     uploadPoliCheck: true
     uploadPREfast: true
