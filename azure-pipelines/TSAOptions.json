@@ -1,6 +1,6 @@
 {
     "tsaVersion": "TsaV2",
-    "codebase": "Existing",
+    "codebase": "NewOrUpdate",
     "codebaseName": "vs-servicehub",
     "tsaStamp": "DevDiv",
     "tsaEnvironment": "PROD",

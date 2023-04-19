@@ -60,6 +60,8 @@ stages:
     SignTypeSelection: ${{ parameters.SignTypeSelection }}
     Packaging.EnableSBOMSigning: false
     Codeql.Enabled: true
+    Codeql.TSAEnabled: true
+    Codeql.TSAOptionsPath: $(Build.SourcesDirectory)\azure-pipelines\TSAOptions.json
 
   jobs:
   - template: build.yml
