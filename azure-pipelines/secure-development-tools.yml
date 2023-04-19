@@ -63,7 +63,7 @@ steps:
     ToolLogsNotFoundAction: Standard
 
 # Create bugs
-- task: TSAUpload@1
+- task: TSAUpload@2
   inputs:
     tsaVersion: 'TsaV2'
     codebase: 'NewOrUpdate'
