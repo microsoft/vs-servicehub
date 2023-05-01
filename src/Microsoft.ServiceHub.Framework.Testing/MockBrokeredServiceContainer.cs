@@ -42,6 +42,8 @@ public class MockBrokeredServiceContainer : GlobalBrokeredServiceContainer
 	/// <inheritdoc />
 	protected override IDisposable Proffer(IProffered proffered)
 	{
+		Requires.NotNull(proffered);
+
 		this.RegisterServicesIfNecessary(proffered);
 		return base.Proffer(proffered);
 	}

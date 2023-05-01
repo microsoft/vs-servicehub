@@ -138,6 +138,7 @@ public class ServiceBrokerClient : IDisposableObservable
 	public async ValueTask<Rental<T>> GetProxyAsync<T>(ServiceRpcDescriptor serviceRpcDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 		where T : class
 	{
+		Requires.NotNull(serviceRpcDescriptor);
 		Verify.NotDisposed(this);
 
 		AsyncLazy<object?>? clientLazy;

@@ -297,6 +297,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <param name="services">The set of services to be registered.</param>
 	protected internal void RegisterServices(IReadOnlyDictionary<ServiceMoniker, ServiceRegistration> services)
 	{
+		Requires.NotNull(services);
+
 		if (services.Count == 0)
 		{
 			return;
@@ -344,6 +346,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns>An <see cref="IDisposable"/> that will remove the service when disposed.</returns>
 	protected IDisposable ProfferIntrinsicService(ServiceRpcDescriptor serviceDescriptor, ServiceRegistration newRegistration, ViewIntrinsicBrokeredServiceFactory factory)
 	{
+		Requires.NotNull(serviceDescriptor);
+
 		this.registeredServices = this.registeredServices.Add(serviceDescriptor.Moniker, newRegistration);
 		return this.Proffer(new ProfferedViewIntrinsicService(this, serviceDescriptor, factory));
 	}
@@ -384,6 +388,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns>A value that may be disposed to cancel the proffer and remove its services from the index.</returns>
 	protected virtual IDisposable Proffer(IProffered proffered)
 	{
+		Requires.NotNull(proffered);
+
 		ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> oldIndex;
 		lock (this.syncObject)
 		{
