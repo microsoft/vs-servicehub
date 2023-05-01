@@ -64,6 +64,8 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 	/// <param name="container">The container to register and proffer the services with.</param>
 	public void RegisterAndProfferServices(GlobalBrokeredServiceContainer container)
 	{
+		Requires.NotNull(container);
+
 		this.Initialize();
 
 		container.RegisterServices(this.serviceRegistration);
