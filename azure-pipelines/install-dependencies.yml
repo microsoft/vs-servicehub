@@ -18,7 +18,16 @@ steps:
       $authFile
       Set-Content -Path $HOME/.yarnrc.yml -Value $authFile
     displayName: 🔏 Authenticate NPM registry
-
+  - pwsh: |
+      Write-Host "This is a script that could use $env:SYSTEM_ACCESSTOKEN"
+      Write-Host "$env:SYSTEM_ACCESSTOKEN = $(System.AccessToken)"
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+  - powershell: |
+      Write-Host "This is a script that could use $env:SYSTEM_ACCESSTOKEN"
+      Write-Host "$env:SYSTEM_ACCESSTOKEN = $(System.AccessToken)"
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 - task: NodeTool@0
   inputs:
     versionSpec: 16.x
