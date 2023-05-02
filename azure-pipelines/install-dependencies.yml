@@ -10,6 +10,13 @@ steps:
       nuGetServiceConnections: azure-public/msft_consumption
     forceReinstallCredentialProvider: true
 
+# Authenticate if we're running on the azure-public account, and not from a fork.
+- ${{ if and(eq(variables['system.collectionId'], '63b6279a-d2f1-4bc3-a21c-db7614e92831'),ne(variables['System.PullRequest.IsFork'], 'true')) }}:
+  - pwsh: |
+      $PAT = '$(System.AccessToken)'
+      "npmRegistries:`n  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:`n    npmAuthIdent: devdiv:$PAT`n    npmAlwaysAuth: true" | Tee-Object -FilePath $HOME/.yarnrc.yml
+    displayName: 🔏 Authenticate NPM registry
+
 - task: NodeTool@0
   inputs:
     versionSpec: 16.x
