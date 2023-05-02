@@ -5,10 +5,10 @@ Run `yarn` after any updates made to package.json.
 
 We use [gulp](https://gulpjs.com/) for development, so specific script implementation can be found in gulpfile.js. With this, you can
 
--   Build: `gulp build`
--   Test: `gulp test` OR `yarn test`.
--   Create a new package: `gulp package`
--   Or all of the above: `gulp`
+- Build: `gulp build`
+- Test: `gulp test` OR `yarn test`.
+- Create a new package: `gulp package`
+- Or all of the above: `gulp`
 
 ## Testing
 
