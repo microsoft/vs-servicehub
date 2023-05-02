@@ -10,6 +10,15 @@ steps:
       nuGetServiceConnections: azure-public/msft_consumption
     forceReinstallCredentialProvider: true
 
+# Authenticate if we're running on the azure-public account.
+- ${{ if eq(variables['system.collectionId'], '63b6279a-d2f1-4bc3-a21c-db7614e92831') }}:
+  - pwsh: |
+      $PAT = '$(System.AccessToken)'
+      $authFile = "npmRegistries:`n  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:`n    npmAuthIdent: devdiv:$PAT`n    npmAlwaysAuth: true"
+      $authFile
+      Set-Content -Path $HOME/.yarnrc.yml -Value $authFile
+    displayName: 🔏 Authenticate NPM registry
+
 - task: NodeTool@0
   inputs:
     versionSpec: 16.x
