@@ -55,6 +55,14 @@ npmRegistries:
 
 This repository can be built on Windows, Linux, and OSX.
 
-Building, testing, and packing this repository can be done by using the standard dotnet CLI commands (e.g. `dotnet build`, `dotnet test`, `dotnet pack`, etc.).
+### .NET code
+
+Building, testing, and packing the .NET code in this repository can be done by using the standard dotnet CLI commands (e.g. `dotnet build`, `dotnet test`, `dotnet pack`, etc.).
+
+### Typescript code
+
+* Build: `yarn build`
+* Test: `yarn test`
+* Pack: `pack.ps1`
 
 [pwsh]: https://docs.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-6
