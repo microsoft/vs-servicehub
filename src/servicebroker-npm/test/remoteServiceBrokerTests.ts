@@ -304,7 +304,6 @@ describe('Service Broker tests', function () {
 						await proxy?.observeNumbers(observer, 3, false)
 						assert(disposed)
 					})
-					console.log(values)
 					assert.deepEqual(values, [1, 2, 3])
 					broker.dispose()
 					await channel.completion
