@@ -164,6 +164,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	}
 
 	[Theory]
+	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]

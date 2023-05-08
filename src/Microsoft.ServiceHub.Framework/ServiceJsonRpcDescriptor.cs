@@ -7,8 +7,9 @@ using System.Globalization;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using Newtonsoft.Json.Serialization;
 using StreamJsonRpc;
+using JsonNET = Newtonsoft.Json.Serialization;
+using STJ = System.Text.Json;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -70,7 +71,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public enum Formatters
 	{
 		/// <summary>
-		/// Format messages with UTF-8 text for a human readable JSON representation.
+		/// Format messages with UTF-8 text for a human readable JSON representation using the <see cref="Newtonsoft.Json.JsonSerializer"/> (i.e. JSON.NET) serializer.
+		/// This <em>can</em> be wire-protocol compatible with <see cref="UTF8SystemTextJson"/> if the <see cref="Newtonsoft.Json.JsonSerializerSettings"/> are configured to be compatible with System.Text.Json.
 		/// </summary>
 		UTF8,
 
@@ -78,6 +80,12 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// Format messages with MessagePack for a high throughput, compact binary representation.
 		/// </summary>
 		MessagePack,
+
+		/// <summary>
+		/// Format messages with UTF-8 text for a human readable JSON representation using the <see cref="System.Text.Json.JsonSerializer"/> serializer.
+		/// This <em>can</em> be wire-protocol compatible with <see cref="UTF8"/> if the <see cref="System.Text.Json.JsonSerializerOptions"/> are configured to be compatible with JSON.NET.
+		/// </summary>
+		UTF8SystemTextJson,
 	}
 
 	/// <summary>
@@ -331,6 +339,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				return this.CreateJsonFormatter();
 			case Formatters.MessagePack:
 				return this.CreateMessagePackFormatter();
+			case Formatters.UTF8SystemTextJson:
+				return this.CreateSystemTextJsonFormatter();
 			default:
 				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.FormatterNotSupported, this.Formatter, this.Protocol));
 		}
@@ -378,12 +388,25 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			MultiplexingStream = this.MultiplexingStream,
 			JsonSerializer =
-					{
-						ContractResolver = new CamelCasePropertyNamesContractResolver
-						{
-							NamingStrategy = new CamelCaseNamingStrategy(processDictionaryKeys: false, overrideSpecifiedNames: true),
-						},
-					},
+			{
+				ContractResolver = new JsonNET.CamelCasePropertyNamesContractResolver
+				{
+					NamingStrategy = new JsonNET.CamelCaseNamingStrategy(processDictionaryKeys: false, overrideSpecifiedNames: true),
+				},
+			},
+		};
+	}
+
+	private IJsonRpcMessageFormatter CreateSystemTextJsonFormatter()
+	{
+		return new SystemTextJsonFormatter
+		{
+			MultiplexingStream = this.MultiplexingStream,
+			JsonSerializerOptions =
+			{
+				DictionaryKeyPolicy = null,
+				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
+			},
 		};
 	}
 
