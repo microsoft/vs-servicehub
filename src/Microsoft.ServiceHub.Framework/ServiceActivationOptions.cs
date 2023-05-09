@@ -4,6 +4,8 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 using Nerdbank.Streams;
+using JsonNET = Newtonsoft.Json;
+using STJ = System.Text.Json.Serialization;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -32,14 +34,16 @@ public struct ServiceActivationOptions : IEquatable<ServiceActivationOptions>
 	/// <summary>
 	/// Gets or sets the client's preferred culture.
 	/// </summary>
-	[Newtonsoft.Json.JsonConverter(typeof(CultureInfoJsonConverter))]
+	[JsonNET.JsonConverter(typeof(CultureInfoJsonConverter))]
+	[STJ.JsonConverter(typeof(CultureInfoSystemTextJsonConverter))]
 	[DataMember]
 	public CultureInfo? ClientCulture { get; set; }
 
 	/// <summary>
 	/// Gets or sets the client's preferred UI culture.
 	/// </summary>
-	[Newtonsoft.Json.JsonConverter(typeof(CultureInfoJsonConverter))]
+	[JsonNET.JsonConverter(typeof(CultureInfoJsonConverter))]
+	[STJ.JsonConverter(typeof(CultureInfoSystemTextJsonConverter))]
 	[DataMember]
 	public CultureInfo? ClientUICulture { get; set; }
 
@@ -52,8 +56,9 @@ public struct ServiceActivationOptions : IEquatable<ServiceActivationOptions>
 	/// If the service is remote, the remote service broker client such as <see cref="RemoteServiceBroker"/> should set this object as the local RPC target when setting up an RPC connection,
 	/// and the service-side should set up a proxy for this object based on the type given in <see cref="ServiceRpcDescriptor.ClientInterface"/>.
 	/// </remarks>
-	[Newtonsoft.Json.JsonIgnore]
+	[JsonNET.JsonIgnore]
 	[IgnoreDataMember]
+	[STJ.JsonIgnore]
 	public object? ClientRpcTarget { get; set; }
 
 	/// <summary>
@@ -68,8 +73,9 @@ public struct ServiceActivationOptions : IEquatable<ServiceActivationOptions>
 	/// before forwarding the request to the final service broker.
 	/// The final service broker should then apply this value to the <see cref="ServiceRpcDescriptor"/> using <see cref="ServiceRpcDescriptor.WithMultiplexingStream(MultiplexingStream)"/>.
 	/// </remarks>
-	[Newtonsoft.Json.JsonIgnore]
+	[JsonNET.JsonIgnore]
 	[IgnoreDataMember]
+	[STJ.JsonIgnore]
 	public MultiplexingStream? MultiplexingStream { get; set; }
 
 	/// <summary>

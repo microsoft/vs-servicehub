@@ -6,7 +6,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
+using JsonNET = Newtonsoft.Json;
+using STJ = System.Text.Json.Serialization;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -15,7 +16,7 @@ namespace Microsoft.ServiceHub.Framework;
 /// </summary>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 [TypeConverter(typeof(ServiceMonikerTypeConverter))]
-[JsonObject]
+[JsonNET.JsonObject]
 [DataContract]
 public class ServiceMoniker : IEquatable<ServiceMoniker>
 {
@@ -35,7 +36,8 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// </summary>
 	/// <param name="name">The name of the service.</param>
 	/// <param name="version">The version of the service or expected by the client. May be null.</param>
-	[JsonConstructor]
+	[JsonNET.JsonConstructor]
+	[STJ.JsonConstructor]
 	public ServiceMoniker(string name, Version? version)
 		: this(name)
 	{
@@ -51,7 +53,7 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// <summary>
 	/// Gets the version of the service or the version expected by the client.
 	/// </summary>
-	[JsonConverter(typeof(Newtonsoft.Json.Converters.VersionConverter))]
+	[JsonNET.JsonConverter(typeof(JsonNET.Converters.VersionConverter))]
 	[DataMember]
 	public Version? Version { get; }
 

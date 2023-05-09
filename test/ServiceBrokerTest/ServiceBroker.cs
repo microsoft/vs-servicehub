@@ -51,7 +51,7 @@ internal class ServiceBroker : IServiceBroker
 		Func<object> factory;
 		if (serviceMoniker.Name == "Calculator")
 		{
-			descriptor = new ServiceJsonRpcDescriptor(serviceMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
+			descriptor = new ServiceJsonRpcDescriptor(serviceMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
 			factory = () => new Calculator();
 		}
 		else if (serviceMoniker.Name == "CalculatorUtf8BE32")
