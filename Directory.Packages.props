@@ -29,7 +29,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.188-beta" />
     <PackageVersion Include="NuGet.Protocol" Version="6.5.0" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.16.17-preview" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.16.19-preview" />
     <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Text.Json" Version="7.0.2" />
