@@ -407,6 +407,12 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				DictionaryKeyPolicy = null,
 				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
 				DefaultIgnoreCondition = STJ.Serialization.JsonIgnoreCondition.WhenWritingNull,
+				Converters =
+				{
+					// These converters are a workaround for https://github.com/dotnet/runtime/issues/85981
+					JsonConverterWrapper<Version>.Instance,
+					JsonConverterWrapper<Uri>.Instance,
+				},
 			},
 		};
 	}
