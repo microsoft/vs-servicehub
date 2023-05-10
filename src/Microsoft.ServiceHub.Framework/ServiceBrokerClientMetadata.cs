@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using JsonNET = Newtonsoft.Json;
+using STJ = System.Text.Json.Serialization;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -18,7 +18,8 @@ public struct ServiceBrokerClientMetadata
 	/// This allows an <see cref="IRemoteServiceBroker"/> to choose the optimal mutually supported connection kind
 	/// when responding to future service requests.
 	/// </remarks>
-	[JsonConverter(typeof(StringEnumConverter))]
+	[JsonNET.JsonConverter(typeof(JsonNET.Converters.StringEnumConverter))]
+	[STJ.JsonConverter(typeof(STJ.JsonStringEnumConverter))]
 	public RemoteServiceConnections SupportedConnections { get; set; }
 
 	/// <summary>

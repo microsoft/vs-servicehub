@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma warning disable RS0026 // Do not add multiple public overloads with optional parameters
+
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Reflection;
@@ -143,6 +145,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
 	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, CancellationToken cancellationToken = default) => ConnectToMultiplexingServerAsync(duplexStream, options: null, cancellationToken: cancellationToken);
 
+	/// <inheritdoc cref="ConnectToMultiplexingServerAsync(Stream, MultiplexingStream.Options?, TraceSource?, CancellationToken)"/>
+	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, CancellationToken cancellationToken = default) => ConnectToMultiplexingServerAsync(duplexStream, options, traceSource: null, cancellationToken);
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RemoteServiceBroker"/> class
 	/// that connects to an <see cref="IRemoteServiceBroker"/> on the default channel
@@ -156,9 +161,10 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// or disposed before this method throws.
 	/// </param>
 	/// <param name="options">Options to pass along to the created <see cref="MultiplexingStream"/> on creation.</param>
+	/// <param name="traceSource">An optional means of logging activity.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
-	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, CancellationToken cancellationToken = default)
+	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(duplexStream, nameof(duplexStream));
 
@@ -168,7 +174,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 			// when the underlying stream is disposed, so we only need one try/catch level here.
 			MultiplexingStream multiplexingStream = await MultiplexingStream.CreateAsync(duplexStream, options, cancellationToken).ConfigureAwait(false);
 			MultiplexingStream.Channel serviceBrokerChannel = await multiplexingStream.AcceptChannelAsync(string.Empty, cancellationToken).ConfigureAwait(false);
-			IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker.ConstructRpc<IRemoteServiceBroker>(serviceBrokerChannel);
+			IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker
+				.WithTraceSource(traceSource)
+				.ConstructRpc<IRemoteServiceBroker>(serviceBrokerChannel);
 			RemoteServiceBroker result = await ConnectToMultiplexingServerAsync(serviceBroker, multiplexingStream, cancellationToken).ConfigureAwait(false);
 			result.multiplexingStreamOwned = true;
 			multiplexingStream.Completion.ApplyResultTo(result.completionSource);
@@ -215,6 +223,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		}
 	}
 
+	/// <inheritdoc cref="ConnectToServerAsync(IDuplexPipe, TraceSource?, CancellationToken)"/>
+	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, CancellationToken cancellationToken = default) => ConnectToServerAsync(pipe, traceSource: null, cancellationToken);
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RemoteServiceBroker"/> class.
 	/// </summary>
@@ -224,22 +235,28 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// This object is considered "owned" by the returned <see cref="RemoteServiceBroker"/> and will be completed when the returned value is disposed,
 	/// or completed before this method throws.
 	/// </param>
+	/// <param name="traceSource">An optional means of logging activity.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, CancellationToken cancellationToken = default)
+	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(pipe, nameof(pipe));
 
-		IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker.ConstructRpc<IRemoteServiceBroker>(pipe);
+		IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker
+			.WithTraceSource(traceSource)
+			.ConstructRpc<IRemoteServiceBroker>(pipe);
 
 		// If this ends up throwing (or rather, returning a faulted Task) it will have disposed the serviceBroker,
 		// which *should* dispose the pipe we handed to it as well. So we don't need to wrap this with try/catch here.
 		// We have a test to assert this behavior.
 		return ConnectToServerAsync(serviceBroker, cancellationToken);
 	}
+
+	/// <inheritdoc cref="ConnectToServerAsync(string, TraceSource?, CancellationToken)"/>
+	public static Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, CancellationToken cancellationToken = default) => ConnectToServerAsync(pipeName, traceSource: null, cancellationToken);
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RemoteServiceBroker"/> class.
@@ -248,17 +265,20 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// The name of a pipe over which to exchange JSON-RPC messages with an
 	/// <see cref="IRemoteServiceBroker"/> service.
 	/// </param>
+	/// <param name="traceSource">An optional means of logging activity.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	public static async Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, CancellationToken cancellationToken = default)
+	public static async Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
 
 		IDuplexPipe pipe = await ConnectToPipeAsync(pipeName, cancellationToken).ConfigureAwait(false);
-		IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker.ConstructRpc<IRemoteServiceBroker>(pipe);
+		IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker
+			.WithTraceSource(traceSource)
+			.ConstructRpc<IRemoteServiceBroker>(pipe);
 
 		// If this ends up throwing (or rather, returning a faulted Task) it will have disposed the serviceBroker,
 		// which *should* dispose the pipe we handed to it as well. So we don't need to wrap this with try/catch here.

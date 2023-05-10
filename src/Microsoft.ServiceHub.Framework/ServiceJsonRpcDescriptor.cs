@@ -406,6 +406,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 			{
 				DictionaryKeyPolicy = null,
 				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
+				DefaultIgnoreCondition = STJ.Serialization.JsonIgnoreCondition.WhenWritingNull,
 			},
 		};
 	}
