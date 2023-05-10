@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using STJ = System.Text.Json.Serialization;
+
 namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
@@ -43,6 +45,7 @@ public struct RemoteServiceConnectionInfo
 	/// <summary>
 	/// Gets a value indicating whether this instance represents no connection information.
 	/// </summary>
+	[STJ.JsonIgnore]
 	public bool IsEmpty => !this.RequestId.HasValue && !this.MultiplexingChannelId.HasValue && string.IsNullOrWhiteSpace(this.PipeName) && this.ClrActivation == null;
 
 	/// <summary>

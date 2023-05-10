@@ -210,8 +210,8 @@ public partial class RemoteServiceBrokerTests : TestBase
 	{
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new EmptyRemoteServiceBroker();
-		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
+		FrameworkServices.RemoteServiceBroker.WithTraceSource(this.CreateTestTraceSource("server", System.Diagnostics.SourceLevels.All)).ConstructRpc(server, pair.Item1);
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.CreateTestTraceSource("client", System.Diagnostics.SourceLevels.All), this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			Assumes.True(server.ClientMetadata.HasValue);
