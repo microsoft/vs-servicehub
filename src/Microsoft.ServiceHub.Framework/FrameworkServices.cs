@@ -44,7 +44,7 @@ public static class FrameworkServices
 	/// </remarks>
 	public static readonly ServiceRpcDescriptor RemoteBrokeredServiceManifest = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.VisualStudio.RemoteBrokeredServiceManifest", new Version(0, 2)),
-		ServiceJsonRpcDescriptor.Formatters.UTF8, // STJ use blocked by https://github.com/dotnet/runtime/issues/85981
+		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 
 	/// <summary>
