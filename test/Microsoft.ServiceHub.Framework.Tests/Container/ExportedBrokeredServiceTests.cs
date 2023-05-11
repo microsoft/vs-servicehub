@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel.Composition;
+using System.IO.Pipelines;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
@@ -24,6 +25,16 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		ValueTask<MockService> GetThisAsync();
 
 		ValueTask<int> AddAsync(int a, int b);
+	}
+
+	private interface ICallbackInterface
+	{
+		Task CallbackAsync(string message);
+	}
+
+	private interface IServiceWithCallback
+	{
+		Task CallMeAsync(string message);
 	}
 
 	private IServiceBroker ServiceBroker => this.container.GetFullAccessServiceBroker();
@@ -151,6 +162,45 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		Assert.NotSame(realObject1, realObject2);
 	}
 
+	[Theory, CombinatorialData]
+	public async Task ActivateBrokeredServiceWithClientCallback(bool usePipe)
+	{
+		string? receivedMessage = null;
+		ClientCallback client = new()
+		{
+			Callback = (string message) => receivedMessage = message,
+		};
+		IServiceWithCallback? svc;
+		if (usePipe)
+		{
+			// We do *not* pass the client RPC target in as options because for a genuine pipe, it wouldn't be available till we set up the RPC connection later.
+			IDuplexPipe? pipe = await this.ServiceBroker.GetPipeAsync(CallBackService.SharedDescriptor.Moniker, options: default, this.TimeoutToken);
+			Assert.NotNull(pipe);
+
+			// This is when a pipe client naturally sets up the client RPC target.
+			svc = CallBackService.SharedDescriptor.ConstructRpc<IServiceWithCallback>(client, pipe);
+		}
+		else
+		{
+			ServiceActivationOptions options = new()
+			{
+				ClientRpcTarget = client,
+			};
+			svc = await this.ServiceBroker.GetProxyAsync<IServiceWithCallback>(CallBackService.SharedDescriptor, options, this.TimeoutToken);
+			Assert.NotNull(svc);
+		}
+
+		try
+		{
+			await svc.CallMeAsync("hi");
+			Assert.Equal("hi", receivedMessage);
+		}
+		finally
+		{
+			(svc as IDisposable)?.Dispose();
+		}
+	}
+
 	[ExportBrokeredService("Calculator", "1.0")]
 	private class MockService : IExportedBrokeredService, ICalculator, IDisposable
 	{
@@ -212,5 +262,46 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 		[Import]
 		internal AuthorizationServiceClient AuthorizationServiceClient { get; set; } = null!;
+	}
+
+	[ExportBrokeredService("CallBackService", "0.1")]
+	private class CallBackService : IServiceWithCallback, IExportedBrokeredService
+	{
+		internal static readonly ServiceRpcDescriptor SharedDescriptor = new ServiceJsonRpcDescriptor(
+			new ServiceMoniker("CallBackService", new Version(0, 1)),
+			typeof(ICallbackInterface),
+			ServiceJsonRpcDescriptor.Formatters.UTF8,
+			ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+
+		private CallBackService()
+		{
+		}
+
+		public ServiceRpcDescriptor Descriptor => SharedDescriptor;
+
+		[Import]
+		internal ServiceActivationOptions ServiceActivationOptions { get; set; }
+
+		public async Task CallMeAsync(string message)
+		{
+			Verify.Operation(this.ServiceActivationOptions.ClientRpcTarget is not null, "No callback provided.");
+			await ((ICallbackInterface)this.ServiceActivationOptions.ClientRpcTarget).CallbackAsync(message);
+		}
+
+		public Task InitializeAsync(CancellationToken cancellationToken)
+		{
+			return Task.CompletedTask;
+		}
+	}
+
+	private class ClientCallback : ICallbackInterface
+	{
+		internal Action<string>? Callback { get; set; }
+
+		public Task CallbackAsync(string message)
+		{
+			this.Callback?.Invoke(message);
+			return Task.CompletedTask;
+		}
 	}
 }

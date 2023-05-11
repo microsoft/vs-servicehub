@@ -142,8 +142,8 @@ internal class ServiceBrokerForExportedBrokeredServices : IServiceBroker, IDispo
 	/// Activates the one brokered service indicated by the <see cref="ActivatedMoniker"/> property.
 	/// </summary>
 	/// <param name="cancellationToken">A cancellation token.</param>
-	/// <returns>The activated service.</returns>
-	internal async ValueTask<IExportedBrokeredService?> CreateBrokeredServiceAsync(CancellationToken cancellationToken)
+	/// <returns>The activated service. The caller should invoke <see cref="IExportedBrokeredService.InitializeAsync(CancellationToken)"/> on the result.</returns>
+	internal IExportedBrokeredService? CreateBrokeredService(CancellationToken cancellationToken)
 	{
 		Verify.Operation(this.ActivatedMoniker is not null, "Exporting properties must be set first.");
 
@@ -155,7 +155,6 @@ internal class ServiceBrokerForExportedBrokeredServices : IServiceBroker, IDispo
 				if (this.ActivatedMoniker.Name == factory.Metadata.ServiceName[i] && requiredVersion == factory.Metadata.ServiceVersion[i])
 				{
 					Verify.Operation(!factory.IsValueCreated, "This method should only be called once.");
-					await factory.Value.InitializeAsync(cancellationToken).ConfigureAwait(false);
 					return factory.Value;
 				}
 			}
