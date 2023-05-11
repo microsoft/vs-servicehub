@@ -284,27 +284,33 @@ describe('Service Broker tests', function () {
 					const s = new MultiplexingRemoteServiceBroker(channel)
 					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
 					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
-					const values = await new Promise<number[]>(async (resolve, reject) => {
-						const values: number[] = []
-						const observer = new Observer<number>(
-							value => values.push(value),
-							error => {
-								if (error) {
-									reject(error)
-								} else {
-									resolve(values)
+					assert(proxy)
+					try {
+						let observer: Observer<number> | undefined
+						const valuesPromise = new Promise<number[]>(async (resolve, reject) => {
+							const values: number[] = []
+							observer = new Observer<number>(
+								value => values.push(value),
+								error => {
+									if (error) {
+										reject(error)
+									} else {
+										resolve(values)
+									}
 								}
-							}
-						)
+							)
+						})
 						let disposed = false
 						const disposableObservable = observer as unknown as IDisposable
 						disposableObservable.dispose = () => {
 							disposed = true
 						}
-						await proxy?.observeNumbers(observer, 3, false)
+						await proxy.observeNumbers(observer!, 3, false)
 						assert(disposed)
-					})
-					assert.deepEqual(values, [1, 2, 3])
+						assert.deepEqual(await valuesPromise, [1, 2, 3])
+					} finally {
+						proxy.dispose()
+					}
 					broker.dispose()
 					await channel.completion
 				} finally {

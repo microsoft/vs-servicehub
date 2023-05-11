@@ -194,7 +194,7 @@ const rpcProxy = {
 			default:
 				return function () {
 					const methodName = property.toString()
-					return invokeRpc(property.toString(), arguments, target.messageConnection)
+					return invokeRpc(methodName, arguments, target.messageConnection)
 				}
 		}
 	},
