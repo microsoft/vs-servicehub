@@ -170,11 +170,14 @@ export class GlobalBrokeredServiceContainer implements IBrokeredServiceContainer
 		}
 
 		if (registration.profferCallback) {
-			// Capture and clear the callback before invoking to ensure that we don't invoke it again
-			// even if the callback yields a promise.
-			const callback = registration.profferCallback
-			registration.profferCallback = undefined
-			await callback(this, serviceMoniker)
+			// We should only invoke a registration callback *once*,
+			// but if it returns a promise, we and all subsequent consumers must wait for it to resolve.
+			if (typeof registration.profferCallback === 'function') {
+				const callbackResult = registration.profferCallback(this, serviceMoniker)
+				registration.profferCallback = callbackResult ? callbackResult : undefined
+			}
+
+			await registration.profferCallback
 		}
 
 		for (const source of GlobalBrokeredServiceContainer.preferredSourceOrderForLocalServices) {

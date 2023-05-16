@@ -152,6 +152,35 @@ describe('GlobalBrokeredServiceContainer', function () {
 			expect(callbackFiredCount).toStrictEqual(1)
 			calc?.dispose()
 		})
+
+		it('async profferCallback blocks multiple requests', async function () {
+			let allowCallbackCompletion: () => void
+			let callbackFiredCount = 0
+			const callbackPromise = new Promise<void>(r => (allowCallbackCompletion = r))
+			container.register([
+				{
+					moniker: Descriptors.calculator.moniker,
+					registration: new ServiceRegistration(ServiceAudience.process, false, async (c, mk) => {
+						callbackFiredCount++
+						await callbackPromise
+						c.profferServiceFactory(Descriptors.calculator, () => Promise.resolve(new Calculator()))
+					}),
+				},
+			])
+
+			const sb = container.getFullAccessServiceBroker()
+			expect(callbackFiredCount).toStrictEqual(0)
+			let calc1Promise = sb.getProxy<ICalculatorService>(Descriptors.calculator)
+			let calc2Promise = sb.getProxy<ICalculatorService>(Descriptors.calculator)
+			allowCallbackCompletion!()
+			const calc1 = await calc1Promise
+			const calc2 = await calc2Promise
+			expect(calc1).toBeTruthy()
+			calc1?.dispose()
+			expect(calc2).toBeTruthy()
+			calc2?.dispose()
+			expect(callbackFiredCount).toStrictEqual(1)
+		})
 	})
 
 	describe('profferServiceFactory', function () {
