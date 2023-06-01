@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicroBuildVersion>2.0.117</MicroBuildVersion>
+    <MicroBuildVersion>2.0.124</MicroBuildVersion>
     <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
     <CodeAnalysisVersion>4.5.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2-beta1.23227.1</CodefixTestingVersion>
