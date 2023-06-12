@@ -2,7 +2,9 @@
  * Represents the format to use in encoding messages
  */
 export enum Formatters {
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Utf8 = 0,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	MessagePack = 1,
 }
 
@@ -10,7 +12,9 @@ export enum Formatters {
  * Represents the delimiter to use in separating messages
  */
 export enum MessageDelimiters {
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	HttpLikeHeaders = 0,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	BigEndianInt32LengthHeader = 1,
 }
 
@@ -19,9 +23,13 @@ export enum MessageDelimiters {
  * see https://stackoverflow.com/questions/39359740/what-are-enum-flags-in-typescript for more info
  */
 export enum RemoteServiceConnections {
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	None = 0,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	Multiplexing = 1 << 0,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	IpcPipe = 1 << 1,
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	ClrActivation = 1 << 3, // this is represented as 0x4 in .NET, keep it like that for consistency.
 }
 
@@ -31,7 +39,7 @@ export module RemoteServiceConnections {
 			connections = parse(connections)
 		}
 
-		return (connections & subset) == subset
+		return (connections & subset) === subset
 	}
 
 	export function parse(connections: string): RemoteServiceConnections {

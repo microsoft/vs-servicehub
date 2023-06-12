@@ -1,6 +1,7 @@
 import { Channel } from 'nerdbank-streams'
 import { MessageConnection } from 'vscode-jsonrpc'
 import assert from 'assert'
+import { registerReleaseMarshaledObjectCallback } from './jsonRpc/MarshalableObject'
 
 /**
  * Constructs a message connection to a given pipe
@@ -13,7 +14,7 @@ export function constructMessageConnection(
 	assert(pipe)
 
 	let rpc: MessageConnection
-	if (IsReadWriteStream(pipe)) {
+	if (isReadWriteStream(pipe)) {
 		rpc = connectionFactory(pipe)
 		pipe.on('close', () => {
 			rpc?.dispose()
@@ -29,10 +30,12 @@ export function constructMessageConnection(
 		rpc.onClose(() => pipe.dispose())
 	}
 
+	registerReleaseMarshaledObjectCallback(rpc)
+
 	return rpc
 }
 
-export function IsReadWriteStream(object: any): object is NodeJS.ReadWriteStream {
+export function isReadWriteStream(object: any): object is NodeJS.ReadWriteStream {
 	return object && 'unshift' in object
 }
 

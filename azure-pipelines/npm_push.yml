@@ -1,0 +1,42 @@
+parameters:
+- name: feedName
+- name: feedUrl
+- name: tgzDir
+- name: access_token
+  default: ''
+- name: service_connection
+  default: ''
+
+steps:
+- ${{ if eq(parameters.service_connection, '') }}:
+  - powershell: |
+      $feedUrl = [Uri]'${{ parameters.feedUrl }}'
+      $feedSkipScheme = "//$($feedUrl.Host)$($feedUrl.PathAndQuery)"
+      Set-Content -Path $HOME/.npmrc -Value "@microsoft:registry=$($feedUrl.AbsoluteUri)`n$($feedSkipScheme):username=VssSessionToken`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=`${NPM_TOKEN_BASE64}"
+      $access_token = '${{ parameters.access_token }}'
+      if (!$access_token) { $access_token = '$(System.AccessToken)' }
+      if (!$access_token) { Write-Error "No access token found." }
+      $env:NPM_TOKEN_BASE64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($access_token))
+      Get-ChildItem @microsoft-*.tgz |% {
+        Write-Host "##[command]npm publish $_ --verbose"
+        npm publish $_ --verbose
+      }
+    displayName: 📦 Push packages to ${{ parameters.feedName }}
+    workingDirectory: ${{ parameters.tgzDir }}
+- ${{ else }}:
+  - powershell: Set-Content -Path '${{ parameters.tgzDir }}/.npmrc' -Value '@microsoft:registry=${{ parameters.feedUrl }}'
+    displayName: 📝 Author .npmrc file for package push
+    workingDirectory: ${{ parameters.tgzDir }}
+  - task: npmAuthenticate@0
+    displayName: 🔏 NPM Authenticate
+    inputs:
+      workingFile: ${{ parameters.tgzDir }}/.npmrc
+      customEndpoint: ${{ parameters.service_connection }}
+  - powershell: |
+      Copy-Item '${{ parameters.tgzDir }}/.npmrc' $HOME
+      Get-ChildItem @microsoft-*.tgz |% {
+        Write-Host "##[command]npm publish $_ --verbose"
+        npm publish $_ --verbose
+      }
+    displayName: 📦 Push packages to ${{ parameters.feedName }}
+    workingDirectory: ${{ parameters.tgzDir }}

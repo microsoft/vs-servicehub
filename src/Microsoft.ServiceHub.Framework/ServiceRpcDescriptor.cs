@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Reflection;
+using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 
 namespace Microsoft.ServiceHub.Framework;
@@ -40,6 +41,7 @@ public abstract partial class ServiceRpcDescriptor
 		this.ClientInterface = copyFrom.ClientInterface;
 		this.TraceSource = copyFrom.TraceSource;
 		this.MultiplexingStream = copyFrom.MultiplexingStream;
+		this.JoinableTaskFactory = copyFrom.JoinableTaskFactory;
 	}
 
 	/// <summary>
@@ -63,6 +65,12 @@ public abstract partial class ServiceRpcDescriptor
 	/// </summary>
 	/// <value><see langword="null"/> by default.</value>
 	public MultiplexingStream? MultiplexingStream { get; private set; }
+
+	/// <summary>
+	/// Gets the <see cref="Microsoft.VisualStudio.Threading.JoinableTaskFactory"/> that may be applied
+	/// to the constructed RPC connection.
+	/// </summary>
+	public JoinableTaskFactory? JoinableTaskFactory { get; private set; }
 
 	/// <summary>
 	/// Gets the interface type that the client's "callback" RPC target is expected to implement.
@@ -173,6 +181,24 @@ public abstract partial class ServiceRpcDescriptor
 
 		ServiceRpcDescriptor result = this.Clone();
 		result.TraceSource = traceSource;
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="JoinableTaskFactory" /> property set to the specified value.
+	/// </summary>
+	/// <param name="joinableTaskFactory">The value for the modified property..</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceRpcDescriptor WithJoinableTaskFactory(JoinableTaskFactory? joinableTaskFactory)
+	{
+		if (this.JoinableTaskFactory == joinableTaskFactory)
+		{
+			return this;
+		}
+
+		ServiceRpcDescriptor result = this.Clone();
+		result.JoinableTaskFactory = joinableTaskFactory;
 		return result;
 	}
 

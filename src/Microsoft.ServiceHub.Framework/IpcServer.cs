@@ -3,7 +3,8 @@
 
 using System.Diagnostics;
 using System.IO.Pipes;
-using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Microsoft.VisualStudio.Threading;
 
 namespace Microsoft.ServiceHub.Framework;
@@ -26,7 +27,9 @@ internal class IpcServer : IDisposable, IIpcServer
 	{
 		if (options.Name is null)
 		{
-			options = options with { Name = ServerFactory.PrependPipePrefix(Guid.NewGuid().ToString("n")) };
+			// TEMPORARY: strip the \\.\pipe\ prefix from Windows pipe names to match the old IRemoteServiceBroker contract
+			// till we get all consumers updated to the new Microsoft.ServiceHub.Framework assembly which can handle that prefix.
+			options = options with { Name = ServerFactory.TrimWindowsPrefixForDotNet(ServerFactory.PrependPipePrefix(Guid.NewGuid().ToString("n"))) };
 		}
 		else
 		{
@@ -182,12 +185,53 @@ internal class IpcServer : IDisposable, IIpcServer
 			// behavior is a named pipe specific behavior. Unix domain sockets cannot emulate it, so if any service or client were to
 			// depend on the message boundaries that named pipes offered, they might malfunction on *nix platforms.
 			// So instead, we simply don't offer that unique behavior.
+			PipeTransmissionMode transmissionMode = PipeTransmissionMode.Byte;
+
+			int maxNumberOfServerInstances = NamedPipeServerStream.MaxAllowedServerInstances;
+
+			PipeOptions pipeOptions = this.Options.PipeOptions;
+#if NETFRAMEWORK
+			// On .NET Framework, we have to implement the CurrentUserOnly security ourselves.
+			// https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeServerStream.Windows.cs#L98-L119
+			PipeSecurity? pipeSecurity = null;
+			if ((pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) == PolyfillExtensions.PipeOptionsCurrentUserOnly)
+			{
+				pipeSecurity = new PipeSecurity();
+				using (WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent())
+				{
+					SecurityIdentifier identifier = currentIdentity.Owner!;
+
+					// Grant full control to the owner so multiple servers can be opened.
+					// Full control is the default per MSDN docs for CreateNamedPipe.
+					PipeAccessRule rule = new PipeAccessRule(identifier, PipeAccessRights.FullControl, AccessControlType.Allow);
+
+					pipeSecurity.AddAccessRule(rule);
+					pipeSecurity.SetOwner(identifier);
+				}
+
+				// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
+				// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
+				// that were not defined in the enumeration.
+				pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
+			}
+
 			return new NamedPipeServerStream(
 				channelName,
 				PipeDirection.InOut,
-				NamedPipeServerStream.MaxAllowedServerInstances,
-				PipeTransmissionMode.Byte,
-				this.Options.PipeOptions);
+				maxNumberOfServerInstances,
+				transmissionMode,
+				pipeOptions,
+				inBufferSize: 0,
+				outBufferSize: 0,
+				pipeSecurity);
+#else
+			return new NamedPipeServerStream(
+				channelName,
+				PipeDirection.InOut,
+				maxNumberOfServerInstances,
+				transmissionMode,
+				pipeOptions);
+#endif
 		}
 
 		async Task ClientConnectedAsync(PipeStream stream)

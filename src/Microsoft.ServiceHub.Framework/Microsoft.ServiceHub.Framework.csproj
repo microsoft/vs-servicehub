@@ -1,17 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net472</TargetFrameworks>
     <Description>The distributed ServiceHub Framework.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="IsExternalInit" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Composition" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="TraceSource.ActivityTracing" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

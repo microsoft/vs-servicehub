@@ -3,6 +3,7 @@
   <OwnedComments>
     <Cmt Name="Dev" />
     <Cmt Name="LcxAdmin" />
+    <Cmt Name="Loc" />
     <Cmt Name="RCCX" />
   </OwnedComments>
   <Item ItemId=";Managed Resources" ItemType="0" PsrId="211" Leaf="true">
@@ -17,6 +18,33 @@
           <Val><![CDATA["{0}" is not an interface.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{0}" はインターフェイスではありません。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CouldNotGetProcessId" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to get the process id of the client.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[クライアントのプロセス ID の取得に失敗しました。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Error_InvalidExternalClientProcessPid" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{0} '{1}' was not provided in the service request or it did not contain a valid PID.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[サービス要求に {0} '{1}' が指定されていないか、有効な PID が含まれていませんでした。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToValidateClient" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to validate the client connecting.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[接続しているクライアントの検証に失敗しました。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -39,11 +67,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NamedPipeClientCouldNotBeValidated" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Named pipe client could not be validated.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[名前付きパイプ クライアントを検証できませんでした。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NotInitialized" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[This instance has not been initialized.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[このインスタンスは初期化されていません。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PipeNotOwnedByCurrentUser" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This pipe is not owned by the current user.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[このパイプは現在のユーザーによって所有されていません。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -66,6 +112,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ServiceMoniker_AlreadyProffered" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[サービス "{0}" は既に提供されています。最後に提供されたファクトリの結果を破棄してから、別のファクトリを提供してください。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
@@ -81,10 +136,13 @@
     <Disp Icon="Ver" Disp="true" LocTbl="false" Path=" \ ;Version \ 8 \ 0" />
     <Item ItemId=";Comments" ItemType="0" PsrId="211" Leaf="true">
       <Str Cat="Text">
-        <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        <Val><![CDATA[The distributed ServiceHub Framework.]]></Val>
         <Tgt Cat="Text" Stat="Loc" Orig="New">
-          <Val><![CDATA[分散 ServiceHub フレームワーク]]></Val>
+          <Val><![CDATA[分散 ServiceHub フレームワーク。]]></Val>
         </Tgt>
+        <Prev Cat="Text">
+          <Val><![CDATA[The distributed ServiceHub Framework]]></Val>
+        </Prev>
       </Str>
       <Disp Icon="Str" />
     </Item>

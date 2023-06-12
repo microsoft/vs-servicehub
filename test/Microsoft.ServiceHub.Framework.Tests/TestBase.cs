@@ -84,7 +84,9 @@ public abstract class TestBase : IDisposable
 		using (MultiplexingStream mx = await MultiplexingStream.CreateAsync(stream, this.CreateTestMXStreamOptions(isServer: true), cancellationToken))
 		{
 			MultiplexingStream.Channel defaultChannel = await mx.OfferChannelAsync(string.Empty, cancellationToken);
-			FrameworkServices.RemoteServiceBroker.ConstructRpc(serverFactory(mx), defaultChannel);
+			FrameworkServices.RemoteServiceBroker
+				.WithTraceSource(this.CreateTestTraceSource("server", SourceLevels.All))
+				.ConstructRpc(serverFactory(mx), defaultChannel);
 			await defaultChannel.Completion.WithCancellation(cancellationToken);
 		}
 	}

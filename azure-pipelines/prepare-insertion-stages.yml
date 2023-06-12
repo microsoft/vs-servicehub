@@ -56,3 +56,9 @@ stages:
         forceReinstallCredentialProvider: true
     - script: dotnet nuget push $(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg -s https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json --api-key azdo --skip-duplicate
       displayName: 📦 Push nuget packages
+    - template: npm_push.yml
+      parameters:
+        tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm
+        feedName: azure-public/vssdk
+        feedUrl: https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/npm/registry/
+        service_connection: azure-public/vssdk NPM

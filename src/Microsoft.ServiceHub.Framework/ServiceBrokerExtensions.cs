@@ -10,7 +10,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// </summary>
 public static class ServiceBrokerExtensions
 {
-#pragma warning disable RS0026 // Do not add multiple public overloads with optional parameters
 	/// <summary>
 	/// Requests access to some service through a client proxy.
 	/// </summary>
@@ -38,7 +37,6 @@ public static class ServiceBrokerExtensions
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
 		return serviceBroker.GetProxyAsync<T>(serviceDescriptor, default(ServiceActivationOptions), cancellationToken);
 	}
-#pragma warning restore RS0026 // Do not add multiple public overloads with optional parameters
 
 	/// <summary>
 	/// Requests access to some service through an <see cref="IDuplexPipe"/>.

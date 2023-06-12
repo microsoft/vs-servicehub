@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Runtime.Versioning;
-
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1403 // File may only contain a single namespace
+
+using System.IO.Pipes;
 
 namespace Microsoft.ServiceHub.Framework
 {
@@ -14,6 +14,21 @@ namespace Microsoft.ServiceHub.Framework
 	internal static class PolyfillExtensions
 	{
 #if !NET5_0_OR_GREATER
+		/// <summary>
+		/// When used to create a <see cref="NamedPipeServerStream"/> instance, indicates
+		/// that the pipe can only be connected to a client created by the same user. When
+		/// used to create a <see cref="NamedPipeClientStream"/> instance, indicates that
+		/// the pipe can only connect to a server created by the same user. On Windows, it
+		/// verifies both the user account and elevation level.
+		/// </summary>
+		/// <remarks>
+		/// .NET implements this, but on .NET Framework we have to implement it ourselves.
+		/// .NET's implementations are available as a template for us to follow:
+		/// <see href="https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeServerStream.Windows.cs#L102-L113">server</see> and
+		/// <see href="https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeClientStream.Windows.cs#L141-L151">client</see>.
+		/// </remarks>
+		internal const PipeOptions PipeOptionsCurrentUserOnly = (PipeOptions)0x2000_0000;
+
 		/// <summary>
 		/// Disposes the stream.
 		/// </summary>

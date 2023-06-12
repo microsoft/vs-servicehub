@@ -3,7 +3,7 @@ import CancellationToken from 'cancellationtoken'
 import { EventEmitter } from 'events'
 import { Channel, MultiplexingStream, MultiplexingStreamOptions } from 'nerdbank-streams'
 import { AuthorizationServiceClient } from './AuthorizationServiceClient'
-import { availabilityChangedEvent, RemoteServiceConnections } from './constants'
+import { availabilityChangedEvent, PIPE_NAME_PREFIX, RemoteServiceConnections } from './constants'
 import { IAuthorizationService } from './IAuthorizationService'
 import { BrokeredServicesChangedArgs } from './BrokeredServicesChangedArgs'
 import { IDisposable } from './IDisposable'
@@ -14,7 +14,7 @@ import { ServiceActivationOptions } from './ServiceActivationOptions'
 import { ServiceBrokerClientMetadata } from './ServiceBrokerClientMetadata'
 import { ServiceMoniker } from './ServiceMoniker'
 import { ServiceRpcDescriptor } from './ServiceRpcDescriptor'
-import { isChannel, IsReadWriteStream } from './utilities'
+import { isChannel, isReadWriteStream } from './utilities'
 import { createConnection } from 'net'
 import { FrameworkServices } from './FrameworkServices'
 import path from 'path'
@@ -23,7 +23,7 @@ import path from 'path'
  * An {@link IServiceBroker} that provisions services from a (typically remote) {@link IRemoteServiceBroker}.
  */
 export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBrokerEmitter) implements IDisposable, IServiceBroker {
-	private static readonly FullConnectionSupport: RemoteServiceConnections = RemoteServiceConnections.Multiplexing | RemoteServiceConnections.IpcPipe
+	private static readonly fullConnectionSupport: RemoteServiceConnections = RemoteServiceConnections.Multiplexing | RemoteServiceConnections.IpcPipe
 
 	/**
 	 * Connects to a pipe to a remote service broker that can then answer service requests
@@ -90,7 +90,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		assert(stream)
 
 		const clientMetadata: ServiceBrokerClientMetadata = {
-			supportedConnections: RemoteServiceBroker.FullConnectionSupport,
+			supportedConnections: RemoteServiceBroker.fullConnectionSupport,
 		}
 		const result = await RemoteServiceBroker.initializeBrokerConnection(server, cancellationToken, clientMetadata, stream)
 		result.ownsMxStream = false
@@ -104,7 +104,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		multiplexingStream?: MultiplexingStream
 	): Promise<RemoteServiceBroker> {
 		if (!clientMetadata) {
-			let supportedConnections = this.FullConnectionSupport
+			let supportedConnections = this.fullConnectionSupport
 			if (!multiplexingStream) {
 				supportedConnections &= ~RemoteServiceConnections.Multiplexing
 			}
@@ -200,12 +200,17 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 			} else if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
 				pipe = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
 			} else if (remoteConnectionInfo.pipeName) {
-				pipe = createConnection(remoteConnectionInfo.pipeName)
+				// Accommodate Windows pipe names that may or may not include the requisite prefix.
+				const pipeName =
+					process.platform === 'win32' && !remoteConnectionInfo.pipeName.startsWith(PIPE_NAME_PREFIX)
+						? PIPE_NAME_PREFIX + remoteConnectionInfo.pipeName
+						: remoteConnectionInfo.pipeName
+				pipe = createConnection(pipeName)
 			} else {
 				throw new Error('Unsupported connection type')
 			}
 		} catch (err) {
-			if (IsReadWriteStream(pipe)) {
+			if (isReadWriteStream(pipe)) {
 				pipe.end()
 			} else if (isChannel(pipe)) {
 				pipe.dispose()

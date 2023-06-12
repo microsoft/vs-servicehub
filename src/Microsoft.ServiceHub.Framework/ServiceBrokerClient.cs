@@ -55,7 +55,6 @@ public class ServiceBrokerClient : IDisposableObservable
 	/// </summary>
 	/// <param name="serviceBroker">The underlying service broker.</param>
 	/// <param name="joinableTaskFactory">A means to avoid deadlocks if the authorization service requires the main thread. May be null.</param>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign", "RS0026:Do not add multiple public overloads with optional parameters", Justification = "Other parameters are significantly different, so ambiguity won't happen.")]
 	public ServiceBrokerClient(IServiceBroker serviceBroker, JoinableTaskFactory? joinableTaskFactory = null)
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));
@@ -139,11 +138,7 @@ public class ServiceBrokerClient : IDisposableObservable
 	public async ValueTask<Rental<T>> GetProxyAsync<T>(ServiceRpcDescriptor serviceRpcDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		if (serviceRpcDescriptor is null)
-		{
-			throw new ArgumentNullException(nameof(serviceRpcDescriptor));
-		}
-
+		Requires.NotNull(serviceRpcDescriptor);
 		Verify.NotDisposed(this);
 
 		AsyncLazy<object?>? clientLazy;

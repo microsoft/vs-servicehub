@@ -4,7 +4,7 @@ pr: none
 resources:
   pipelines:
   - pipeline: CI
-    source: Library # TODO: This should match the name of your CI pipeline
+    source: vs-servicehub
     trigger:
       tags:
       - auto-release
@@ -26,20 +26,19 @@ jobs:
       } else {
         Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
       }
-    displayName: ⚙ Set up pipeline
+    displayName: ⚙️ Set up pipeline
   - task: UseDotNet@2
-    displayName: ⚙ Install .NET SDK
+    displayName: ⚙️ Install .NET SDK
     inputs:
       packageType: sdk
       version: 6.x
   - task: NodeTool@0
     inputs:
       versionSpec: 16.x
-    displayName: ⚙️ Install Node.js
+    displayName: ⚙️️ Install Node.js
   - download: CI
     artifact: deployables-Windows
     displayName: 🔻 Download deployables-Windows artifact
-    patterns: 'deployables-Windows/NuGet/*'
   - task: GitHubRelease@1
     displayName: 📢 GitHub release (create)
     inputs:
@@ -51,7 +50,9 @@ jobs:
       title: v$(resources.pipeline.CI.runName)
       isDraft: true # After running this step, visit the new draft release, edit, and publish.
       isPreRelease: $(IsPrerelease)
-      assets: $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg
+      assets: |
+        $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg
+        $(Pipeline.Workspace)/CI/deployables-Windows/npm/*.tgz
       changeLogCompareToRelease: lastNonDraftRelease
       changeLogType: issueBased
       changeLogLabels: |
@@ -64,13 +65,9 @@ jobs:
     displayName: 📦 Push packages to nuget.org
     condition: and(succeeded(), ne(variables['NuGetOrgApiKey'], ''))
 
-  - task: npmAuthenticate@0
-    inputs:
-      workingFile: azure-pipelines/.npmrc
-      customEndpoint: npmjs.org (andrewarnott)
-  - powershell: |
-      Get-ChildItem '$(Pipeline.Workspace)/CI/deployables-Windows/npm/*.tgz' |% {
-        npm publish $_
-      }
-    displayName: 📦 Push packages to npmjs.org
-    workingDirectory: azure-pipelines/.npmrc
+  - template: npm_push.yml
+    parameters:
+      tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
+      feedName: npmjs.org
+      feedUrl: https://registry.npmjs.org/
+      service_connection: npmjs.org (andrewarnott)

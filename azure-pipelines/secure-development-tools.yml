@@ -37,6 +37,14 @@ steps:
     TargetPattern: guardianGlob
     AnalyzeTargetGlob: $(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.dll;$(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.exe
 
+- task: BinSkim@4
+  displayName: 🔍 Run BinSkim
+  inputs:
+    InputType: Basic
+    Function: analyze
+    TargetPattern: guardianGlob
+    AnalyzeTargetGlob: $(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.dll;$(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.exe
+
 - task: APIScan@2
   displayName: 🔍 Run APIScan
   inputs:

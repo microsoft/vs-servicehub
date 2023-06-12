@@ -16,6 +16,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	private static readonly ServiceMoniker SomeMoniker = new ServiceMoniker("Some name");
 	private static readonly ServiceMoniker SomeOtherMoniker = new ServiceMoniker("Some other name");
 	private static readonly MultiplexingStream.Options MultiplexingStreamOptions = new MultiplexingStream.Options();
+	private static readonly JoinableTaskFactory SomeJoinableTaskFactory = new JoinableTaskContext().Factory;
 
 	public ServiceJsonRpcDescriptorTests(ITestOutputHelper logger)
 		: base(logger)
@@ -163,6 +164,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	}
 
 	[Theory]
+	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]
@@ -400,6 +402,19 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 
 		Assert.Equal(8, await calc.AddAsync(3, 5));
 		Assert.NotEmpty(myListener.TracedMessages);
+	}
+
+	[Fact]
+	public void WithJoinableTaskFactory_ImpactsJsonRpcProperty()
+	{
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+		ServiceRpcDescriptor jtfDescriptor = descriptor.WithJoinableTaskFactory(SomeJoinableTaskFactory);
+
+		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
+		descriptor.ConstructRpc(new Calculator(), pair.Item1);
+		ICalculator calc = jtfDescriptor.ConstructRpc<ICalculator>(pair.Item2);
+
+		Assert.Same(SomeJoinableTaskFactory, ((IJsonRpcClientProxy)calc).JsonRpc.JoinableTaskFactory);
 	}
 
 	[Fact]

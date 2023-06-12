@@ -1,0 +1,4 @@
+Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer
+Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.MockBrokeredServiceContainer(System.Diagnostics.TraceSource? traceSource = null) -> void
+override Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.LocalUserCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+override Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.Proffer(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered! proffered) -> System.IDisposable!

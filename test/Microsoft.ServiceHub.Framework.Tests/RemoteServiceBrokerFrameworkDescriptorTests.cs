@@ -23,7 +23,7 @@ public class RemoteServiceBrokerFrameworkDescriptorTests : RpcTestBase<IRemoteSe
 	public void FormatterAndDelimiter()
 	{
 		ServiceJsonRpcDescriptor descriptor = Assert.IsAssignableFrom<ServiceJsonRpcDescriptor>(FrameworkServices.RemoteServiceBroker);
-		Assert.Equal(ServiceJsonRpcDescriptor.Formatters.UTF8, descriptor.Formatter);
+		Assert.Equal(ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, descriptor.Formatter);
 		Assert.Equal(ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, descriptor.MessageDelimiter);
 	}
 

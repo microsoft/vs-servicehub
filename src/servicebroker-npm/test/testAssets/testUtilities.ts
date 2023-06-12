@@ -80,3 +80,7 @@ export const appleTreeDescriptor: ServiceJsonRpcDescriptor = new ServiceJsonRpcD
 	Formatters.Utf8,
 	MessageDelimiters.HttpLikeHeaders
 )
+
+export function delay(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms))
+}

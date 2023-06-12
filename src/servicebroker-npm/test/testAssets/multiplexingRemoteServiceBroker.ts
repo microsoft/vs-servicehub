@@ -28,11 +28,12 @@ export class MultiplexingRemoteServiceBroker extends (EventEmitter as new () => 
 	public constructor(channel: Channel) {
 		super()
 		this.clientProxy = FrameworkServices.remoteServiceBroker.constructRpc<IRemoteServiceBroker>(channel.stream)
-			; (this.clientProxy as unknown as IJsonRpcClientProxy)._jsonRpc.onNotification(availabilityChangedEvent, (args: BrokeredServicesChangedArgs) => {
-				this.eventArgs = args
-				this.emit('availabilityChanged', args)
-				this.availabilityChangedRaised.resolve()
-			})
+		let clientProxy = this.clientProxy as unknown as IJsonRpcClientProxy
+		clientProxy._jsonRpc.onNotification(availabilityChangedEvent, (args: BrokeredServicesChangedArgs) => {
+			this.eventArgs = args
+			this.emit('availabilityChanged', args)
+			this.availabilityChangedRaised.resolve()
+		})
 	}
 
 	public async handshake(clientMetadata: ServiceBrokerClientMetadata, cancellationToken?: CancellationToken): Promise<void> {

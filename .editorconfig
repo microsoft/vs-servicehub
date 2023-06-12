@@ -186,5 +186,8 @@ dotnet_diagnostic.DOC202.severity = warning
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = warning
 
+# SA1601: Partial elements should be documented
+dotnet_diagnostic.SA1601.severity = silent
+
 [*.sln]
 indent_style = tab

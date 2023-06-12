@@ -1,23 +1,21 @@
 import assert from 'assert'
 import CancellationToken from 'cancellationtoken'
-import { IRemoteServiceBroker } from '../src/IRemoteServiceBroker'
 import { FullDuplexStream } from 'nerdbank-streams'
-import { Formatters, MessageDelimiters, RemoteServiceConnections } from '../src/constants'
-import { ServiceBrokerClientMetadata } from '../src/ServiceBrokerClientMetadata'
-import { ServiceJsonRpcDescriptor } from '../src/ServiceJsonRpcDescriptor'
-import { ServiceMoniker } from '../src/ServiceMoniker'
-import { Calculator } from './testAssets/calculatorService'
 import {
-	IAppleTreeService,
-	ApplePickedEventArgs,
-	AppleGrownEventArgs,
-	ICalculatorService,
-	ICallMeBackClient,
-	ICallMeBackService,
-	IWaitToBeCanceled,
-} from './testAssets/interfaces'
+	IDisposable,
+	IRemoteServiceBroker,
+	ServiceMoniker,
+	ServiceJsonRpcDescriptor,
+	ServiceBrokerClientMetadata,
+	Formatters,
+	MessageDelimiters,
+	RemoteServiceConnections,
+	MarshaledObjectLifetime,
+	RpcMarshalable,
+} from '../src'
+import { Calculator } from './testAssets/calculatorService'
+import { IAppleTreeService, ApplePickedEventArgs, ICalculatorService, ICallMeBackClient, ICallMeBackService, IWaitToBeCanceled } from './testAssets/interfaces'
 import { TestRemoteServiceBroker } from './testAssets/testRemoteServiceBroker'
-import { IDisposable } from '../src/IDisposable'
 import { appleTreeDescriptor, calcDescriptorUtf8Http, callBackDescriptor, cancellationWaiter } from './testAssets/testUtilities'
 import { CallMeBackService } from './testAssets/callMeBackService'
 import { CallMeBackClient } from './testAssets/callMeBackClient'
@@ -75,13 +73,19 @@ describe('ServiceJsonRpcDescriptor', function () {
 			appleTreeDescriptor.constructRpc(server, pipes.first)
 			const rpc = appleTreeDescriptor.constructRpc<IAppleTreeService>(pipes.second)
 
-			const receivedPickedArgs = new Promise<ApplePickedEventArgs>(resolve => rpc.once('picked', args => resolve(args)))
-			await rpc.pick({ color: 'green' })
-			assert.strictEqual((await receivedPickedArgs).color, 'green')
+			const receivedPickedArgsPromise = new Promise<ApplePickedEventArgs>(resolve => rpc.once('picked', args => resolve(args)))
+			await rpc.pick({ color: 'green', weight: 5 })
+			const receivedPickedArgs = await receivedPickedArgsPromise
+			assert.strictEqual(receivedPickedArgs.color, 'green')
+			assert.strictEqual(receivedPickedArgs.weight, 5)
 
-			const receivedGrownArgs = new Promise<AppleGrownEventArgs>(resolve => rpc.on('grown', args => resolve(args)))
-			await rpc.grow({ seeds: 8 })
-			assert.strictEqual((await receivedGrownArgs).seeds, 8)
+			const receivedGrownArgsPromise = new Promise<{ seeds: number; weight: number }>(resolve =>
+				rpc.on('grown', (seeds, weight) => resolve({ seeds, weight }))
+			)
+			await rpc.grow(8, 5)
+			const receivedGrownArgs = await receivedGrownArgsPromise
+			assert.strictEqual(receivedGrownArgs.seeds, 8)
+			assert.strictEqual(receivedGrownArgs.weight, 5)
 		})
 	})
 
@@ -91,7 +95,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 		cancellationWaiter.constructRpc(server, pipes.first)
 		const rpc = cancellationWaiter.constructRpc<IWaitToBeCanceled>(pipes.second)
 		const cts = CancellationToken.create()
-		const rpcCall = rpc.WaitForCancellation(cts.token)
+		const rpcCall = rpc.waitForCancellation(cts.token)
 		await server.methodReached
 		cts.cancel()
 		await rpcCall
@@ -125,7 +129,7 @@ describe('ServiceJsonRpcDescriptor', function () {
 
 		it('can be invoked', async () => {
 			const msg = 'my message'
-			await proxyToService.CallMeBackAsync(msg)
+			await proxyToService.callMeBack(msg)
 			expect(clientTarget.lastMessage).toEqual(msg)
 		})
 	})
@@ -152,6 +156,177 @@ describe('ServiceJsonRpcDescriptor', function () {
 		assert(!info2.equals(info3a), 'Should not be equal with different formatter and message delimiter')
 		assert(!info2.equals(info3b), 'Should not be equal with different message delimiter')
 	})
+
+	describe('general marshalable objects', function () {
+		interface IPhone extends IDisposable {
+			placeCall(callerName: string): Promise<string>
+		}
+
+		interface IServer {
+			callMeBack(clientPhone: IPhone): Promise<string>
+			callingAllPhones(...clientPhones: IPhone[]): Promise<string[]>
+			callMeLater(clientPhone: IPhone): Promise<void> | void
+			providePhone(): IPhone | Promise<IPhone>
+			providePhoneWithCallLifetime(): IPhone | Promise<IPhone>
+			isThisYourPhone(phone: IPhone): IPhone | null | Promise<IPhone | null>
+			throwInside(phone: IPhone): Promise<void>
+		}
+
+		class Server implements IServer {
+			public clientReadyForCall: Promise<void> | undefined
+			public deferredClientCallResult: Promise<string> | undefined
+			readonly serverPhone = new Phone('server', 'explicit')
+
+			async callMeBack(clientPhone: IPhone): Promise<string> {
+				const response = await clientPhone.placeCall('server')
+				return response
+			}
+
+			async callingAllPhones(...clientPhonesAndCT: (IPhone | CancellationToken)[]): Promise<string[]> {
+				const clientPhones = clientPhonesAndCT.slice(0, clientPhonesAndCT.length - 1) as IPhone[]
+				return Promise.all(clientPhones.map((phone, i) => phone.placeCall(`server ${i + 1}`)))
+			}
+
+			callMeLater(clientPhone: IPhone) {
+				this.deferredClientCallResult = new Promise<string>(async (resolve, reject) => {
+					try {
+						await this.clientReadyForCall
+						const result = await clientPhone.placeCall('server')
+						clientPhone.dispose()
+						resolve(result)
+					} catch (reason) {
+						reject(reason)
+					}
+				})
+			}
+
+			providePhone() {
+				return this.serverPhone
+			}
+
+			providePhoneWithCallLifetime() {
+				// This will always fail, because returning call-lifetime object is not allowed.
+				return new Phone('server', 'call')
+			}
+
+			isThisYourPhone(phone: IPhone) {
+				return phone === this.serverPhone ? phone : null
+			}
+
+			async throwInside() {
+				throw new Error('throwing as requested.')
+			}
+		}
+
+		class Phone implements IPhone, RpcMarshalable {
+			readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime
+			readonly disposed: Promise<void>
+			private disposalSource?: () => void
+
+			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
+				this._jsonRpcMarshalableLifetime = lifetime ?? 'explicit' // call lifetime isn't supported yet.
+				this.disposed = new Promise<void>(resolve => (this.disposalSource = resolve))
+			}
+
+			placeCall(callerName: string): Promise<string> {
+				return Promise.resolve(`Hi, ${this.owner}. This is ${callerName}.`)
+			}
+
+			dispose() {
+				this.disposalSource!()
+			}
+		}
+
+		let server: Server
+		let rpc: IServer & IDisposable
+
+		const serverDescriptor = new ServiceJsonRpcDescriptor(ServiceMoniker.create('test'), Formatters.Utf8, MessageDelimiters.HttpLikeHeaders)
+
+		beforeEach(function () {
+			server = new Server()
+
+			const pipes = FullDuplexStream.CreatePair()
+			serverDescriptor.constructRpc(server, pipes.first)
+			rpc = serverDescriptor.constructRpc<IServer>(pipes.second)
+		})
+
+		it('as arguments', async function () {
+			const response = await rpc.callMeBack(new Phone('client'))
+			assert.strictEqual(response, 'Hi, client. This is server.')
+		})
+
+		it('as return value', async function () {
+			const serverPhone = await rpc.providePhone()
+			const response = await serverPhone.placeCall('client')
+			assert.strictEqual(response, 'Hi, server. This is client.')
+		})
+
+		it('disposal of proxy releases memory', async function () {
+			const serverPhone = await rpc.providePhone()
+			serverPhone.dispose()
+			await assert.rejects(serverPhone.placeCall('client'))
+			await server.serverPhone.disposed
+		})
+
+		it('call lifetime is not yet supported', async function () {
+			const phone = new Phone('client', 'call')
+			await assert.rejects(rpc.callMeBack(phone))
+		})
+
+		it.skip('lifetime is scoped to the call', async function () {
+			const phone = new Phone('client', 'call')
+			server.clientReadyForCall = new Promise<void>(async (resolve, reject) => {
+				try {
+					await rpc.callMeLater(phone)
+					resolve()
+				} catch (reason) {
+					reject(reason)
+				}
+			})
+			await server.clientReadyForCall
+			await assert.rejects(server.deferredClientCallResult!)
+		})
+
+		it('lifetime exceeds scope of the call', async function () {
+			const phone = new Phone('client', 'explicit')
+			server.clientReadyForCall = new Promise<void>(async (resolve, reject) => {
+				try {
+					await rpc.callMeLater(phone)
+					resolve()
+				} catch (reason) {
+					reject(reason)
+				}
+			})
+			await server.clientReadyForCall
+			const response = await server.deferredClientCallResult
+			assert.strictEqual(response, 'Hi, client. This is server.')
+		})
+
+		it('can pass the proxy back and forth', async function () {
+			const serverPhone = await rpc.providePhone()
+			const result = await rpc.isThisYourPhone(serverPhone)
+			assert.strictEqual(result, serverPhone)
+		})
+
+		it('lifetime of call in return value is disallowed', async function () {
+			await assert.rejects(async () => await rpc.providePhoneWithCallLifetime())
+		})
+
+		it('multiple marshaled objects', async function () {
+			const phone1 = new Phone('client 1')
+			const phone2 = new Phone('client 2')
+			const responses = await rpc.callingAllPhones(phone1, phone2)
+			assert.deepEqual(responses, ['Hi, client 1. This is server 1.', 'Hi, client 2. This is server 2.'])
+		})
+
+		it('resources released when server throws', async function () {
+			const phone = new Phone('client')
+			await assert.rejects(rpc.throwInside(phone))
+			await phone.disposed
+		})
+	})
+
+	describe('IObserver<T>', function () {})
 })
 
 describe('Various formatters and delimiters', function () {

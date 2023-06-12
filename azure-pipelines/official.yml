@@ -11,12 +11,12 @@ trigger:
     - .vscode/
     - azure-pipelines/release.yml
     - azure-pipelines/vs-insertion.yml
-#schedules:
-#- cron: "0 3 * * *" # Daily @ 8 PM PST
-#  displayName: Daily vs-insertion
-#  branches:
-#    include:
-#    - microbuild
+schedules:
+- cron: "0 3 * * *" # Daily @ 8 PM PST
+  displayName: Daily vs-insertion
+  branches:
+    include:
+    - main
 
 parameters:
 - name: SignTypeSelection
@@ -27,7 +27,7 @@ parameters:
 - name: ShouldSkipOptimize
   displayName: Skip OptProf optimization
   type: boolean
-  default: true # change to false after OptProf pipelines are passing again
+  default: false
 - name: includeMacOS
   displayName: Build on macOS
   type: boolean
@@ -39,7 +39,7 @@ parameters:
 - name: EnableCompliance
   displayName: Run Compliance Tools
   type: boolean
-  default: true
+  default: false
 - name: EnableAPIScan
   displayName: Include APIScan with Compliance tools
   type: boolean

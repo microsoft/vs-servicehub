@@ -113,6 +113,12 @@ try {
     }
 
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NuGet packages", "Restore")) {
+        $RestoreArguments = @()
+        if ($Interactive)
+        {
+            $RestoreArguments += '--interactive'
+        }
+
         Write-Host "Restoring NuGet packages" -ForegroundColor $HeaderColor
         dotnet restore @RestoreArguments
         if ($lastexitcode -ne 0) {

@@ -1,4 +1,4 @@
-import { AppleGrownEventArgs, ApplePickedEventArgs, AppleTreeEmitter, IAppleTreeService } from './interfaces'
+import { ApplePickedEventArgs, AppleTreeEmitter, IAppleTreeService } from './interfaces'
 import { EventEmitter } from 'events'
 import CancellationToken from 'cancellationtoken'
 import { RpcEventServer } from '../../src/ServiceRpcDescriptor'
@@ -10,8 +10,8 @@ export class AppleTree extends (EventEmitter as new () => AppleTreeEmitter) impl
 		this.emit('picked', args)
 		return Promise.resolve()
 	}
-	grow(args: AppleGrownEventArgs, cancellationToken?: CancellationToken): Promise<void> {
-		this.emit('grown', args)
+	grow(seeds: number, weight: number, cancellationToken?: CancellationToken): Promise<void> {
+		this.emit('grown', seeds, weight)
 		return Promise.resolve()
 	}
 }

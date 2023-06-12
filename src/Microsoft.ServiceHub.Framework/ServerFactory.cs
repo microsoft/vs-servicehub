@@ -3,10 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
+using System.Security.Principal;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
 
@@ -23,7 +22,7 @@ public static class ServerFactory
 #if NET5_0_OR_GREATER
 	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly;
 #else
-	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous;
+	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
 
 	private const int ConnectRetryIntervalMs = 20;
@@ -88,10 +87,20 @@ public static class ServerFactory
 	{
 		Requires.NotNull(pipeName, nameof(pipeName));
 
-		NamedPipeClientStream pipeStream = new(".", TrimWindowsPrefixForDotNet(pipeName), PipeDirection.InOut, StandardPipeOptions);
+		PipeOptions fullPipeOptions = StandardPipeOptions;
+		PipeOptions pipeOptions = StandardPipeOptions;
+
+#if NETFRAMEWORK
+		// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
+		// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
+		// that were not defined in the enumeration.
+		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
+#endif
+
+		NamedPipeClientStream pipeStream = new(".", TrimWindowsPrefixForDotNet(pipeName), PipeDirection.InOut, pipeOptions);
 		try
 		{
-			await ConnectWithRetryAsync(pipeStream, cancellationToken, maxRetries: options.FailFast ? 0 : int.MaxValue, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			await ConnectWithRetryAsync(pipeStream, fullPipeOptions, cancellationToken, maxRetries: options.FailFast ? 0 : int.MaxValue, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
 			return pipeStream;
 		}
 		catch
@@ -130,12 +139,13 @@ public static class ServerFactory
 	/// Connects to a named pipe without spinning the CPU as <see cref="NamedPipeClientStream.Connect(int)"/> or <see cref="NamedPipeClientStream.ConnectAsync(CancellationToken)"/> would do.
 	/// </summary>
 	/// <param name="npcs">The named pipe client stream to connect.</param>
+	/// <param name="pipeOptions">The pipe options applied to this connection.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <param name="maxRetries">The maximum number of retries to attempt.</param>
 	/// <param name="withSpinningWait">Whether or not the connect should be attempted with a spinning wait.
 	/// If the pipe being connected to is known to exist, it is safe to use a spinning wait to avoid potentially throwing exceptions for retries.</param>
 	/// <returns>A <see cref="Task"/> that tracks the asynchronous connection attempt.</returns>
-	private static async Task ConnectWithRetryAsync(NamedPipeClientStream npcs, CancellationToken cancellationToken, int maxRetries = int.MaxValue, bool withSpinningWait = false)
+	private static async Task ConnectWithRetryAsync(NamedPipeClientStream npcs, PipeOptions pipeOptions, CancellationToken cancellationToken, int maxRetries = int.MaxValue, bool withSpinningWait = false)
 	{
 		Requires.NotNull(npcs, nameof(npcs));
 
@@ -158,6 +168,9 @@ public static class ServerFactory
 					await npcs.ConnectAsync((int)NMPWAIT_NOWAIT).ConfigureAwait(false);
 				}
 
+#if NETFRAMEWORK
+				ValidateRemotePipeUser(npcs, pipeOptions);
+#endif
 				return;
 			}
 			catch (Exception ex)
@@ -200,6 +213,31 @@ public static class ServerFactory
 			}
 		}
 	}
+
+#if NETFRAMEWORK
+	/// <remarks>
+	/// Source code for this came from <see href="https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeClientStream.Windows.cs#LL136C8-L152C10">.NET source code</see>.
+	/// </remarks>
+	private static void ValidateRemotePipeUser(NamedPipeClientStream clientStream, PipeOptions pipeOptions)
+	{
+		if ((pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) != PolyfillExtensions.PipeOptionsCurrentUserOnly)
+		{
+			return;
+		}
+
+		PipeSecurity accessControl = clientStream.GetAccessControl();
+		IdentityReference? remoteOwnerSid = accessControl.GetOwner(typeof(SecurityIdentifier));
+		using (WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent())
+		{
+			SecurityIdentifier? currentUserSid = currentIdentity.Owner;
+			if (remoteOwnerSid != currentUserSid)
+			{
+				clientStream.Close();
+				throw new UnauthorizedAccessException(Strings.PipeNotOwnedByCurrentUser);
+			}
+		}
+	}
+#endif
 
 	/// <summary>
 	/// Options that can influence the IPC server.

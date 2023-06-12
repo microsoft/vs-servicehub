@@ -1,6 +1,7 @@
 import CancellationToken from 'cancellationtoken'
 import { EventEmitter } from 'events'
 import StrictEventEmitter from 'strict-event-emitter-types'
+import { IObserver } from '../../src'
 
 export interface IFakeService {
 	fakeProperty: string
@@ -10,41 +11,41 @@ export interface IFakeService {
 export interface ICalculatorService {
 	add(a: number, b: number, cancellationToken?: CancellationToken): Promise<number>
 	add5(a: number, cancellationToken?: CancellationToken): Promise<number>
+	observeNumbers(observer: IObserver<number>, length: number, failAtEnd: boolean): Promise<void>
 }
 
 export interface ICallMeBackService {
-	CallMeBackAsync(message: string, cancellationToken?: CancellationToken): Promise<void>
+	callMeBack(message: string, cancellationToken?: CancellationToken): Promise<void>
 }
 
 export interface ICallMeBackClient {
-	YouPhonedAsync(message: string): Promise<void>
+	youPhoned(message: string): Promise<void>
 }
 
 export interface IActivationService {
-	GetClientCredentialsAsync(): Promise<{ [key: string]: string }>
-	GetActivationArgumentsAsync(): Promise<{ [key: string]: string }>
+	getClientCredentials(): Promise<{ [key: string]: string }>
+	getActivationArguments(): Promise<{ [key: string]: string }>
 }
 
 export interface IWaitToBeCanceled {
-	WaitForCancellation(cancellationToken: CancellationToken): Promise<void>
+	waitForCancellation(cancellationToken: CancellationToken): Promise<void>
 }
 
 export interface ApplePickedEventArgs {
 	color: 'red' | 'green' | 'yellow'
-}
-
-export interface AppleGrownEventArgs {
-	seeds: number
+	weight: number
 }
 
 export interface AppleTreeEvents {
+	/** An event with one argument that contains two properties. */
 	picked: (args: ApplePickedEventArgs) => void
-	grown: (args: AppleGrownEventArgs) => void
+	/** An event with two arguments. */
+	grown: (seeds: number, weight: number) => void
 }
 
 export type AppleTreeEmitter = StrictEventEmitter<EventEmitter, AppleTreeEvents>
 
 export interface IAppleTreeService extends AppleTreeEmitter {
 	pick(args: ApplePickedEventArgs, cancellationToken?: CancellationToken): Promise<void>
-	grow(args: AppleGrownEventArgs, cancellationToken?: CancellationToken): Promise<void>
+	grow(seeds: number, weight: number, cancellationToken?: CancellationToken): Promise<void>
 }
