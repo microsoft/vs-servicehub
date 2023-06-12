@@ -28,6 +28,8 @@
     No effect if -NoPrerequisites is specified.
 .PARAMETER NoRestore
     Skips the package restore step.
+.PARAMETER NoToolRestore
+    Skips the dotnet tool restore step.
 .PARAMETER Signing
     Install the MicroBuild signing plugin for building test-signed builds on desktop machines.
 .PARAMETER Localization
@@ -43,6 +45,8 @@
     Install the MicroBuild SBOM plugin.
 .PARAMETER AccessToken
     An optional access token for authenticating to Azure Artifacts authenticated feeds.
+.PARAMETER Interactive
+    Runs NuGet restore in interactive mode. This can turn authentication failures into authentication challenges.
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 Param (
@@ -57,6 +61,8 @@ Param (
     [Parameter()]
     [switch]$NoRestore,
     [Parameter()]
+    [switch]$NoToolRestore,
+    [Parameter()]
     [switch]$Signing,
     [Parameter()]
     [switch]$Localization,
@@ -67,7 +73,9 @@ Param (
     [Parameter()]
     [switch]$SBOM,
     [Parameter()]
-    [string]$AccessToken
+    [string]$AccessToken,
+    [Parameter()]
+    [switch]$Interactive
 )
 
 $EnvVars = @{}
@@ -98,12 +106,25 @@ Push-Location $PSScriptRoot
 try {
     $HeaderColor = 'Green'
 
+    $RestoreArguments = @()
+    if ($Interactive)
+    {
+        $RestoreArguments += '--interactive'
+    }
+
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NuGet packages", "Restore")) {
         Write-Host "Restoring NuGet packages" -ForegroundColor $HeaderColor
-        dotnet restore
+        dotnet restore @RestoreArguments
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring packages."
         }
+    }
+
+    if (!$NoToolRestore -and $PSCmdlet.ShouldProcess("dotnet tool", "restore")) {
+      dotnet tool restore @RestoreArguments
+      if ($lastexitcode -ne 0) {
+          throw "Failure while restoring dotnet CLI tools."
+      }
     }
 
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
@@ -116,7 +137,7 @@ try {
         }
     }
 
-    $InstallNuGetPkgScriptPath = ".\azure-pipelines\Install-NuGetPackage.ps1"
+    $InstallNuGetPkgScriptPath = "$PSScriptRoot\azure-pipelines\Install-NuGetPackage.ps1"
     $nugetVerbosity = 'quiet'
     if ($Verbose) { $nugetVerbosity = 'normal' }
     $MicroBuildPackageSource = 'https://pkgs.dev.azure.com/devdiv/_packaging/MicroBuildToolset%40Local/nuget/v3/index.json'

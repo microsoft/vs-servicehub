@@ -133,7 +133,7 @@ public class MultiplexingRelayServiceBroker : IRemoteServiceBroker, IDisposable,
 		};
 		MultiplexingStream.Channel outerChannel = this.multiplexingStreamWithClient.CreateChannel(channelOptions);
 		Assumes.True(this.channelsOfferedToClient.TryAdd(requestId, outerChannel));
-		outerChannel.Acceptance.ContinueWith(_ => this.channelsOfferedToClient.TryRemove(requestId, out MultiplexingStream.Channel _), TaskScheduler.Default).Forget();
+		outerChannel.Acceptance.ContinueWith(_ => this.channelsOfferedToClient.TryRemove(requestId, out MultiplexingStream.Channel? _), TaskScheduler.Default).Forget();
 
 		return new RemoteServiceConnectionInfo
 		{

@@ -3,7 +3,8 @@
 # and update the hashtable below with the T4 macro you'll use for
 # your libraries as defined in the src\ProductData\AssemblyVersions.tt file.
 
-$nbgv = & "$PSScriptRoot\..\Get-nbgv.ps1"
+$MacroName = 'MicrosoftServiceHubFrameworkVersion'
+$SampleProject = "$PSScriptRoot\..\..\src\Microsoft.ServiceHub.Framework"
 [string]::join(',',(@{
-    ('MicrosoftServiceHubFrameworkVersion') = & { (& $nbgv get-version --project "$PSScriptRoot\..\..\src\Microsoft.ServiceHub.Framework" --format json | ConvertFrom-Json).AssemblyVersion };
+    ($MacroName) = & { (dotnet tool run nbgv -- get-version --project $SampleProject --format json | ConvertFrom-Json).AssemblyVersion };
 }.GetEnumerator() |% { "$($_.key)=$($_.value)" }))
