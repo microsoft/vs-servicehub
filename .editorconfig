@@ -26,7 +26,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 # MSBuild project files
-[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj,msbuildproj,props,targets,props,targets}]
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj,msbuildproj,props,targets}]
 indent_size = 2
 indent_style = space
 

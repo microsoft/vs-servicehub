@@ -28,7 +28,14 @@ steps:
       !**/linux-*/**
       !**/osx*/**
     TargetFolder: $(Build.ArtifactStagingDirectory)/APIScanInputs
-  condition: and(succeeded(), ${{ parameters.EnableAPIScan }}, ne(variables.ApiScanClientId, ''))
+
+- task: BinSkim@4
+  displayName: 🔍 Run BinSkim
+  inputs:
+    InputType: Basic
+    Function: analyze
+    TargetPattern: guardianGlob
+    AnalyzeTargetGlob: $(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.dll;$(Build.ArtifactStagingDirectory)/APIScanInputs/**/*.exe
 
 - task: BinSkim@4
   displayName: 🔍 Run BinSkim

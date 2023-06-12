@@ -106,6 +106,12 @@ Push-Location $PSScriptRoot
 try {
     $HeaderColor = 'Green'
 
+    $RestoreArguments = @()
+    if ($Interactive)
+    {
+        $RestoreArguments += '--interactive'
+    }
+
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NuGet packages", "Restore")) {
         $RestoreArguments = @()
         if ($Interactive)
