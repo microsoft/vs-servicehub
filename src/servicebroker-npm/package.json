@@ -41,7 +41,7 @@
 		"@tsconfig/node16": "^1.0.3",
 		"@types/jest": "^29.5.1",
 		"@types/msgpack-lite": "^0.1.8",
-		"@types/node": "^16.18.11",
+		"@types/node": "^20.3.1",
 		"@types/string-hash": "^1.1.1",
 		"@types/uuid": "^9.0.1",
 		"@typescript-eslint/eslint-plugin": "^5.59.2",
