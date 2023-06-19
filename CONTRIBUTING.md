@@ -51,6 +51,16 @@ npmRegistries:
     npmAlwaysAuth: true
 ```
 
+#### NPM/Yarn Maintenance
+
+Keeping yarn itself and its SDKs current while in Zero Install mode requires certain steps to be taken periodically.
+The following two commands update these:
+
+```ps1
+yarn set version berry
+yarn dlx @yarnpkg/sdks vscode
+```
+
 ## Building
 
 This repository can be built on Windows, Linux, and OSX.
