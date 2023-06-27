@@ -6,5 +6,5 @@
 $MacroName = 'MicrosoftServiceHubFrameworkVersion'
 $SampleProject = "$PSScriptRoot\..\..\src\Microsoft.ServiceHub.Framework"
 [string]::join(',',(@{
-    ($MacroName) = & { (dotnet tool run nbgv -- get-version --project $SampleProject --format json | ConvertFrom-Json).AssemblyVersion };
+    ($MacroName) = & { (dotnet nbgv get-version --project $SampleProject --format json | ConvertFrom-Json).AssemblyVersion };
 }.GetEnumerator() |% { "$($_.key)=$($_.value)" }))
