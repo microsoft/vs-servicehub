@@ -5,6 +5,7 @@ using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
+
 public partial class GlobalBrokeredServiceContainer
 {
 	/// <summary>
