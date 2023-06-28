@@ -2,7 +2,7 @@
 
 [![Build Status](https://dev.azure.com/azure-public/vside/_apis/build/status/vs-servicehub?branchName=main)](https://dev.azure.com/azure-public/vside/_build/latest?definitionId=53&branchName=main)
 
-These are the libraries that Visual Studio use for much of its intra- and inter-process exchange of services.
+These are the libraries that Visual Studio uses for much of its intra- and inter-process exchange of services.
 
 ## Microsoft.ServiceHub.Framework
 
