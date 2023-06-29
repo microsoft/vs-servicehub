@@ -233,7 +233,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		cancellationToken: CancellationToken = CancellationToken.CONTINUE
 	): Promise<NodeJS.ReadWriteStream | null> {
 		assert(serviceMoniker)
-		options = options ? options : { clientCulture: 'en-US', clientUICulture: 'en-US' }
+		options = options ? options : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
 		options = await this.applyAuthorization(options, cancellationToken)
 		if (options.clientRpcTarget) {
 			throw new Error('Cannot connect pipe to service with client RPC target')
