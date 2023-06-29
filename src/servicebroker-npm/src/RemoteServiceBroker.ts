@@ -233,7 +233,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		cancellationToken: CancellationToken = CancellationToken.CONTINUE
 	): Promise<NodeJS.ReadWriteStream | null> {
 		assert(serviceMoniker)
-		options = options ? options : { clientCulture: 'en-US', clientUICulture: 'en-US' }
+		options = options ? options : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
 		options = await this.applyAuthorization(options, cancellationToken)
 		if (options.clientRpcTarget) {
 			throw new Error('Cannot connect pipe to service with client RPC target')
@@ -248,7 +248,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 				return null
 			}
 			if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
-				channel = await this.multiplexingStream.acceptChannelAsync('', undefined, cancellationToken)
+				channel = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
 				pipe = channel.stream as NodeJS.ReadWriteStream
 			} else if (remoteConnectionInfo.pipeName) {
 				throw new Error('Cannot connect to named pipe')
