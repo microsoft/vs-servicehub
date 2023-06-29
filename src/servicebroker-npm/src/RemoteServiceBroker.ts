@@ -248,7 +248,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 				return null
 			}
 			if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
-				channel = await this.multiplexingStream.acceptChannelAsync('', undefined, cancellationToken)
+				channel = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
 				pipe = channel.stream as NodeJS.ReadWriteStream
 			} else if (remoteConnectionInfo.pipeName) {
 				throw new Error('Cannot connect to named pipe')
