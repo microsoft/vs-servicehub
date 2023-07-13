@@ -5,7 +5,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <MicroBuildVersion>2.0.130</MicroBuildVersion>
     <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
-    <CodeAnalysisVersion>4.5.0</CodeAnalysisVersion>
+    <CodeAnalysisVersion>4.6.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2-beta1.23323.1</CodefixTestingVersion>
     <VSThreadingVersion>17.6.40</VSThreadingVersion>
   </PropertyGroup>
