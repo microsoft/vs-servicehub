@@ -16,7 +16,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.6.17" />
+    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.7.26" />
     <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.6.13" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.6.36011" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33627.172" />
