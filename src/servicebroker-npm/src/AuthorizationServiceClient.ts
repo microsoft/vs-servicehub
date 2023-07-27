@@ -18,7 +18,10 @@ export class AuthorizationServiceClient implements IDisposable {
 	 * @param authService The authorization service to use with requests
 	 * @param ownsAuthService Indicates if the client owns the authorization service
 	 */
-	public constructor(private authService: IAuthorizationService, private ownsAuthService: boolean = true) {
+	public constructor(
+		private authService: IAuthorizationService,
+		private ownsAuthService: boolean = true
+	) {
 		assert(authService)
 
 		this.authService = authService

@@ -7,7 +7,10 @@ import { writeAsync, getBufferFrom } from 'nerdbank-streams/js/Utilities'
 
 /** Reads JSON-RPC messages that have a 32-bit big endian header describing the length of each message. */
 export class BE32MessageReader extends AbstractMessageReader implements MessageReader {
-	constructor(private readonly readable: NodeJS.ReadableStream, private readonly decoder: (buffer: Uint8Array) => Promise<Message>) {
+	constructor(
+		private readonly readable: NodeJS.ReadableStream,
+		private readonly decoder: (buffer: Uint8Array) => Promise<Message>
+	) {
 		super()
 	}
 
@@ -43,7 +46,10 @@ export class BE32MessageWriter extends AbstractMessageWriter implements MessageW
 	private readonly headerBuffer = Buffer.alloc(4)
 	private errorCount = 0
 
-	constructor(private readonly writable: NodeJS.WritableStream | Writable, private readonly encoder: (message: Message) => Promise<Uint8Array>) {
+	constructor(
+		private readonly writable: NodeJS.WritableStream | Writable,
+		private readonly encoder: (message: Message) => Promise<Uint8Array>
+	) {
 		super()
 		writable.on('error', err => this.fireError([err, undefined, undefined]))
 		writable.once('close', () => this.fireClose())

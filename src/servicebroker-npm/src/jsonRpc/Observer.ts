@@ -39,7 +39,10 @@ export class Observer<T> implements IObserver<T>, RpcMarshalable {
 		return this.error !== undefined
 	}
 
-	constructor(private readonly next: (value: T) => void, private readonly completion?: (error?: any) => void) {}
+	constructor(
+		private readonly next: (value: T) => void,
+		private readonly completion?: (error?: any) => void
+	) {}
 
 	onNext(value: T): void {
 		this.next(value)
