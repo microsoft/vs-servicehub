@@ -223,7 +223,10 @@ describe('ServiceJsonRpcDescriptor', function () {
 			readonly disposed: Promise<void>
 			private disposalSource?: () => void
 
-			constructor(public readonly owner: string, lifetime?: MarshaledObjectLifetime) {
+			constructor(
+				public readonly owner: string,
+				lifetime?: MarshaledObjectLifetime
+			) {
 				this._jsonRpcMarshalableLifetime = lifetime ?? 'explicit' // call lifetime isn't supported yet.
 				this.disposed = new Promise<void>(resolve => (this.disposalSource = resolve))
 			}
