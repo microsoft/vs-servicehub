@@ -221,7 +221,7 @@ public static class ServiceBrokerAggregator
 		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
 			where T : class
 		{
-			IDuplexPipe? pipe = await this.inner.GetPipeAsync(serviceDescriptor.Moniker, options, cancellationToken).ConfigureAwait(false); ;
+			IDuplexPipe? pipe = await this.inner.GetPipeAsync(serviceDescriptor.Moniker, options, cancellationToken).ConfigureAwait(false);
 			if (pipe is null)
 			{
 				return null;
