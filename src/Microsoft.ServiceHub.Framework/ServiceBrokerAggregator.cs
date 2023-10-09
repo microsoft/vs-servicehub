@@ -221,15 +221,22 @@ public static class ServiceBrokerAggregator
 		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
 			where T : class
 		{
-			T? client = await this.inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken).ConfigureAwait(false);
-			if (client == null)
+			IDuplexPipe? pipe = await this.inner.GetPipeAsync(serviceDescriptor.Moniker, options, cancellationToken).ConfigureAwait(false); ;
+			if (pipe is null)
 			{
 				return null;
 			}
 
-			(Stream, Stream) streamPair = FullDuplexStream.CreatePair();
-			serviceDescriptor.ConstructRpc(client, streamPair.Item1.UsePipe());
-			return serviceDescriptor.ConstructRpc<T>(streamPair.Item2.UsePipe());
+			try
+			{
+				return serviceDescriptor.ConstructRpc<T>(pipe);
+			}
+			catch
+			{
+				await pipe.Input.CompleteAsync().ConfigureAwait(false);
+				await pipe.Output.CompleteAsync().ConfigureAwait(false);
+				throw;
+			}
 		}
 
 		/// <inheritdoc />

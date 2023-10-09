@@ -6,6 +6,7 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
+using StreamJsonRpc;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,6 +34,11 @@ public class ServiceBrokerAggregatorTests : TestBase
 	}
 
 	public interface ICalculator
+	{
+		Task<int> AddAsync(int a, int b);
+	}
+
+	public interface ICalculatorCopy
 	{
 		Task<int> AddAsync(int a, int b);
 	}
@@ -192,7 +198,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
 		Assumes.NotNull(result);
 		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
-		Assert.Equal(8, await result.AddAsync(3, 5));
+		Assert.True(result is IJsonRpcClientProxy);
 	}
 
 	[Fact]
@@ -207,6 +213,19 @@ public class ServiceBrokerAggregatorTests : TestBase
 	{
 		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(this.mockBrokers[0]);
 		Assert.Null(await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken));
+	}
+
+	[Fact]
+	public async Task ForceMarshal_EnsureNoRuntimeTypeChecksOccur()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(this.mockBrokers[1]);
+
+		// Brokered service implements ICalculator while we ask for a proxy for ICalculatorCopy.
+		// The copy interface has the same method but it is a different type which ForceMarshal broker should support.
+		ICalculatorCopy? result = await aggregator.GetProxyAsync<ICalculatorCopy>(Descriptor1, this.TimeoutToken);
+		Assumes.NotNull(result);
+		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
+		Assert.True(result is IJsonRpcClientProxy);
 	}
 
 	private class MockServiceBroker : IServiceBroker
