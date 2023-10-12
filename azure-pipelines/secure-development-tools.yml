@@ -72,7 +72,6 @@ steps:
     GdnBreakSuppressionSets: falsepositives
     GdnBreakOutputSuppressionFile: $(Build.ArtifactStagingDirectory)/guardian_failures_as_suppressions/
     GdnBreakOutputSuppressionSet: falsepositives
-  continueOnError: true # remove this line once we get things passing.
 
 # This is useful when false positives appear so we can copy some of the output into the suppressions file.
 - publish: $(Build.ArtifactStagingDirectory)/guardian_failures_as_suppressions
