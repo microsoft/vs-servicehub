@@ -75,7 +75,7 @@ public static class FrameworkServices
 		}
 
 		/// <inheritdoc />
-		protected override JsonRpcConnection CreateConnection(JsonRpc jsonRpc)
+		protected internal override JsonRpcConnection CreateConnection(JsonRpc jsonRpc)
 		{
 			JsonRpcConnection connection = base.CreateConnection(jsonRpc);
 			connection.LocalRpcTargetOptions.MethodNameTransform = NameNormalize;
@@ -85,7 +85,7 @@ public static class FrameworkServices
 			return connection;
 		}
 
-		protected override IJsonRpcMessageFormatter CreateFormatter()
+		protected internal override IJsonRpcMessageFormatter CreateFormatter()
 		{
 			IJsonRpcMessageFormatter formatter = base.CreateFormatter();
 
