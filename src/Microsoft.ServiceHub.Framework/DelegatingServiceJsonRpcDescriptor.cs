@@ -14,7 +14,7 @@ namespace Microsoft.ServiceHub.Framework;
 /// This implementation will also ensure inner descriptor is updated with any changes to multiplexing stream options or exception strategy.
 /// </remarks>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
-public class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
+public abstract class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
 {
 	private ServiceJsonRpcDescriptor innerDescriptor;
 
@@ -68,11 +68,5 @@ public class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
 	protected internal override JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
 	{
 		return this.innerDescriptor.CreateJsonRpc(handler);
-	}
-
-	/// <inheritdoc />
-	protected override ServiceRpcDescriptor Clone()
-	{
-		return new DelegatingServiceJsonRpcDescriptor(this);
 	}
 }

@@ -72,7 +72,7 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe()) as ServiceJsonRpcDescriptor.JsonRpcConnection;
 		Assumes.NotNull(jsonRpcConnection);
 
-		var jsonRpc = jsonRpcConnection.JsonRpc;
+		JsonRpc jsonRpc = jsonRpcConnection.JsonRpc;
 
 		Assert.Equal(ExceptionProcessing.CommonErrorData, jsonRpc.ExceptionStrategy);
 		Assert.Equal(SomeJoinableTaskFactory, jsonRpc.JoinableTaskFactory);
