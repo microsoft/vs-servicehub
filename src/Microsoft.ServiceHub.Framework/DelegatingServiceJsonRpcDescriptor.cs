@@ -11,7 +11,15 @@ namespace Microsoft.ServiceHub.Framework;
 /// A delegating RPC descriptor for services that support JSON-RPC. By default this descriptor will delegate operations to the wrapped descriptor.
 /// </summary>
 /// <remarks>
-/// This implementation will also ensure inner descriptor is updated with any changes to multiplexing stream options or exception strategy.
+/// <para>
+/// Default implementation of this class only delegates protected override methods and <see cref="ConstructRpcConnection(IDuplexPipe)"/> is not delegated
+/// intentionally. This allows derived classes to pick which protected methods they want to override and which ones to delegate while
+/// keeping default ConstructRpcConnection implementation.
+/// </para>
+/// <para>
+/// This implementation will also ensure inner descriptor is updated with any changes settings such as multiplexing options, before
+/// <see cref="ConstructRpcConnection(IDuplexPipe)"/> is executed.
+/// </para>
 /// </remarks>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 public abstract class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
@@ -42,8 +50,8 @@ public abstract class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescrip
 	/// <inheritdoc />
 	public override RpcConnection ConstructRpcConnection(IDuplexPipe pipe)
 	{
-		this.innerDescriptor = this.innerDescriptor.WithSettingsFrom(this);
-		return this.innerDescriptor.ConstructRpcConnection(pipe);
+		this.ApplySettingsToInnerDescriptor();
+		return base.ConstructRpcConnection(pipe);
 	}
 
 	/// <inheritdoc />
@@ -68,5 +76,17 @@ public abstract class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescrip
 	protected internal override JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
 	{
 		return this.innerDescriptor.CreateJsonRpc(handler);
+	}
+
+	/// <summary>
+	/// Ensures that settings from the current instance are applied to delegated descriptor.
+	/// </summary>
+	/// <remarks>
+	/// This is called by <see cref="ConstructRpcConnection(IDuplexPipe)" /> by default but if derived class overrides that method
+	/// it should call this method to ensure settings are applied properly to the delegated descriptor.
+	/// </remarks>
+	protected void ApplySettingsToInnerDescriptor()
+	{
+		this.innerDescriptor = this.innerDescriptor.WithSettingsFrom(this);
 	}
 }

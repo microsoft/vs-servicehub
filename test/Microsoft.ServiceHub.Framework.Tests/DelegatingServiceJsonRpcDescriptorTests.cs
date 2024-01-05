@@ -81,6 +81,32 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 		Assert.NotSame(createFormatterCalledFrom, innerDescriptor);
 	}
 
+	[Fact]
+	public void DerivedImplementationIsCalledWhenOverrideIsPresent()
+	{
+		bool createFormatterCalled = false;
+		bool createJsonRpcCalled = false;
+
+		TestServiceJsonRpcDescriptor innerDescriptor = new TestServiceJsonRpcDescriptor(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+		innerDescriptor.OnCreateFormatter += (s, e) =>
+		{
+			createFormatterCalled = true;
+		};
+
+		DelegatingDescriptorWithOverride descriptor = new DelegatingDescriptorWithOverride(innerDescriptor);
+		descriptor.OnCreateJsonRpcCalled += (s, e) =>
+		{
+			createJsonRpcCalled = true;
+		};
+
+		(Stream, Stream) pair = FullDuplexStream.CreatePair();
+
+		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe()) as ServiceJsonRpcDescriptor.JsonRpcConnection;
+		Assumes.NotNull(jsonRpcConnection);
+		Assert.True(createFormatterCalled);
+		Assert.True(createJsonRpcCalled);
+	}
+
 	/// <summary>
 	/// This test ensures that multiplexing stream changes are applied correctly.
 	/// </summary>
@@ -167,6 +193,33 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 		protected override ServiceRpcDescriptor Clone()
 		{
 			return new MyDelegatingDescriptor(this);
+		}
+	}
+
+	private class DelegatingDescriptorWithOverride : DelegatingServiceJsonRpcDescriptor
+	{
+		public EventHandler<EventArgs>? OnCreateJsonRpcCalled;
+
+		public DelegatingDescriptorWithOverride(ServiceJsonRpcDescriptor innerDescriptor)
+			: base(innerDescriptor)
+		{
+		}
+
+		private DelegatingDescriptorWithOverride(DelegatingDescriptorWithOverride copyFrom)
+			: base(copyFrom)
+		{
+			this.OnCreateJsonRpcCalled = copyFrom.OnCreateJsonRpcCalled;
+		}
+
+		protected override JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
+		{
+			this.OnCreateJsonRpcCalled?.Invoke(this, EventArgs.Empty);
+			return new JsonRpc(handler);
+		}
+
+		protected override ServiceRpcDescriptor Clone()
+		{
+			return new DelegatingDescriptorWithOverride(this);
 		}
 	}
 }
