@@ -6,21 +6,22 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
+using StreamJsonRpc;
 using Xunit;
 using Xunit.Abstractions;
 
 public class ServiceBrokerAggregatorTests : TestBase
 {
 	private static readonly ServiceRpcDescriptor Descriptor1 = new ServiceJsonRpcDescriptor(new ServiceMoniker("Some service 1"), clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
-	private readonly IReadOnlyList<MockServiceBroker> mockBrokers = new[]
+	private readonly IReadOnlyList<InternalMockServiceBroker> mockBrokers = new[]
 	{
-		new MockServiceBroker(),
-		new MockServiceBroker()
+		new InternalMockServiceBroker(),
+		new InternalMockServiceBroker()
 		{
 			PipeResults = { { Descriptor1.Moniker, new MockPipe() } },
 			ProxyResults = { { Descriptor1.Moniker, new MockProxy() } },
 		},
-		new MockServiceBroker()
+		new InternalMockServiceBroker()
 		{
 			PipeResults = { { Descriptor1.Moniker, new MockPipe() } },
 			ProxyResults = { { Descriptor1.Moniker, new MockProxy() } },
@@ -33,6 +34,11 @@ public class ServiceBrokerAggregatorTests : TestBase
 	}
 
 	public interface ICalculator
+	{
+		Task<int> AddAsync(int a, int b);
+	}
+
+	public interface ICalculatorCopy
 	{
 		Task<int> AddAsync(int a, int b);
 	}
@@ -125,7 +131,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 	[Fact]
 	public async Task Sequential_GetPipeAsync_NoHit()
 	{
-		var mock1 = new MockServiceBroker();
+		var mock1 = new InternalMockServiceBroker();
 		IServiceBroker sequential = ServiceBrokerAggregator.Sequential(new[] { mock1 });
 		IDuplexPipe? result = await sequential.GetPipeAsync(Descriptor1.Moniker, this.TimeoutToken);
 		Assert.Null(result);
@@ -134,7 +140,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 	[Fact]
 	public async Task Sequential_GetProxyAsync_NoHit()
 	{
-		var mock1 = new MockServiceBroker();
+		var mock1 = new InternalMockServiceBroker();
 		IServiceBroker sequential = ServiceBrokerAggregator.Sequential(new[] { mock1 });
 		MockProxy? result = await sequential.GetProxyAsync<MockProxy>(Descriptor1, this.TimeoutToken);
 		Assert.Null(result);
@@ -143,7 +149,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 	[Fact]
 	public async Task Parallel_GetPipeAsync_NoHit()
 	{
-		var mock1 = new MockServiceBroker();
+		var mock1 = new InternalMockServiceBroker();
 		IServiceBroker parallel = ServiceBrokerAggregator.Parallel(new[] { mock1 });
 		IDuplexPipe? result = await parallel.GetPipeAsync(Descriptor1.Moniker, this.TimeoutToken);
 		Assert.Null(result);
@@ -152,7 +158,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 	[Fact]
 	public async Task Parallel_GetProxyAsync_NoHit()
 	{
-		var mock1 = new MockServiceBroker();
+		var mock1 = new InternalMockServiceBroker();
 		IServiceBroker parallel = ServiceBrokerAggregator.Parallel(new[] { mock1 });
 		MockProxy? result = await parallel.GetProxyAsync<MockProxy>(Descriptor1, this.TimeoutToken);
 		Assert.Null(result);
@@ -192,7 +198,40 @@ public class ServiceBrokerAggregatorTests : TestBase
 		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
 		Assumes.NotNull(result);
 		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
+		Assert.True(result is IJsonRpcClientProxy);
+	}
+
+	[Fact]
+	public async Task ForceMarshal_CanInvokeMethodOnTypeMatchingProxy()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(new MockServiceBroker());
+		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
+		Assumes.NotNull(result);
+		Assert.True(result is IJsonRpcClientProxy);
 		Assert.Equal(8, await result.AddAsync(3, 5));
+	}
+
+	[Fact]
+	public async Task ForceMarshal_CanInvokeMethodOnDifferentTypeProxy()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(new MockServiceBroker());
+		ICalculatorCopy? result = await aggregator.GetProxyAsync<ICalculatorCopy>(TestServices.Calculator, this.TimeoutToken);
+		Assumes.NotNull(result);
+		Assert.True(result is IJsonRpcClientProxy);
+		Assert.Equal(8, await result.AddAsync(3, 5));
+	}
+
+	[Fact]
+	public async Task ForceMarshal_EnsureNoRuntimeTypeChecksOccur()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(this.mockBrokers[1]);
+
+		// Brokered service implements ICalculator while we ask for a proxy for ICalculatorCopy.
+		// The copy interface has the same method but it is a different type which ForceMarshal broker should support.
+		ICalculatorCopy? result = await aggregator.GetProxyAsync<ICalculatorCopy>(Descriptor1, this.TimeoutToken);
+		Assumes.NotNull(result);
+		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
+		Assert.True(result is IJsonRpcClientProxy);
 	}
 
 	[Fact]
@@ -209,7 +248,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		Assert.Null(await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken));
 	}
 
-	private class MockServiceBroker : IServiceBroker
+	private class InternalMockServiceBroker : IServiceBroker
 	{
 		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
 
