@@ -30,7 +30,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.188-beta" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.10.69" />
-    <PackageVersion Include="NuGet.Protocol" Version="6.5.0" />
+    <PackageVersion Include="NuGet.Protocol" Version="6.8.0" />
     <PackageVersion Include="StreamJsonRpc" Version="2.16.41" />
     <PackageVersion Include="System.Collections.Immutable" Version="7.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
