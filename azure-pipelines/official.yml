@@ -38,7 +38,7 @@ parameters:
 - name: EnableCompliance
   displayName: Run Compliance Tools
   type: boolean
-  default: false
+  default: true
 - name: EnableAPIScan
   displayName: Include APIScan with Compliance tools
   type: boolean
