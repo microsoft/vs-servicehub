@@ -1,5 +1,8 @@
 parameters:
 - name: ShouldSkipOptimize
+- name: IsProfilingRun
+  type: boolean
+  default: false
 
 steps:
 - task: ComponentGovernanceComponentDetection@0
@@ -21,3 +24,11 @@ steps:
     ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
     AccessToken: $(System.AccessToken)
   displayName: 🔧 Install OptProf Plugin
+
+# We have to install the signing plugin ourselves for Optprof runs because those pipelines haven't migrated to 1ES PT yet.
+- ${{ if parameters.IsProfilingRun }}:
+  - task: MicroBuildSigningPlugin@4
+    inputs:
+      signType: Real
+      zipSources: false
+    displayName: 🔧 Install MicroBuild Signing Plugin

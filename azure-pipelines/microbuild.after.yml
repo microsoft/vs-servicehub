@@ -1,6 +1,9 @@
 parameters:
-  EnableCompliance:
-  EnableAPIScan:
+- name: EnableCompliance
+- name: EnableAPIScan
+- name: IsProfilingRun
+  type: boolean
+  default: false
 
 steps:
 - task: MicroBuildCodesignVerify@3
@@ -20,6 +23,14 @@ steps:
   displayName: 🔧 Publish to Artifact Services - ProfilingInputs
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   continueOnError: true
+
+- ${{ if parameters.IsProfilingRun }}:
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)/InsertionOutputs
+      ArtifactName: InsertionOutputs
+      ArtifactType: Container
+    displayName: 🔧 Publish InsertionOutputs as Azure DevOps artifacts
 
 - task: Ref12Analyze@0
   displayName: 📑 Ref12 (Codex) Analyze

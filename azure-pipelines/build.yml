@@ -79,11 +79,6 @@ jobs:
         displayName: 📢 Publish VSInsertion-Windows
         targetPath: $(Build.ArtifactStagingDirectory)/VSInsertion-Windows
         artifactName: VSInsertion-Windows
-      - output: pipelineArtifact
-        displayName: 📢 Publish InsertionOutputs
-        targetPath: $(Build.ArtifactStagingDirectory)/InsertionOutputs
-        artifactName: InsertionOutputs
-        condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       # This is useful when false positives appear so we can copy some of the output into the suppressions file.
       - output: pipelineArtifact
         displayName: 📢 Publish Guardian failures
@@ -107,6 +102,7 @@ jobs:
     - template: microbuild.before.yml
       parameters:
         ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
+        IsProfilingRun: ${{ parameters.IsProfilingRun }}
 
   - template: dotnet.yml
     parameters:
@@ -120,6 +116,7 @@ jobs:
   - template: post_build.yml
     parameters:
       RunTests: ${{ parameters.RunTests }}
+      IsProfilingRun: ${{ parameters.IsProfilingRun }}
 
   - script: dotnet format --verify-no-changes --no-restore
     displayName: 💅 Verify formatted code
@@ -129,6 +126,7 @@ jobs:
       parameters:
         EnableCompliance: ${{ parameters.EnableCompliance }}
         EnableAPIScan: ${{ parameters.EnableAPIScan }}
+        IsProfilingRun: ${{ parameters.IsProfilingRun }}
 
 - ${{ if ne(parameters.IsProfilingRun, 'true') }}:
   - job: Linux
