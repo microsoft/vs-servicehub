@@ -67,13 +67,6 @@ jobs:
           enabled: false
           ${{ if eq(variables['Build.Reason'], 'pullRequest') }}:
             languages: ENU,JPN
-        optprof:
-          enabled: true
-          ProfilingInputsDropName: ProfilingInputs/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
-          OptimizationInputsLookupMethod: DropPrefix
-          DropNamePrefix: OptimizationInputs/$(System.TeamProject)/$(Build.Repository.Name)
-          ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
-          AccessToken: $(System.AccessToken)
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
       - ${{ each artifact_name in parameters.artifact_names }}:

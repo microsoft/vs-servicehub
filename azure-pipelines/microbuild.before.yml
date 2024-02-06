@@ -12,3 +12,12 @@ steps:
     outputformat: text
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   retryCountOnTaskFailure: 3 # fails when the cloud service is overloaded
+
+- task: MicroBuildOptProfPlugin@6
+  inputs:
+    ProfilingInputsDropName: ProfilingInputs/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+    OptimizationInputsLookupMethod: DropPrefix
+    DropNamePrefix: OptimizationInputs/$(System.TeamProject)/$(Build.Repository.Name)
+    ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
+    AccessToken: $(System.AccessToken)
+  displayName: 🔧 Install OptProf Plugin
