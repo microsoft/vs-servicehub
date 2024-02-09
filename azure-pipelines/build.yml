@@ -37,7 +37,6 @@ parameters:
   - build_logs
   - coverageResults
   - deployables
-  - LocBin
   - projectAssetsJson
   - symbols
   - testResults
@@ -65,7 +64,7 @@ jobs:
         sbom:
           enabled: true
         localization:
-          enabled: false
+          enabled: true
           ${{ if eq(variables['Build.Reason'], 'pullRequest') }}:
             languages: ENU,JPN
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
@@ -80,6 +79,10 @@ jobs:
         displayName: 📢 Publish VSInsertion-Windows
         targetPath: $(Build.ArtifactStagingDirectory)/VSInsertion-Windows
         artifactName: VSInsertion-Windows
+      - output: pipelineArtifact
+        displayName: 📢 Publish LocBin-Windows
+        targetPath: $(Build.ArtifactStagingDirectory)/LocBin-Windows
+        artifactName: LocBin-Windows
       # This is useful when false positives appear so we can copy some of the output into the suppressions file.
       - output: pipelineArtifact
         displayName: 📢 Publish Guardian failures
