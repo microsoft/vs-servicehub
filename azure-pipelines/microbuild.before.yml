@@ -1,5 +1,8 @@
 parameters:
 - name: ShouldSkipOptimize
+- name: IsProfilingRun
+  type: boolean
+  default: false
 
 steps:
 - task: ComponentGovernanceComponentDetection@0
@@ -21,18 +24,10 @@ steps:
     AccessToken: $(System.AccessToken)
   displayName: 🔧 Install OptProf Plugin
 
-- task: MicroBuildLocalizationPlugin@3
-  inputs:
-    languages: $(LocLanguages)
-  displayName: 🔧 Install MicroBuild Localization Plugin
-
-- task: MicroBuildSigningPlugin@3
-  inputs:
-    signType: $(SignType)
-    zipSources: false
-  displayName: 🔧 Install MicroBuild Signing Plugin
-  condition: and(succeeded(), or(eq(variables['Agent.OS'], 'Windows_NT'), eq(variables['SignType'], 'real')))
-
-- task: MicroBuildSbomPlugin@1
-  displayName: 🔧 Install MicroBuild Sbom Plugin
-  condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+# We have to install the signing plugin ourselves for Optprof runs because those pipelines haven't migrated to 1ES PT yet.
+- ${{ if parameters.IsProfilingRun }}:
+  - task: MicroBuildSigningPlugin@4
+    inputs:
+      signType: Real
+      zipSources: false
+    displayName: 🔧 Install MicroBuild Signing Plugin

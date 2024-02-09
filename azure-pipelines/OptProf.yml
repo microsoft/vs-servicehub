@@ -36,8 +36,6 @@ variables:
   value: $(Agent.TempDirectory)/.nuget/packages
 - name: PublicRelease
   value: false # avoid using nice version since we're building a preliminary/unoptimized package
-- name: SignType
-  value: real
 - group: Library.Template
 
 stages:
@@ -51,6 +49,7 @@ stages:
       includeMacOS: false
       ShouldSkipOptimize: true
       IsProfilingRun: true
+      RealSign: true
       EnableCompliance: false
 - stage: QueueVSBuild
   jobs:

@@ -1,7 +1,11 @@
+parameters:
+- name: RealSign
+  type: boolean
+
 stages:
 - stage: symbol_archive
   displayName: Symbol archival
-  condition: and(succeeded(), eq(dependencies.Build.outputs['Windows.SetPipelineVariables.SignType'], 'Real'))
+  condition: and(succeeded(), eq('${{ parameters.RealSign }}', 'true'))
   jobs:
   - job: archive
     pool: VSEng-ReleasePool-1ES
@@ -23,8 +27,6 @@ stages:
         SymbolsUncPath: \\cpvsbuild\drops\$(TeamName)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildId)\Symbols.Archival
         SymbolsEmailContacts: vsidemicrobuild
         SymbolsAgentPath: $(Pipeline.Workspace)/symbols-legacy
-    - task: MicroBuildCleanup@1
-      displayName: ☎️ Send Telemetry
 
 - stage: azure_public_vssdk_feed
   displayName: azure-public/vssdk feed
@@ -33,20 +35,28 @@ stages:
   - job: push
     pool:
       name: AzurePipelines-EO
-      vmImage: AzurePipelinesUbuntu20.04compliant
+      demands:
+      - ImageOverride -equals AzurePipelinesUbuntu20.04compliantGPT
+      os: Linux
+    templateContext:
+      outputParentDirectory: $(Pipeline.Workspace)
+      outputs:
+      - output: nuget
+        displayName: 📦 Push nuget packages
+        packagesToPush: '(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg'
+        packageParentPath: (Pipeline.Workspace)/deployables-Windows/NuGet
+        allowPackageConflicts: true
+        nuGetFeedType: external
+        publishFeedCredentials: azure-public/vssdk
     steps:
+    - download: current
+      artifact: Variables-Windows
+      displayName: 🔻 Download Variables-Windows artifact
+    - powershell: $(Pipeline.Workspace)/Variables-Windows/_pipelines.ps1
+      displayName: ⚙️ Set pipeline variables based on artifacts
     - download: current
       artifact: deployables-Windows
       displayName: 🔻 Download deployables-Windows artifact
-    - powershell: .\tools\Install-DotNetSdk.ps1
-      displayName: ⚙ Install .NET SDK
-    - task: NuGetAuthenticate@1
-      displayName: 🔏 Authenticate NuGet feeds
-      inputs:
-        nuGetServiceConnections: azure-public/vssdk
-        forceReinstallCredentialProvider: true
-    - script: dotnet nuget push $(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg -s https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json --api-key azdo --skip-duplicate
-      displayName: 📦 Push nuget packages
     - template: npm_push.yml
       parameters:
         tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm

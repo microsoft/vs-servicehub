@@ -2,6 +2,11 @@ trigger: none # We only want to trigger manually or based on resources
 pr: none
 
 resources:
+  repositories:
+  - repository: MicroBuildTemplate
+    type: git
+    name: 1ESPipelineTemplates/MicroBuildTemplate
+    ref: refs/tags/release
   pipelines:
   - pipeline: CI
     source: vs-servicehub
@@ -9,65 +14,78 @@ resources:
       tags:
       - auto-release
 
-variables:
-- group: VS SDK feeds # Expected to provide NuGetOrgApiKey
+extends:
+  template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
+  parameters:
+    sdl:
+      sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
+    stages:
+    - stage: release
+      jobs:
+      - job: release
+        pool:
+          name: AzurePipelines-EO
+          demands:
+          - ImageOverride -equals AzurePipelinesUbuntu20.04compliantGPT
+          os: Linux
+        templateContext:
+          outputParentDirectory: $(Pipeline.Workspace)
+          outputs:
+          - output: nuget
+            displayName: 📦 Push packages to nuget.org
+            packagesToPush: '$(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg'
+            packageParentPath: $(Pipeline.Workspace)/CI/deployables-Windows/NuGet
+            allowPackageConflicts: true
+            nuGetFeedType: external
+            publishFeedCredentials: VisualStudioExtensibility (nuget.org)
+        steps:
+        - checkout: none
+        - powershell: |
+            Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
+            if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
+              Write-Host "##vso[task.setvariable variable=IsPrerelease]true"
+            } else {
+              Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
+            }
+          displayName: ⚙️ Set up pipeline
+        - task: UseDotNet@2
+          displayName: ⚙️ Install .NET SDK
+          inputs:
+            packageType: sdk
+            version: 6.x
+        - task: NodeTool@0
+          inputs:
+            versionSpec: 16.x
+          displayName: ⚙️️ Install Node.js
+        - download: CI
+          artifact: deployables-Windows
+          displayName: 🔻 Download deployables-Windows artifact
+        - task: GitHubRelease@1
+          displayName: 📢 GitHub release (create)
+          inputs:
+            gitHubConnection: AArnott
+            repositoryName: $(Build.Repository.Name)
+            target: $(resources.pipeline.CI.sourceCommit)
+            tagSource: userSpecifiedTag
+            tag: v$(resources.pipeline.CI.runName)
+            title: v$(resources.pipeline.CI.runName)
+            isDraft: true # After running this step, visit the new draft release, edit, and publish.
+            isPreRelease: $(IsPrerelease)
+            assets: |
+              $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg
+              $(Pipeline.Workspace)/CI/deployables-Windows/npm/*.tgz
+            changeLogCompareToRelease: lastNonDraftRelease
+            changeLogType: issueBased
+            changeLogLabels: |
+              [
+                { "label" : "breaking change", "displayName" : "Breaking changes", "state" : "closed" },
+                { "label" : "bug", "displayName" : "Fixes", "state" : "closed" },
+                { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
+              ]
 
-jobs:
-- job: release
-  pool:
-    name: AzurePipelines-EO
-    vmImage: AzurePipelinesUbuntu20.04compliant
-  steps:
-  - checkout: none
-  - powershell: |
-      Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
-      if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
-        Write-Host "##vso[task.setvariable variable=IsPrerelease]true"
-      } else {
-        Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
-      }
-    displayName: ⚙️ Set up pipeline
-  - task: UseDotNet@2
-    displayName: ⚙️ Install .NET SDK
-    inputs:
-      packageType: sdk
-      version: 6.x
-  - task: NodeTool@0
-    inputs:
-      versionSpec: 16.x
-    displayName: ⚙️️ Install Node.js
-  - download: CI
-    artifact: deployables-Windows
-    displayName: 🔻 Download deployables-Windows artifact
-  - task: GitHubRelease@1
-    displayName: 📢 GitHub release (create)
-    inputs:
-      gitHubConnection: AArnott
-      repositoryName: $(Build.Repository.Name)
-      target: $(resources.pipeline.CI.sourceCommit)
-      tagSource: userSpecifiedTag
-      tag: v$(resources.pipeline.CI.runName)
-      title: v$(resources.pipeline.CI.runName)
-      isDraft: true # After running this step, visit the new draft release, edit, and publish.
-      isPreRelease: $(IsPrerelease)
-      assets: |
-        $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg
-        $(Pipeline.Workspace)/CI/deployables-Windows/npm/*.tgz
-      changeLogCompareToRelease: lastNonDraftRelease
-      changeLogType: issueBased
-      changeLogLabels: |
-        [
-          { "label" : "breaking change", "displayName" : "Breaking changes", "state" : "closed" },
-          { "label" : "bug", "displayName" : "Fixes", "state" : "closed" },
-          { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
-        ]
-  - script: dotnet nuget push $(Pipeline.Workspace)/CI/deployables-Windows/NuGet/*.nupkg -s https://api.nuget.org/v3/index.json --api-key $(NuGetOrgApiKey) --skip-duplicate
-    displayName: 📦 Push packages to nuget.org
-    condition: and(succeeded(), ne(variables['NuGetOrgApiKey'], ''))
-
-  - template: npm_push.yml
-    parameters:
-      tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
-      feedName: npmjs.org
-      feedUrl: https://registry.npmjs.org/
-      service_connection: npmjs.org (andrewarnott)
+        - template: npm_push.yml
+          parameters:
+            tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
+            feedName: npmjs.org
+            feedUrl: https://registry.npmjs.org/
+            service_connection: npmjs.org (andrewarnott)
