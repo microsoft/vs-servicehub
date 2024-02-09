@@ -37,6 +37,7 @@ parameters:
   - build_logs
   - coverageResults
   - deployables
+  - LocBin
   - projectAssetsJson
   - symbols
   - testResults
