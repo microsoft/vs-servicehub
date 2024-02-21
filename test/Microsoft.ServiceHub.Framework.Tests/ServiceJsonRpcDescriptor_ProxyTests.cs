@@ -192,7 +192,7 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 	}
 
 	[Fact]
-	public void TargetImplementsIJsonRpcLocalProxy()
+	public async Task TargetImplementsIJsonRpcLocalProxy()
 	{
 		var target = new SomeNonDisposableService();
 		ISomeService? proxy = this.CreateProxy<ISomeService>(target);
@@ -204,7 +204,7 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 
 		ISomeService2? newProxy = jsonRpcLocalProxy!.ConstructLocalProxy<ISomeService2>();
 		Assert.NotNull(newProxy);
-		Assert.Equal(proxy.GetIdentifier().Result, newProxy!.GetIdentifier().Result);
+		Assert.Equal(await proxy.GetIdentifier(), await newProxy!.GetIdentifier());
 
 		ISomeServiceNotImplemented? nullProxy = jsonRpcLocalProxy!.ConstructLocalProxy<ISomeServiceNotImplemented>();
 		Assert.Null(nullProxy);
