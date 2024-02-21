@@ -15,4 +15,11 @@ public interface IDiscoveryService
 	/// <param name="cancellationToken">A token to signal cancellation.</param>
 	/// <returns>The full path to the service's configuration file or null if the service was not found.</returns>
 	Task<string> DiscoverServiceAsync(string serviceName, CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Find all configuration files for all services provided by this discovery service.
+	/// </summary>
+	/// <param name="cancellationToken">A token to signal cancellation.</param>
+	/// <returns>A collection of tuples containing the name of the service and the full path to the service's configuration file.</returns>
+	Task<IEnumerable<(string ServiceName, string FilePath)>> DiscoverAllServicesAsync(CancellationToken cancellationToken);
 }
