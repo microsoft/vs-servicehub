@@ -199,6 +199,11 @@ jobs:
         parameters:
           Is1ESPT: ${{ parameters.Is1ESPT }}
           RunTests: ${{ parameters.RunTests }}
+      - template: post_build.yml
+        parameters:
+          Is1ESPT: ${{ parameters.Is1ESPT }}
+          RunTests: ${{ parameters.RunTests }}
+          IsOptProf: ${{ parameters.IsOptProf }}
       - ${{ if parameters.EnableDotNetFormatCheck }}:
         - script: dotnet format --verify-no-changes --no-restore
           displayName: 💅 Verify formatted code
@@ -231,6 +236,11 @@ jobs:
         parameters:
           Is1ESPT: ${{ parameters.Is1ESPT }}
           RunTests: ${{ parameters.RunTests }}
+      - template: post_build.yml
+        parameters:
+          Is1ESPT: ${{ parameters.Is1ESPT }}
+          RunTests: ${{ parameters.RunTests }}
+          IsOptProf: ${{ parameters.IsOptProf }}
 
   - job: WrapUp
     dependsOn:
