@@ -33,38 +33,38 @@ stages:
           SymbolsAgentPath: $(Pipeline.Workspace)/symbols-legacy
           azureSubscription: Symbols Upload (DevDiv)
 
-  - job: push
-    displayName: azure-public/vssdk feed
-    ${{ if parameters.ArchiveSymbols }}:
-      dependsOn: symbol_archive
-    pool:
-      name: AzurePipelines-EO
-      demands:
-      - ImageOverride -equals AzurePipelinesUbuntu20.04compliantGPT
-      os: Linux
-    templateContext:
-      outputParentDirectory: $(Pipeline.Workspace)
-      outputs:
-      - output: nuget
-        displayName: 📦 Push nuget packages
-        packagesToPush: '(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg'
-        packageParentPath: (Pipeline.Workspace)/deployables-Windows/NuGet
-        allowPackageConflicts: true
-        nuGetFeedType: external
-        publishFeedCredentials: azure-public/vssdk
-    steps:
-    - checkout: none
-    - download: current
-      artifact: Variables-Windows
-      displayName: 🔻 Download Variables-Windows artifact
-    - powershell: $(Pipeline.Workspace)/Variables-Windows/_pipelines.ps1
-      displayName: ⚙️ Set pipeline variables based on artifacts
-    - download: current
-      artifact: deployables-Windows
-      displayName: 🔻 Download deployables-Windows artifact
-    - template: npm_push.yml
-      parameters:
-        tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm
-        feedName: azure-public/vssdk
-        feedUrl: https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/npm/registry/
-        service_connection: azure-public/vssdk NPM
+  - ${{ if true }}:
+    - job: push
+      displayName: azure-public/vssdk feed
+      ${{ if parameters.ArchiveSymbols }}:
+        dependsOn: symbol_archive
+      pool:
+        name: AzurePipelines-EO
+        demands:
+        - ImageOverride -equals 1ESPT-Ubuntu22.04
+        os: Linux
+      templateContext:
+        outputs:
+        - output: nuget
+          displayName: 📦 Push nuget packages
+          packagesToPush: '$(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg'
+          packageParentPath: $(Pipeline.Workspace)/deployables-Windows/NuGet
+          allowPackageConflicts: true
+          nuGetFeedType: external
+          publishFeedCredentials: azure-public/vssdk
+      steps:
+      - checkout: none
+      - download: current
+        artifact: Variables-Windows
+        displayName: 🔻 Download Variables-Windows artifact
+      - powershell: $(Pipeline.Workspace)/Variables-Windows/_pipelines.ps1
+        displayName: ⚙️ Set pipeline variables based on artifacts
+      - download: current
+        artifact: deployables-Windows
+        displayName: 🔻 Download deployables-Windows artifact
+      - template: npm_push.yml
+        parameters:
+          tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm
+          feedName: azure-public/vssdk
+          feedUrl: https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/npm/registry/
+          service_connection: azure-public/vssdk NPM

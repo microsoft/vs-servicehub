@@ -1,19 +1,13 @@
 trigger: none
 pr: none
 schedules:
-  - cron: "0 3 * * Tue" # Mon @ 8 or 9 PM Mountain Time (depending on DST)
-    displayName: Weekly OptProf run
-    branches:
-      include:
-      - 'v4*'
-      - main
-    always: true # we must keep data fresh since optimizationdata drops are purged after 30 days
-
-parameters:
-- name: InsertTargetBranch
-  displayName: VS repo target branch
-  type: string
-  default: main
+- cron: "0 3 * * Tue" # Mon @ 8 or 9 PM Mountain Time (depending on DST)
+  displayName: Weekly OptProf run
+  branches:
+    include:
+    - 'v*.*'
+    - main
+  always: true # we must keep data fresh since optimizationdata drops are purged after 30 days
 
 # Avoid errant CI builds: https://developercommunity.visualstudio.com/content/problem/1154409/azure-pipeline-is-triggering-due-to-events-that-ne.html
 #resources:
@@ -24,33 +18,29 @@ parameters:
 #    ref: refs/heads/test
 
 variables:
-- name: TreatWarningsAsErrors
-  value: true
-- name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
-  value: true
-- name: BuildConfiguration
-  value: Release
-- name: BuildPlatform
-  value: Any CPU
-- name: NUGET_PACKAGES
-  value: $(Agent.TempDirectory)/.nuget/packages
+- template: GlobalVariables.yml
 - name: PublicRelease
   value: false # avoid using nice version since we're building a preliminary/unoptimized package
-- group: Library.Template
+- name: IsOptProf
+  value: true
 
 stages:
 - stage: Library
   variables:
-    OptProf: true
+  - name: OptProf
+    value: true
+  - template: BuildStageVariables.yml
   jobs:
   - template: build.yml
     parameters:
-      windowsPool: VSEngSS-MicroBuild2022-1ES
-      includeMacOS: false
-      ShouldSkipOptimize: true
-      IsProfilingRun: true
+      Is1ESPT: false
       RealSign: true
       EnableCompliance: false
+      windowsPool: VSEngSS-MicroBuild2022-1ES
+      EnableMacOSBuild: false
+      ShouldSkipOptimize: true
+      IsOptProf: true
+      RunTests: false
 - stage: QueueVSBuild
   jobs:
   - job: QueueOptProf
@@ -58,7 +48,6 @@ stages:
     variables:
       InsertPayloadName: vs-servicehub
       InsertTopicBranch: team/VS-IDE/vs-servicehub-OptProf-run-$(Build.BuildId)
-      InsertTargetBranch: ${{ parameters.InsertTargetBranch }}
     steps:
     - checkout: none # We don't need source from our own repo
       clean: true
@@ -93,9 +82,11 @@ stages:
         packagesToPush: $(Agent.TempDirectory)/VSInsertion-Windows/*.nupkg
         publishVstsFeed: 97a41293-2972-4f48-8c0e-05493ae82010 # VS feed
         allowPackageConflicts: true
-    - task: MicroBuildInsertVsPayload@3
+    - task: MicroBuildInsertVsPayload@4
       displayName: Insert VS Payload
       inputs:
+        TeamName: $(TeamName)
+        TeamEmail: $(TeamEmail)
         SkipCreatePR: true
         CustomScriptExecutionCommand: src\VSSDK\NuGet\AllowUnstablePackages.ps1
     - task: benjhuser.tfs-extensions-build-tasks.trigger-build-task.TriggerBuild@3
