@@ -256,6 +256,30 @@ public class ServiceBrokerClientTests : TestBase
 	}
 
 	[Fact]
+	public async Task Invalidated_RaisedWhenProxyDies()
+	{
+		this.serviceBroker = new TestServiceBroker();
+		this.client = new ServiceBrokerClient(ServiceBrokerAggregator.ForceMarshal(this.serviceBroker));
+
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> invalidated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		this.client.Invalidated += (s, e, ct) =>
+		{
+			invalidated.TrySetResult(e);
+			return Task.CompletedTask;
+		};
+
+		using (ServiceBrokerClient.Rental<ICalculator> rental = await this.client.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken))
+		{
+			// Arrange for the connection to be lost (on the service side).
+			this.serviceBroker.ForceKillLastServicePipe();
+
+			BrokeredServicesChangedEventArgs args = await invalidated.Task.WithCancellation(this.TimeoutToken);
+			Assert.False(args.OtherServicesImpacted);
+			Assert.Equal(TestServices.Calculator.Moniker, Assert.Single(args.ImpactedServices));
+		}
+	}
+
+	[Fact]
 	public async Task Invalidate_WhileProxiesUsed()
 	{
 		Calculator underlyingService;

@@ -8,6 +8,8 @@ using Nerdbank.Streams;
 
 internal class TestServiceBroker : IServiceBroker
 {
+	private IDuplexPipe? lastConstructedServerPipe;
+
 	public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
 
 	public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
@@ -34,6 +36,7 @@ internal class TestServiceBroker : IServiceBroker
 		{
 			Assumes.NotNull(server);
 			(IDuplexPipe, IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
+			this.lastConstructedServerPipe = pair.Item1;
 #pragma warning disable CS0618 // Type or member is obsolete
 			descriptor
 				.WithMultiplexingStream(options.MultiplexingStream)
@@ -62,6 +65,15 @@ internal class TestServiceBroker : IServiceBroker
 		}
 
 		return default;
+	}
+
+	internal void ForceKillLastServicePipe()
+	{
+		Verify.Operation(this.lastConstructedServerPipe is not null, "No server pipe to kill.");
+
+		this.lastConstructedServerPipe.Output.Complete();
+
+		this.lastConstructedServerPipe = null;
 	}
 
 	internal void OnAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
