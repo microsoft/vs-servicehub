@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.IO.Pipelines;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
@@ -198,7 +199,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
 		Assumes.NotNull(result);
 		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
-		Assert.True(result is IJsonRpcClientProxy);
+		Assert.IsAssignableFrom<IJsonRpcClientProxy>(result);
 	}
 
 	[Fact]
@@ -207,7 +208,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(new MockServiceBroker());
 		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
 		Assumes.NotNull(result);
-		Assert.True(result is IJsonRpcClientProxy);
+		Assert.IsAssignableFrom<IJsonRpcClientProxy>(result);
 		Assert.Equal(8, await result.AddAsync(3, 5));
 	}
 
@@ -217,7 +218,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(new MockServiceBroker());
 		ICalculatorCopy? result = await aggregator.GetProxyAsync<ICalculatorCopy>(TestServices.Calculator, this.TimeoutToken);
 		Assumes.NotNull(result);
-		Assert.True(result is IJsonRpcClientProxy);
+		Assert.IsAssignableFrom<IJsonRpcClientProxy>(result);
 		Assert.Equal(8, await result.AddAsync(3, 5));
 	}
 
@@ -231,7 +232,7 @@ public class ServiceBrokerAggregatorTests : TestBase
 		ICalculatorCopy? result = await aggregator.GetProxyAsync<ICalculatorCopy>(Descriptor1, this.TimeoutToken);
 		Assumes.NotNull(result);
 		Assert.NotSame(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
-		Assert.True(result is IJsonRpcClientProxy);
+		Assert.IsAssignableFrom<IJsonRpcClientProxy>(result);
 	}
 
 	[Fact]
@@ -246,6 +247,75 @@ public class ServiceBrokerAggregatorTests : TestBase
 	{
 		IServiceBroker aggregator = ServiceBrokerAggregator.ForceMarshal(this.mockBrokers[0]);
 		Assert.Null(await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken));
+	}
+
+	[Fact]
+	public void ForceMarshal_Events()
+	{
+		VerifyAvailabilityChangedEvent(ServiceBrokerAggregator.ForceMarshal);
+	}
+
+	[Fact]
+	public void NonDisposable()
+	{
+		Assert.IsNotAssignableFrom<IDisposable>(ServiceBrokerAggregator.NonDisposable(new DisposableServiceBroker()));
+	}
+
+	[Fact]
+	public void NonDisposable_Null()
+	{
+		Assert.Throws<ArgumentNullException>(() => ServiceBrokerAggregator.NonDisposable(null!));
+	}
+
+	[Fact]
+	public void NonDisposable_Events()
+	{
+		VerifyAvailabilityChangedEvent(ServiceBrokerAggregator.NonDisposable);
+	}
+
+	[Fact]
+	public async Task NonDisposable_GetPipeAsync()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.NonDisposable(this.mockBrokers[1]);
+		IDuplexPipe? result = await aggregator.GetPipeAsync(Descriptor1.Moniker, this.TimeoutToken);
+		Assert.Same(result, this.mockBrokers[1].PipeResults[Descriptor1.Moniker]);
+	}
+
+	[Fact]
+	public async Task NonDisposable_GetProxyAsync()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.NonDisposable(this.mockBrokers[1]);
+		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
+		Assumes.NotNull(result);
+		Assert.Same(this.mockBrokers[1].ProxyResults[Descriptor1.Moniker], result);
+	}
+
+	private static void VerifyAvailabilityChangedEvent(Func<IServiceBroker, IServiceBroker> aggregator)
+	{
+		InternalMockServiceBroker testBroker = new();
+		IServiceBroker wrapper = aggregator(testBroker);
+		VerifyAvailabilityChangedEvent(testBroker, wrapper);
+	}
+
+	private static void VerifyAvailabilityChangedEvent(InternalMockServiceBroker innerBroker, IServiceBroker wrapper)
+	{
+		(object? Sender, BrokeredServicesChangedEventArgs Args)? handled = null;
+		wrapper.AvailabilityChanged += Handler;
+		try
+		{
+			BrokeredServicesChangedEventArgs args = new(ImmutableHashSet.Create(Descriptor1.Moniker), otherServicesImpacted: true);
+			innerBroker.RaiseAvailabilityChanged(args);
+			Assert.Equal((wrapper, args), handled);
+		}
+		finally
+		{
+			wrapper.AvailabilityChanged -= Handler;
+		}
+
+		void Handler(object? sender, BrokeredServicesChangedEventArgs args)
+		{
+			handled = (sender, args);
+		}
 	}
 
 	private class InternalMockServiceBroker : IServiceBroker
@@ -278,6 +348,33 @@ public class ServiceBrokerAggregatorTests : TestBase
 			this.QueryCounter++;
 			this.ProxyResults.TryGetValue(serviceDescriptor.Moniker, out object? result);
 			return new ValueTask<T?>((T?)result);
+		}
+
+		internal void RaiseAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.OnAvailabilityChanged(args);
+
+		protected virtual void OnAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
+	}
+
+	private class DisposableServiceBroker : IServiceBroker, IDisposable
+	{
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
+
+		internal bool IsDisposed { get; private set; }
+
+		public void Dispose()
+		{
+			this.IsDisposed = true;
+		}
+
+		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+		{
+			throw new NotImplementedException();
 		}
 
 		protected virtual void OnAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);

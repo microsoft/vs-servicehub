@@ -7,3 +7,4 @@ override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.Creat
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateHandler(System.IO.Pipelines.IDuplexPipe! pipe, StreamJsonRpc.IJsonRpcMessageFormatter! formatter) -> StreamJsonRpc.IJsonRpcMessageHandler!
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateJsonRpc(StreamJsonRpc.IJsonRpcMessageHandler! handler) -> StreamJsonRpc.JsonRpc!
+static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.NonDisposable(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker) -> Microsoft.ServiceHub.Framework.IServiceBroker!
