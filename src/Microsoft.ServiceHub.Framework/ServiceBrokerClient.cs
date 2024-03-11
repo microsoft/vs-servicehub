@@ -155,7 +155,13 @@ public class ServiceBrokerClient : IDisposableObservable
 					{
 						Verify.NotDisposed(this);
 						GC.KeepAlive(typeof(ValueTask<T>)); // workaround CLR bug https://dev.azure.com/devdiv/DevDiv/_workitems/edit/1358442
-						return await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
+						T? proxy = await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
+						if (proxy is StreamJsonRpc.IJsonRpcClientProxy localProxy)
+						{
+							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnInvalidated(new BrokeredServicesChangedEventArgs(ImmutableHashSet.Create(serviceRpcDescriptor.Moniker)));
+						}
+
+						return proxy;
 					},
 					this.joinableTaskFactory);
 				this.clientCache.Add(key, clientLazy);
