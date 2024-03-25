@@ -162,6 +162,9 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 			case IUsingOperation { Resources: IConversionOperation { Operand: ILocalReferenceOperation { Local: { } local } } }:
 				// using (proxy as IDisposable)
 				return SymbolEqualityComparer.Default.Equals(local, symbol);
+			case IUsingOperation { Resources: ILocalReferenceOperation { Local: { } local } }:
+				// using (proxy)
+				return SymbolEqualityComparer.Default.Equals(local, symbol);
 			default:
 				return false;
 		}
@@ -255,6 +258,12 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 
 			// 4. Inside the resource expression of a using block.
 			if (Utils.FindAncestors<IUsingOperation>(operation).FirstOrDefault()?.Resources.Descendants().Contains(operation) ?? false)
+			{
+				return;
+			}
+
+			// 5. Inside the resource expression of a using declaration.
+			if (Utils.FindAncestors<IUsingDeclarationOperation>(operation).Any())
 			{
 				return;
 			}
