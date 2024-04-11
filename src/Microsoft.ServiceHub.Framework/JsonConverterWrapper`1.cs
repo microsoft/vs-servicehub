@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -39,6 +40,6 @@ internal sealed class JsonConverterWrapper<T> : JsonConverter<T>
 		=> BuiltInConverter.ReadAsPropertyName(ref reader, typeToConvert, options);
 
 	/// <inheritdoc/>
-	public override void WriteAsPropertyName(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+	public override void WriteAsPropertyName(Utf8JsonWriter writer, [DisallowNull] T value, JsonSerializerOptions options)
 		=> BuiltInConverter.WriteAsPropertyName(writer, value, options);
 }
