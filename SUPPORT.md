@@ -11,3 +11,7 @@ Note that this repo is primarily used for Visual Studio and related products and
 ## Microsoft Support Policy
 
 Support for this project is limited to the resources listed above.
+
+*********
+DO NOT COMPLETE PR
+*********
