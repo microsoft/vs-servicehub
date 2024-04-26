@@ -53,7 +53,7 @@ extends:
           displayName: ⚙ Set up pipeline
         - task: NodeTool@0
           inputs:
-            versionSpec: 16.x
+            versionSpec: 18.x
           displayName: ⚙️️ Install Node.js
         - download: CI
           artifact: deployables-Windows
