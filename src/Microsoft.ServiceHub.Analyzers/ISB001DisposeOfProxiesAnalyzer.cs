@@ -43,7 +43,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		isEnabledByDefault: true);
 
 	/// <inheritdoc />
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
 		NonDisposalDescriptor,
 		OverwrittenMemberDescriptor,
 		ProxyMemberMustBeDisposedInDisposeMethodDescriptor);

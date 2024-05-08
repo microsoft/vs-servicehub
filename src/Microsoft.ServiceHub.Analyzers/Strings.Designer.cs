@@ -19,7 +19,7 @@ namespace Microsoft.ServiceHub.Analyzers {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Strings {
@@ -138,6 +138,33 @@ namespace Microsoft.ServiceHub.Analyzers {
         internal static string ISB002_Title {
             get {
                 return ResourceManager.GetString("ISB002_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Classes attributed with ExportBrokeredServiceAttribute must implement IExportedBrokeredService..
+        /// </summary>
+        internal static string ISB003_Description {
+            get {
+                return ResourceManager.GetString("ISB003_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The type &quot;{0}&quot; must implement IExportedBrokeredService..
+        /// </summary>
+        internal static string ISB003_MessageFormat {
+            get {
+                return ResourceManager.GetString("ISB003_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exported brokered service validity.
+        /// </summary>
+        internal static string ISB003_Title {
+            get {
+                return ResourceManager.GetString("ISB003_Title", resourceCulture);
             }
         }
     }

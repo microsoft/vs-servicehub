@@ -147,4 +147,14 @@
   <data name="ISB002_Title" xml:space="preserve">
     <value>Avoid storing rentals in fields</value>
   </data>
+  <data name="ISB003_Description" xml:space="preserve">
+    <value>Classes attributed with ExportBrokeredServiceAttribute must implement IExportedBrokeredService.</value>
+  </data>
+  <data name="ISB003_MessageFormat" xml:space="preserve">
+    <value>The type "{0}" must implement IExportedBrokeredService.</value>
+    <comment>{0} is a type name.</comment>
+  </data>
+  <data name="ISB003_Title" xml:space="preserve">
+    <value>Exported brokered service validity</value>
+  </data>
 </root>

@@ -3,7 +3,6 @@
 
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.ServiceHub.Analyzers;
-using Xunit;
 using Verify = CSharpCodeFixVerifier<Microsoft.ServiceHub.Analyzers.ISB001DisposeOfProxiesAnalyzer, Microsoft.CodeAnalysis.Testing.EmptyCodeFixProvider>;
 
 public class ISB001DisposeOfProxiesAnalyzerTests
