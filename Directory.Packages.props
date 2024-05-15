@@ -4,11 +4,11 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicroBuildVersion>2.0.149</MicroBuildVersion>
+    <MicroBuildVersion>2.0.152</MicroBuildVersion>
     <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
     <CodeAnalysisVersion>4.6.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2-beta1.23411.1</CodefixTestingVersion>
-    <VSThreadingVersion>17.6.40</VSThreadingVersion>
+    <VSThreadingVersion>17.10.48</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
@@ -22,7 +22,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.6.36011" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33627.172" />
     <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.6.16" />
-    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.6.11" />
+    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.8.8" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
@@ -37,9 +37,9 @@
     <PackageVersion Include="System.Text.Json" Version="7.0.3" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.7" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.0" />
     <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
-    <PackageVersion Include="xunit" Version="2.7.0" />
+    <PackageVersion Include="xunit" Version="2.8.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(IsAnalyzerProject)'=='true'">
     <!-- Analyzers need to use older references to work in existing C# compilers. -->

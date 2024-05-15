@@ -10,6 +10,6 @@ internal static class ReferencesHelper
 		.WithPackages(ImmutableArray.Create(
 			new PackageIdentity("System.ComponentModel.Composition", "6.0.0"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.6.40"),
-			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.6.11")));
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.10.48"),
+			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.8.8")));
 }
