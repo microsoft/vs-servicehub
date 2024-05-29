@@ -2,6 +2,7 @@ Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor
 Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.ApplySettingsToInnerDescriptor() -> void
 Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.DelegatingServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor! descriptor) -> void
 Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.DelegatingServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor! innerDescriptor) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.GetFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.ConstructRpcConnection(System.IO.Pipelines.IDuplexPipe! pipe) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection!
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateConnection(StreamJsonRpc.JsonRpc! jsonRpc) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection!
 override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
