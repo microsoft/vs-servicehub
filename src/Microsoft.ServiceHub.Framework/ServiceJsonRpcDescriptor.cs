@@ -280,6 +280,12 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
+	/// Initializes a new instance of <see cref="IJsonRpcMessageFormatter"/> for use in a new server or client.
+	/// </summary>
+	/// <returns>The new message formatter.</returns>
+	public IJsonRpcMessageFormatter GetFormatter() => this.CreateFormatter();
+
+	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
 	/// but with <see cref="ExceptionStrategy"/>, <see cref="MultiplexingStreamOptions"/>, <see cref="JoinableTaskFactory"/> and <see cref="TraceSource"/> matching to passed in descriptor.
 	/// </summary>
