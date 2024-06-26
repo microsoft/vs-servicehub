@@ -428,9 +428,16 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			this.profferedServiceIndex = this.profferedServiceIndex.SetItem(proffered.Source, monikerAndProfferBuilder.ToImmutable());
 		}
 
-		if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
+		try
 		{
-			this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Proffered, "{0} proffered brokered service(s): {1}.", proffered.Source, ServiceBrokerUtilities.DeferredFormatting(() => string.Join(", ", proffered.Monikers)));
+			if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
+			{
+				this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Proffered, "{0} proffered brokered service(s): {1}.", proffered.Source, ServiceBrokerUtilities.DeferredFormatting(() => string.Join(", ", proffered.Monikers)));
+			}
+		}
+		catch
+		{
+			// TraceEvent() will intermittently raise IOException that we can ignore. Eat the exception.
 		}
 
 		this.OnAvailabilityChanged(oldIndex, proffered);
