@@ -41,10 +41,6 @@ parameters:
 - name: EnableAPIScan
   displayName: Include APIScan with compliance tools
   type: boolean
-  default: true
-- name: EnableAPIScan
-  displayName: Include APIScan with compliance tools
-  type: boolean
   default: true # enable in individual repos only AFTER updating TSAOptions.json with your own values
 
 resources:
