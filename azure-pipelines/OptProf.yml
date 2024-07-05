@@ -8,12 +8,6 @@ schedules:
       - main
     always: true # we must keep data fresh since optimizationdata drops are purged after 30 days
 
-parameters:
-- name: InsertTargetBranch
-  displayName: VS repo target branch
-  type: string
-  default: main
-
 # Avoid errant CI builds: https://developercommunity.visualstudio.com/content/problem/1154409/azure-pipeline-is-triggering-due-to-events-that-ne.html
 #resources:
 #  repositories:
@@ -58,7 +52,6 @@ stages:
     variables:
       InsertPayloadName: vs-servicehub
       InsertTopicBranch: team/VS-IDE/vs-servicehub-OptProf-run-$(Build.BuildId)
-      InsertTargetBranch: ${{ parameters.InsertTargetBranch }}
     steps:
     - checkout: none # We don't need source from our own repo
       clean: true
