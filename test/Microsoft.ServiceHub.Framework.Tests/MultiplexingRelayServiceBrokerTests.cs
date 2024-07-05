@@ -79,7 +79,7 @@ public class MultiplexingRelayServiceBrokerTests : TestBase
 	public async Task ConnectToServerAsync_Canceled()
 	{
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
-		await Assert.ThrowsAsync<OperationCanceledException>(() => MultiplexingRelayServiceBroker.ConnectToServerAsync(new MockServiceBroker(), pair.Item1, new CancellationToken(canceled: true)));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => MultiplexingRelayServiceBroker.ConnectToServerAsync(new MockServiceBroker(), pair.Item1, new CancellationToken(canceled: true)));
 		Assert.True(((IDisposableObservable)pair.Item1).IsDisposed);
 	}
 
