@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -63,6 +64,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		this.MessageDelimiter = copyFrom.MessageDelimiter;
 		this.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions;
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
+		this.AdditionalClientInterfaces = copyFrom.AdditionalClientInterfaces;
 	}
 
 	/// <summary>
@@ -133,6 +135,13 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public MultiplexingStream.Options? MultiplexingStreamOptions { get; private set; }
 
 	/// <summary>
+	/// Gets the set of interfaces that will be added to a generated proxy in addition to the one specified
+	/// as the type argument to <see cref="JsonRpcConnection.ConstructRpcClient{T}"/> or
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>.
+	/// </summary>
+	public ImmutableArray<Type> AdditionalClientInterfaces { get; private set; } = ImmutableArray<Type>.Empty;
+
+	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
 	/// </summary>
 	[ExcludeFromCodeCoverage]
@@ -159,7 +168,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
 	{
-		return target != null ? LocalProxyGeneration.CreateProxy<T>(target, this.ExceptionStrategy) : null;
+		return target != null ? LocalProxyGeneration.CreateProxy<T>(target, this.AdditionalClientInterfaces.AsSpan(), this.ExceptionStrategy) : null;
 	}
 
 	/// <inheritdoc />
@@ -230,6 +239,24 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 
 		var result = (ServiceJsonRpcDescriptor)this.Clone();
 		result.ExceptionStrategy = exceptionStrategy;
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="AdditionalClientInterfaces" /> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="AdditionalClientInterfaces"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcDescriptor WithAdditionalClientInterfaces(ImmutableArray<Type> value)
+	{
+		if (this.AdditionalClientInterfaces == value)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcDescriptor)this.Clone();
+		result.AdditionalClientInterfaces = value;
 		return result;
 	}
 
@@ -322,7 +349,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	/// <param name="jsonRpc">The <see cref="JsonRpc"/> object that will have to be passed to <see cref="JsonRpcConnection(JsonRpc)"/>.</param>
 	/// <returns>The new instance of <see cref="JsonRpcConnection"/>.</returns>
-	protected internal virtual JsonRpcConnection CreateConnection(JsonRpc jsonRpc) => new JsonRpcConnection(jsonRpc);
+	protected internal virtual JsonRpcConnection CreateConnection(JsonRpc jsonRpc) => new JsonRpcConnection(jsonRpc, this);
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="IJsonRpcMessageHandler"/> for use in a new server or client.
@@ -460,6 +487,10 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	public class JsonRpcConnection : RpcConnection
 	{
+		private const string GetOptionalInterfacesMethodName = "__jsonrpc_getOptionalInterfaces";
+
+		private readonly ServiceJsonRpcDescriptor? owner;
+
 		/// <summary>
 		/// Backing field for the <see cref="LocalRpcTargetOptions"/> property.
 		/// </summary>
@@ -476,13 +507,21 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// </devremarks>
 		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { };
 
+		/// <inheritdoc cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcDescriptor)"/>
+		public JsonRpcConnection(JsonRpc jsonRpc)
+			: this(jsonRpc, null)
+		{
+		}
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="JsonRpcConnection"/> class.
 		/// </summary>
 		/// <param name="jsonRpc">The JSON-RPC object.</param>
-		public JsonRpcConnection(JsonRpc jsonRpc)
+		/// <param name="owner">The descriptor that created this object.</param>
+		public JsonRpcConnection(JsonRpc jsonRpc, ServiceJsonRpcDescriptor? owner)
 		{
 			this.JsonRpc = jsonRpc ?? throw new ArgumentNullException(nameof(jsonRpc));
+			this.owner = owner;
 		}
 
 		/// <inheritdoc/>
@@ -538,7 +577,17 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		}
 
 		/// <inheritdoc/>
-		public override T ConstructRpcClient<T>() => this.JsonRpc.Attach<T>(this.LocalRpcProxyOptions);
+		public override T ConstructRpcClient<T>()
+		{
+			if (this.owner?.AdditionalClientInterfaces.Length > 0)
+			{
+				return (T)this.JsonRpc.Attach([typeof(T), .. this.owner.AdditionalClientInterfaces], this.LocalRpcProxyOptions);
+			}
+			else
+			{
+				return this.JsonRpc.Attach<T>(this.LocalRpcProxyOptions);
+			}
+		}
 
 		/// <inheritdoc/>
 		public override void Dispose() => this.JsonRpc.Dispose();

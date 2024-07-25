@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft;
@@ -70,8 +71,11 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	[Fact]
 	public void Ctor_SetsPropertiesWithClone()
 	{
+		ImmutableArray<Type> additionalClientInterfaces = [typeof(IDisposable)];
 		var descriptor = new TestServiceJsonRpcDescriptor(SomeMoniker, null, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStreamOptions);
-		descriptor = (TestServiceJsonRpcDescriptor)descriptor.WithExceptionStrategy(descriptor.ExceptionStrategy == ExceptionProcessing.ISerializable ? ExceptionProcessing.CommonErrorData : ExceptionProcessing.ISerializable);
+		descriptor = (TestServiceJsonRpcDescriptor)descriptor
+			.WithExceptionStrategy(descriptor.ExceptionStrategy == ExceptionProcessing.ISerializable ? ExceptionProcessing.CommonErrorData : ExceptionProcessing.ISerializable)
+			.WithAdditionalClientInterfaces(additionalClientInterfaces);
 
 		TestServiceJsonRpcDescriptor descriptorCopied = descriptor.CopyWithClone();
 
@@ -83,6 +87,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.Equal(MultiplexingStreamOptions.SeededChannels, descriptorCopied.MultiplexingStreamOptions?.SeededChannels);
 		Assert.True(descriptorCopied.MultiplexingStreamOptions?.IsFrozen);
 		Assert.Equal(descriptor.ExceptionStrategy, descriptorCopied.ExceptionStrategy);
+		Assert.Equal(additionalClientInterfaces, descriptor.AdditionalClientInterfaces);
 	}
 
 	[Fact]
@@ -468,6 +473,22 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.NotSame(descriptor, modified);
 		Assert.Equal(ExceptionProcessing.ISerializable, modified.ExceptionStrategy);
 		Assert.Equal(ExceptionProcessing.CommonErrorData, descriptor.ExceptionStrategy);
+	}
+
+	[Fact]
+	public void WithAdditionalClientInterfaces()
+	{
+		ImmutableArray<Type> additionalClientInterfaces2 = [typeof(IDisposable)];
+		ImmutableArray<Type> additionalClientInterfaces3 = [typeof(System.IAsyncDisposable)];
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		ServiceJsonRpcDescriptor descriptor2 = descriptor.WithAdditionalClientInterfaces(additionalClientInterfaces2);
+		Assert.NotSame(descriptor, descriptor2);
+		Assert.Equal(additionalClientInterfaces2, descriptor2.AdditionalClientInterfaces);
+
+		Assert.Same(descriptor2, descriptor2.WithAdditionalClientInterfaces(additionalClientInterfaces2));
+		ServiceJsonRpcDescriptor descriptor3 = descriptor2.WithAdditionalClientInterfaces(additionalClientInterfaces3);
+		Assert.NotSame(descriptor2, descriptor3);
+		Assert.Equal(additionalClientInterfaces3, descriptor3.AdditionalClientInterfaces);
 	}
 
 	private static ServiceJsonRpcDescriptor CreateDefault(ServiceMoniker? moniker = null) => new ServiceJsonRpcDescriptor(moniker ?? SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
