@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
+using TraceEvents = Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 
@@ -13,6 +15,8 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
 public class ServiceRegistration
 {
+	private ImmutableArray<Type> additionalServiceInterfacesResolvedTypes;
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ServiceRegistration"/> class.
 	/// </summary>
@@ -55,6 +59,12 @@ public class ServiceRegistration
 	public bool IsExposedRemotely => (this.Audience & (ServiceAudience.LiveShareGuest | ServiceAudience.RemoteExclusiveClient | ServiceAudience.RemoteExclusiveServer)) != ServiceAudience.None;
 
 	/// <summary>
+	/// Gets a collection of the <see cref="Type.AssemblyQualifiedName">assembly-qualified names</see> for additional service interfaces
+	/// that should be exposed to the service broker client.
+	/// </summary>
+	public ImmutableArray<string> AdditionalServiceInterfaceTypeNames { get; init; } = ImmutableArray<string>.Empty;
+
+	/// <summary>
 	/// Gets the string to use in a <see cref="DebuggerDisplayAttribute"/>.
 	/// </summary>
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -72,6 +82,41 @@ public class ServiceRegistration
 	/// <param name="consumingAudience">The candidate audience that would like to get this service.</param>
 	/// <returns>A value indicating whether the service permits access by the given audience.</returns>
 	internal bool IsExposedTo(ServiceAudience consumingAudience) => (consumingAudience & this.Audience) == consumingAudience;
+
+	/// <summary>
+	/// Gets the resolved types for the <see cref="AdditionalServiceInterfaceTypeNames"/>.
+	/// </summary>
+	/// <param name="logger">The logger to use for tracing out any errors when loading the additional types.</param>
+	/// <returns>The array of types.</returns>
+	internal ImmutableArray<Type> GetAdditionalServiceInterfaceTypes(TraceSource logger)
+	{
+		if (this.additionalServiceInterfacesResolvedTypes.IsDefault)
+		{
+			ImmutableArray<Type>.Builder builder = ImmutableArray.CreateBuilder<Type>(this.AdditionalServiceInterfaceTypeNames.Length);
+			foreach (string typeName in this.AdditionalServiceInterfaceTypeNames)
+			{
+				try
+				{
+					if (Type.GetType(typeName, throwOnError: true) is Type type)
+					{
+						builder.Add(type);
+					}
+					else
+					{
+						logger.TraceEvent(TraceEventType.Error, (int)TraceEvents.AdditionalProxyInterfaceTypeLoadFailure, "Could not resolve additional service interface type '{0}'.", typeName);
+					}
+				}
+				catch (Exception ex)
+				{
+					logger.TraceEvent(TraceEventType.Error, (int)TraceEvents.AdditionalProxyInterfaceTypeLoadFailure, "Could not resolve additional service interface type '{0}': {1}", typeName, ex);
+				}
+			}
+
+			this.additionalServiceInterfacesResolvedTypes = builder.Count == builder.Capacity ? builder.MoveToImmutable() : builder.ToImmutable();
+		}
+
+		return this.additionalServiceInterfacesResolvedTypes;
+	}
 
 	/// <summary>
 	/// Triggers the call to <see cref="IBrokeredServiceContainer.Proffer(ServiceRpcDescriptor, BrokeredServiceFactory)"/>

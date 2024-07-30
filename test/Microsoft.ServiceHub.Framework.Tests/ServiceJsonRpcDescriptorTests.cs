@@ -489,6 +489,8 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		ServiceJsonRpcDescriptor descriptor3 = descriptor2.WithAdditionalServiceInterfaces(additionalServiceInterfaces3);
 		Assert.NotSame(descriptor2, descriptor3);
 		Assert.Equal(additionalServiceInterfaces3, descriptor3.AdditionalServiceInterfaces);
+
+		Assert.Null(descriptor.WithAdditionalServiceInterfaces(null).AdditionalServiceInterfaces);
 	}
 
 	private static ServiceJsonRpcDescriptor CreateDefault(ServiceMoniker? moniker = null) => new ServiceJsonRpcDescriptor(moniker ?? SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);

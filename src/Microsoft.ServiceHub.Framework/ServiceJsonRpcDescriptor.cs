@@ -139,7 +139,15 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// as the type argument to <see cref="JsonRpcConnection.ConstructRpcClient{T}"/> or
 	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>.
 	/// </summary>
-	public ImmutableArray<Type> AdditionalServiceInterfaces { get; private set; } = ImmutableArray<Type>.Empty;
+	/// <value>The default value is <see langword="null"/>.</value>
+	/// <remarks>
+	/// A <see langword="null" /> value may signal an implementation of
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>
+	/// to supply some default set of optional interfaces based on service registration.
+	/// Such implementations should honor any non-<see langword="null" /> value from this property (including an empty array)
+	/// by not adding any additional interfaces beyond those specified.
+	/// </remarks>
+	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
 
 	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
@@ -168,7 +176,11 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
 	{
-		return target != null ? LocalProxyGeneration.CreateProxy<T>(target, this.AdditionalServiceInterfaces.AsSpan(), this.ExceptionStrategy) : null;
+		ReadOnlySpan<Type> additionalServiceInterfaces =
+			this.AdditionalServiceInterfaces is null ? default : this.AdditionalServiceInterfaces.Value.AsSpan();
+		return target != null
+			? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces, this.ExceptionStrategy)
+			: null;
 	}
 
 	/// <inheritdoc />
@@ -248,7 +260,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	/// <param name="value">The new value for the <see cref="AdditionalServiceInterfaces"/> property.</param>
 	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
-	public ServiceJsonRpcDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type> value)
+	public ServiceJsonRpcDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type>? value)
 	{
 		if (this.AdditionalServiceInterfaces == value)
 		{
@@ -579,7 +591,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// <inheritdoc/>
 		public override T ConstructRpcClient<T>()
 		{
-			if (this.owner?.AdditionalServiceInterfaces.Length > 0)
+			if (this.owner?.AdditionalServiceInterfaces is { Length: > 0 })
 			{
 				return (T)this.JsonRpc.Attach([typeof(T), .. this.owner.AdditionalServiceInterfaces], this.LocalRpcProxyOptions);
 			}
