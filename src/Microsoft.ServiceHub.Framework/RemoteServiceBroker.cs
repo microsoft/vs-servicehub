@@ -621,7 +621,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 
 	private static async Task<IDuplexPipe> ConnectToPipeAsync(string pipeName, CancellationToken cancellationToken)
 	{
-		return (await ServerFactory.ConnectAsync(pipeName, cancellationToken).ConfigureAwait(false)).UsePipe();
+		return (await ServerFactory.ConnectAsync(pipeName, cancellationToken).ConfigureAwait(false))
+			.UsePipe(cancellationToken: CancellationToken.None);
 	}
 
 	/// <summary>

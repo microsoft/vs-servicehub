@@ -11,5 +11,5 @@ internal class Calculator : ICalculator, IDisposable
 
 	void IDisposable.Dispose() => this.disposedEvent.Set();
 
-	internal Task WaitForDisposalAsync(CancellationToken cancellationToken) => this.disposedEvent.WaitAsync().WithCancellation(cancellationToken);
+	internal Task WaitForDisposalAsync(CancellationToken cancellationToken) => this.disposedEvent.WaitAsync(cancellationToken);
 }
