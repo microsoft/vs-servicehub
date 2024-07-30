@@ -214,11 +214,11 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 	/// Verifies that local proxies cannot be created over an object that does not implement the required interfaces.
 	/// </summary>
 	[Fact]
-	public void WithAdditionalClientInterfaces_NonExistingOnTarget()
+	public void WithAdditionalServiceInterfaces_NonExistingOnTarget()
 	{
 		ServiceCompositionException ex = Assert.Throws<ServiceCompositionException>(() => this.CreateProxy<ISomeService>(
 			new SomeNonDisposableService(),
-			SomeDescriptor.WithAdditionalClientInterfaces([typeof(IDisposable)])));
+			SomeDescriptor.WithAdditionalServiceInterfaces([typeof(IDisposable)])));
 		Assert.IsType<InvalidCastException>(ex.InnerException);
 		this.Logger.WriteLine(ex.ToString());
 	}

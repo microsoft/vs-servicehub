@@ -302,7 +302,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				// rather than detect and report it. :(
 				if (monikers.Add(moniker))
 				{
-					registrations.Add(moniker, new ServiceRegistration(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i]));
+					ServiceRegistration registration = new(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i])
+					{
+						AdditionalServiceInterfaceTypeNames = exportMetadata.OptionalInterfacesImplemented?[i] is { IsDefault: false } ifaces ? ifaces : ImmutableArray<string>.Empty,
+					};
+					registrations.Add(moniker, registration);
 				}
 			}
 		}

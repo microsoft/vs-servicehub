@@ -27,6 +27,11 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		ValueTask<int> AddAsync(int a, int b);
 	}
 
+	private interface ISubtractingCalculator
+	{
+		ValueTask<int> SubtractAsync(int a, int b);
+	}
+
 	private interface ICallbackInterface
 	{
 		Task CallbackAsync(string message);
@@ -63,6 +68,29 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		{
 			Assumes.Present(calc);
 			Assert.Equal(5, await calc.AddAsync(2, 3));
+		}
+	}
+
+	[Fact]
+	public async Task InvokeBrokeredService_WithoutOptionalInterface()
+	{
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor);
+		using (calc as IDisposable)
+		{
+			Assumes.Present(calc);
+			Assert.IsNotAssignableFrom<ISubtractingCalculator>(calc);
+		}
+	}
+
+	[Fact]
+	public async Task InvokeBrokeredService_WithOptionalInterface()
+	{
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext);
+		using (calc as IDisposable)
+		{
+			Assumes.Present(calc);
+			ISubtractingCalculator subCalc = Assert.IsAssignableFrom<ISubtractingCalculator>(calc);
+			Assert.Equal(-1, await subCalc.SubtractAsync(2, 3));
 		}
 	}
 
@@ -237,7 +265,8 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	}
 
 	[ExportBrokeredService("Calculator", "1.1")]
-	private class MockServiceWithImports : MockService
+	[ExportBrokeredService("Calculator", "1.2", typeof(ISubtractingCalculator))]
+	private class MockServiceWithImports : MockService, ISubtractingCalculator
 	{
 		internal static readonly new ServiceRpcDescriptor SharedDescriptor = new ServiceJsonRpcDescriptor(
 			new ServiceMoniker("Calculator", new Version("1.1")),
@@ -249,7 +278,17 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 				ProtocolMajorVersion = 3,
 			});
 
-		public override ServiceRpcDescriptor Descriptor => SharedDescriptor;
+		internal static readonly ServiceRpcDescriptor SharedDescriptorVNext = new ServiceJsonRpcDescriptor(
+			new ServiceMoniker("Calculator", new Version("1.2")),
+			clientInterface: null,
+			ServiceJsonRpcDescriptor.Formatters.MessagePack,
+			ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
+			new Nerdbank.Streams.MultiplexingStream.Options
+			{
+				ProtocolMajorVersion = 3,
+			});
+
+		public override ServiceRpcDescriptor Descriptor => this.ServiceMoniker.Version?.Minor == 2 ? SharedDescriptorVNext : SharedDescriptor;
 
 		[Import]
 		internal ServiceMoniker ServiceMoniker { get; set; } = null!;
@@ -262,6 +301,8 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 		[Import]
 		internal AuthorizationServiceClient AuthorizationServiceClient { get; set; } = null!;
+
+		public ValueTask<int> SubtractAsync(int a, int b) => new(a - b);
 	}
 
 	[ExportBrokeredService("CallBackService", "0.1")]

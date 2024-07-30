@@ -10,7 +10,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 	/// <summary>
 	/// The IDs used for events logged via <see cref="TraceSource.TraceEvent(TraceEventType, int)"/>.
 	/// </summary>
-	protected enum TraceEvents
+	protected internal enum TraceEvents
 	{
 		/// <summary>
 		/// Indicates brokered services have been registered.
@@ -36,5 +36,10 @@ public abstract partial class GlobalBrokeredServiceContainer
 		/// Indicates that a handler of some brokered service event threw an unhandled exception.
 		/// </summary>
 		EventHandlerFaulted,
+
+		/// <summary>
+		/// Indicates loading a type specified by a <see cref="ServiceRegistration"/> failed.
+		/// </summary>
+		AdditionalProxyInterfaceTypeLoadFailure,
 	}
 }

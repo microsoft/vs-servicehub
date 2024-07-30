@@ -1,0 +1,1 @@
+Microsoft.ServiceHub.Framework.Testing.MockBrokeredServiceContainer.RegisterServices(System.Collections.Generic.IReadOnlyDictionary<Microsoft.ServiceHub.Framework.ServiceMoniker!, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration!>! services) -> void

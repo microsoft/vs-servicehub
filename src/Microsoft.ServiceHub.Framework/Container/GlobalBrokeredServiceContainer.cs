@@ -286,6 +286,13 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			.WithJoinableTaskFactory(this.joinableTaskFactory)
 			.WithTraceSource(traceSource);
 
+		if (descriptor is ServiceJsonRpcDescriptor { AdditionalServiceInterfaces: null } jsonRpcDescriptor &&
+			this.RegisteredServices.TryGetValue(descriptor.Moniker, out ServiceRegistration? registration) &&
+			registration.AdditionalServiceInterfaceTypeNames.Length > 0)
+		{
+			descriptor = jsonRpcDescriptor.WithAdditionalServiceInterfaces(registration.GetAdditionalServiceInterfaceTypes(this.traceSource));
+		}
+
 		return this.ApplyDescriptorSettings(descriptor, clientRole);
 	}
 
