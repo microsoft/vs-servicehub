@@ -53,7 +53,7 @@ public class ServiceBrokerClient : IDisposableObservable
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ServiceBrokerClient"/> class.
 	/// </summary>
-	/// <param name="serviceBroker">The underlying service broker.</param>
+	/// <param name="serviceBroker">The underlying service broker. This will be disposed of if it implements <see cref="IDisposable" /> when this <see cref="ServiceBrokerClient" /> is disposed of.</param>
 	/// <param name="joinableTaskFactory">A means to avoid deadlocks if the authorization service requires the main thread. May be null.</param>
 	public ServiceBrokerClient(IServiceBroker serviceBroker, JoinableTaskFactory? joinableTaskFactory = null)
 	{
