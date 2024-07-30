@@ -196,13 +196,13 @@ public static class ServiceBrokerAggregator
 						}
 						else if (client is IDuplexPipe pipe)
 						{
-							pipe.Input.Complete(new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker)));
-							pipe.Output.Complete(new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker)));
+							pipe.Input.Complete(new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker)));
+							pipe.Output.Complete(new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker)));
 						}
 					}
 
 					// Now communicate the composition failure to the caller.
-					throw new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker));
+					throw new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker));
 			}
 		}
 

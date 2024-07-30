@@ -9,5 +9,9 @@
     <Using Remove="System.Net.Http" Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="*.resx" EmitFormatMethods="true" />
+  </ItemGroup>
+
   <Import Project="azure-pipelines\NuGetSbom.targets" Condition="'$(IsPackable)'!='false'" />
 </Project>
