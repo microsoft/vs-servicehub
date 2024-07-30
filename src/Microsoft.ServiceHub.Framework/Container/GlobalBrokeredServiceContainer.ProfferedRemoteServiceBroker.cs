@@ -69,7 +69,7 @@ public partial class GlobalBrokeredServiceContainer
 		/// <inheritdoc/>
 		public async ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
 		{
-			IServiceBroker broker = await this.serviceBroker.GetValueAsync().ConfigureAwait(false);
+			IServiceBroker broker = await this.serviceBroker.GetValueAsync(cancellationToken).ConfigureAwait(false);
 			return await broker.GetPipeAsync(serviceMoniker, options, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -77,7 +77,7 @@ public partial class GlobalBrokeredServiceContainer
 		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
 			where T : class
 		{
-			IServiceBroker broker = await this.serviceBroker.GetValueAsync().ConfigureAwait(false);
+			IServiceBroker broker = await this.serviceBroker.GetValueAsync(cancellationToken).ConfigureAwait(false);
 			GC.KeepAlive(typeof(ValueTask<T>)); // workaround CLR bug https://dev.azure.com/devdiv/DevDiv/_workitems/edit/1358442
 			return await broker.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken).ConfigureAwait(false);
 		}

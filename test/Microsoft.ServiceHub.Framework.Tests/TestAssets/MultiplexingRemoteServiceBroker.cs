@@ -52,36 +52,38 @@ internal class MultiplexingRemoteServiceBroker : IRemoteServiceBroker
 
 			// Awaiting for channel acceptance must happen out of band since the client must receive the connection info
 			// before they'll ever try to connect to our channel.
-			Task.Run(async delegate
-			{
-				await channel.Acceptance;
-				ServiceRpcDescriptor.RpcConnection connection = descriptor.ConstructRpcConnection(channel);
-				if (descriptor.ClientInterface != null)
+			Task.Run(
+				async delegate
 				{
-					options.ClientRpcTarget = connection.ConstructRpcClient(descriptor.ClientInterface);
-				}
+					await channel.Acceptance;
+					ServiceRpcDescriptor.RpcConnection connection = descriptor.ConstructRpcConnection(channel);
+					if (descriptor.ClientInterface != null)
+					{
+						options.ClientRpcTarget = connection.ConstructRpcClient(descriptor.ClientInterface);
+					}
 
-				if (serviceMoniker.Name == TestServices.Calculator.Moniker.Name)
-				{
-					server = new Calculator();
-				}
-				else if (serviceMoniker.Name == TestServices.Echo.Moniker.Name)
-				{
-					server = new EchoService(options);
-				}
-				else if (serviceMoniker.Name == TestServices.CallMeBack.Moniker.Name)
-				{
-					server = new CallMeBackService(options);
-				}
+					if (serviceMoniker.Name == TestServices.Calculator.Moniker.Name)
+					{
+						server = new Calculator();
+					}
+					else if (serviceMoniker.Name == TestServices.Echo.Moniker.Name)
+					{
+						server = new EchoService(options);
+					}
+					else if (serviceMoniker.Name == TestServices.CallMeBack.Moniker.Name)
+					{
+						server = new CallMeBackService(options);
+					}
 
-				if (server is null)
-				{
-					throw new NotSupportedException(serviceMoniker.ToString());
-				}
+					if (server is null)
+					{
+						throw new NotSupportedException(serviceMoniker.ToString());
+					}
 
-				connection.AddLocalRpcTarget(server);
-				connection.StartListening();
-			}).Forget();
+					connection.AddLocalRpcTarget(server);
+					connection.StartListening();
+				},
+				CancellationToken.None).Forget();
 		}
 
 		return Task.FromResult(result);
