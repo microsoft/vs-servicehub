@@ -272,10 +272,10 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	}
 
 	[Fact]
-	public async Task WithAdditionalClientInterfaces()
+	public async Task WithAdditionalServiceInterfaces()
 	{
 		SomeNonDisposableService service = new();
-		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalClientInterfaces([typeof(ISomeService2)]));
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
 
 		// Test method calls
 		Assert.Equal(3, await proxy.AddAsync(1, 2));
