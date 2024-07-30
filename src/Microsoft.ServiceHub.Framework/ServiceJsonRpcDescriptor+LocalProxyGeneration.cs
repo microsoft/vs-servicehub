@@ -159,7 +159,7 @@ public partial class ServiceJsonRpcDescriptor
 			Requires.NotNull(serviceInterface, nameof(serviceInterface));
 			if (!serviceInterface.IsInterface)
 			{
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.ClientProxyTypeArgumentMustBeAnInterface, serviceInterface));
+				throw new NotSupportedException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(serviceInterface));
 			}
 
 			foreach (Type additionalInterface in additionalInterfaces)

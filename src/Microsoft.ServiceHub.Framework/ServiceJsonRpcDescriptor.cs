@@ -371,7 +371,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				handler = new HeaderDelimitedMessageHandler(pipe, formatter);
 				break;
 			default:
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.MessageDelimiterNotSupported, this.MessageDelimiter, this.Protocol));
+				throw new NotSupportedException(Strings.FormatMessageDelimiterNotSupported(this.MessageDelimiter, this.Protocol));
 		}
 
 		return handler;
@@ -404,7 +404,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 			case Formatters.UTF8SystemTextJson:
 				return this.CreateSystemTextJsonFormatter();
 			default:
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.FormatterNotSupported, this.Formatter, this.Protocol));
+				throw new NotSupportedException(Strings.FormatFormatterNotSupported(this.Formatter, this.Protocol));
 		}
 	}
 
