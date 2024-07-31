@@ -304,7 +304,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				{
 					ServiceRegistration registration = new(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i])
 					{
-						AdditionalServiceInterfaceTypeNames = exportMetadata.OptionalInterfacesImplemented?[i] is { IsDefault: false } ifaces ? ifaces : ImmutableArray<string>.Empty,
+						AdditionalServiceInterfaceTypeNames = exportMetadata.OptionalInterfacesImplemented?[i] is string?[] ifaces ? ifaces.ToImmutableArray() : ImmutableArray<string>.Empty,
 					};
 					registrations.Add(moniker, registration);
 				}

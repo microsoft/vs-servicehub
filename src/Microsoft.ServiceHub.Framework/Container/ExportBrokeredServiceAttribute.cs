@@ -142,7 +142,7 @@ internal interface IBrokeredServicesExportMetadata
 
 	/// <inheritdoc cref="ExportBrokeredServiceAttribute.OptionalInterfacesImplemented"/>
 	[DefaultValue(null)]
-	ImmutableArray<string>[]? OptionalInterfacesImplemented { get; }
+	string[]?[]? OptionalInterfacesImplemented { get; }
 
 	/// <inheritdoc cref="ExportBrokeredServiceAttribute.Audience"/>
 	ServiceAudience[] Audience { get; }

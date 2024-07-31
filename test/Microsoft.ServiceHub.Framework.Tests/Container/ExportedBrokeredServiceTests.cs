@@ -83,9 +83,22 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		}
 	}
 
-	[Fact]
-	public async Task InvokeBrokeredService_WithOptionalInterface()
+	[Theory, PairwiseData]
+	public async Task InvokeBrokeredService_WithOptionalInterface(bool serializedCatalog)
 	{
+		if (serializedCatalog)
+		{
+			this.container = new();
+
+			MefHost mefHost = new MefHost(serializedCatalog: true)
+			{
+				BrokeredServiceContainer = this.container,
+			};
+
+			// This has a side effect of registering MEF exported brokered services into the mock container.
+			await mefHost.CreateExportProviderAsync();
+		}
+
 		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext);
 		using (calc as IDisposable)
 		{
@@ -228,14 +241,6 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		{
 			(svc as IDisposable)?.Dispose();
 		}
-	}
-
-	[Fact]
-	public async Task CompositionIsSerializable()
-	{
-		ComposableCatalog catalog = await MefHost.GetCatalogAsync(this.TimeoutToken);
-		CachedCatalog cachedCatalog = new CachedCatalog();
-		await cachedCatalog.SaveAsync(catalog, Stream.Null, this.TimeoutToken);
 	}
 
 	[ExportBrokeredService("Calculator", "1.0")]
