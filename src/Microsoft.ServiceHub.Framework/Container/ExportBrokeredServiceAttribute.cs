@@ -53,7 +53,7 @@ public class ExportBrokeredServiceAttribute : ExportAttribute
 
 		// We must render this as an array of strings so that when the metadata is read back from the MEF cache,
 		// it doesn't require loading the assembly that declares the optional interface.
-		this.OptionalInterfacesImplemented = optionalInterfaces.Select(t => t.AssemblyQualifiedName!).ToImmutableArray();
+		this.OptionalInterfacesImplemented = optionalInterfaces.Select(t => t.AssemblyQualifiedName!).ToArray();
 	}
 
 	/// <summary>
@@ -70,7 +70,7 @@ public class ExportBrokeredServiceAttribute : ExportAttribute
 	/// Gets an array of <see cref="Type.AssemblyQualifiedName">assembly-qualified names</see> of <em>optional</em> interfaces
 	/// that the exported brokered service implements.
 	/// </summary>
-	public ImmutableArray<string> OptionalInterfacesImplemented { get; } = ImmutableArray<string>.Empty;
+	public string[] OptionalInterfacesImplemented { get; } = [];
 
 	/// <summary>
 	/// Gets or sets a value indicating which clients should be allowed to directly acquire this service.

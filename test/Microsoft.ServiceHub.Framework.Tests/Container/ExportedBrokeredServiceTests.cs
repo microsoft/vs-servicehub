@@ -7,6 +7,7 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.ServiceHub.Framework.Testing;
+using Microsoft.VisualStudio.Composition;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Xunit;
 using Xunit.Abstractions;
@@ -227,6 +228,14 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		{
 			(svc as IDisposable)?.Dispose();
 		}
+	}
+
+	[Fact]
+	public async Task CompositionIsSerializable()
+	{
+		ComposableCatalog catalog = await MefHost.GetCatalogAsync(this.TimeoutToken);
+		CachedCatalog cachedCatalog = new CachedCatalog();
+		await cachedCatalog.SaveAsync(catalog, Stream.Null, this.TimeoutToken);
 	}
 
 	[ExportBrokeredService("Calculator", "1.0")]
