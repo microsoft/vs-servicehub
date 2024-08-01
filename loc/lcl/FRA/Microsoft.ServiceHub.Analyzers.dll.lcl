@@ -23,37 +23,49 @@
       </Item>
       <Item ItemId=";ISB001_DisposeOfAcquiredProxy_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Always dispose of proxies.]]></Val>
+          <Val><![CDATA[Always dispose of proxies]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Supprimez toujours les proxies.]]></Val>
+            <Val><![CDATA[Supprimez toujours les proxies]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Always dispose of proxies.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_Description" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Cela se présente généralement sous la forme suivante : "({0} as IDisposable)?.Dispose();"]]></Val>
+            <Val><![CDATA[Cette opération se présente généralement sous la forme suivante : « ({0} as IDisposable)?.Dispose(); ».]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          <Val><![CDATA[Dispose of old proxy before overwriting reference to it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Supprimez l'ancien proxy avant de remplacer toute référence à celui-ci.]]></Val>
+            <Val><![CDATA[Supprimez l’ancien proxy avant de remplacer toute référence à celui-ci]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_ProxyMemberMustBeDisposedInDisposeMethod_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Le proxy stocké dans "{0}.{1}" doit être supprimé par une méthode IDisposable.Dispose ou Dispose(bool) sur le type "{0}".]]></Val>
+            <Val><![CDATA[Le proxy stocké dans « {0}.{1} » doit être supprimé par une méthode IDisposable.Dispose ou Dispose(bool) sur le type « {0} ».]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -77,10 +89,13 @@
       </Item>
       <Item ItemId=";ISB002_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Évitez de stocker ServiceBrokerClient.Rental<T> dans un champ ou une propriété.]]></Val>
+            <Val><![CDATA[Évitez de stocker ServiceBrokerClient.Rental<T> dans un champ ou une propriété]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -104,10 +119,13 @@
       </Item>
       <Item ItemId=";ISB003_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService.]]></Val>
+          <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Le type «{0}» doit implémenter IExportedBrokeredService.]]></Val>
+            <Val><![CDATA[Le type « {0} » doit implémenter IExportedBrokeredService]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
