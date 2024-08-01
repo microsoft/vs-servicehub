@@ -23,37 +23,49 @@
       </Item>
       <Item ItemId=";ISB001_DisposeOfAcquiredProxy_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Always dispose of proxies.]]></Val>
+          <Val><![CDATA[Always dispose of proxies]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[항상 프록시를 삭제합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Always dispose of proxies.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_Description" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이는 일반적으로 "({0} as IDisposable)?.Dispose();" 형식을 사용합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          <Val><![CDATA[Dispose of old proxy before overwriting reference to it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[참조를 덮어쓰기 전에 이전 프록시를 삭제합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_ProxyMemberMustBeDisposedInDisposeMethod_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{0}. {1}"에 저장된 프록시는 "{0}" 형식의 IDisposable.Dispose 또는 Dispose(bool) 메서드를 통해 삭제해야 합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -77,10 +89,13 @@
       </Item>
       <Item ItemId=";ISB002_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[필드 또는 속성에 ServiceBrokerClient.Rental<T>을 저장하지 마세요.]]></Val>
+            <Val><![CDATA[필드 또는 속성에 ServiceBrokerClient.Rental<T>를 저장하지 마세요.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -104,10 +119,13 @@
       </Item>
       <Item ItemId=";ISB003_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService.]]></Val>
+          <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{0}" 형식은 IExportedBrokeredService를 구현해야 합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
