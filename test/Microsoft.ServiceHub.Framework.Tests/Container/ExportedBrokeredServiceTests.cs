@@ -7,6 +7,7 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.ServiceHub.Framework.Testing;
+using Microsoft.VisualStudio.Composition;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Xunit;
 using Xunit.Abstractions;
@@ -82,9 +83,22 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		}
 	}
 
-	[Fact]
-	public async Task InvokeBrokeredService_WithOptionalInterface()
+	[Theory, PairwiseData]
+	public async Task InvokeBrokeredService_WithOptionalInterface(bool serializedCatalog)
 	{
+		if (serializedCatalog)
+		{
+			this.container = new();
+
+			MefHost mefHost = new MefHost(serializedCatalog: true)
+			{
+				BrokeredServiceContainer = this.container,
+			};
+
+			// This has a side effect of registering MEF exported brokered services into the mock container.
+			await mefHost.CreateExportProviderAsync();
+		}
+
 		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext);
 		using (calc as IDisposable)
 		{
