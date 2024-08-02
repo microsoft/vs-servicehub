@@ -98,7 +98,17 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 					return null;
 				}
 
-				ServiceRpcDescriptor descriptor = brokeredService.Descriptor;
+				ServiceRpcDescriptor? descriptor = brokeredService.Descriptor;
+				if (descriptor is null)
+				{
+					// This is the service's way of refusing to be activated.
+					// This *could* be because the service is exported with a null version,
+					// which matches on any client version, yet the client requested a version
+					// that the service doesn't support.
+					export.Dispose();
+					return null;
+				}
+
 				descriptor = await container.ApplyDescriptorSettingsInternalAsync(descriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 				(IDuplexPipe, IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
@@ -181,7 +191,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				serviceDescriptor = await container.ApplyDescriptorSettingsInternalAsync(serviceDescriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 				brokeredService = export.Value.CreateBrokeredService(cancellationToken);
-				if (brokeredService is null)
+				if (brokeredService is null || brokeredService.Descriptor is null)
 				{
 					export.Dispose();
 					return null;
@@ -247,7 +257,15 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			sb.Value.ServiceActivationOptions = serviceActivationOptions;
 			sb.Value.ActivatedMoniker = serviceMoniker;
 
-			ServiceRegistration serviceRegistration = this.serviceRegistration[serviceMoniker];
+			if (!this.serviceRegistration.TryGetValue(serviceMoniker, out ServiceRegistration? serviceRegistration))
+			{
+				if (!this.serviceRegistration.TryGetValue(new ServiceMoniker(serviceMoniker.Name, null), out serviceRegistration))
+				{
+					sb.Dispose();
+					return null;
+				}
+			}
+
 			authorizationService = await contextualServiceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, cancellationToken).ConfigureAwait(false);
 			Assumes.Present(authorizationService);
 			if (!serviceRegistration.AllowGuestClients && !await authorizationService.CheckAuthorizationAsync(ClientIsOwnerProtectedOperation, cancellationToken).ConfigureAwait(false))

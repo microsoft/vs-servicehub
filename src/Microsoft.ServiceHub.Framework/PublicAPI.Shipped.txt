@@ -341,7 +341,7 @@ Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal
 Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal.GetLimitedAccessServiceBroker(Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience audience, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! clientCredentials, Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy credentialPolicy) -> Microsoft.ServiceHub.Framework.IServiceBroker!
 Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal.LocalUserCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService
-Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService.Descriptor.get -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService.Descriptor.get -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor?
 Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService.InitializeAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
 Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.AllClientsIncludingGuests = Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.Local | Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.RemoteExclusiveClient | Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.LiveShareGuest -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
