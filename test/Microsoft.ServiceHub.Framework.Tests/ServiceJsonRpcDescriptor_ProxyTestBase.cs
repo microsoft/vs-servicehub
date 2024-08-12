@@ -297,6 +297,14 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		Assert.Equal("b", await propertyChangingRaised.Task.WithCancellation(this.TimeoutToken));
 	}
 
+	[Fact]
+	public async Task WithAdditionalServiceInterfaces_RequestWithAddlIface()
+	{
+		SomeNonDisposableService service = new();
+		ISomeService2 proxy = this.CreateProxy<ISomeService2>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
+		Assert.Equal(4, await proxy.AddValue2Async(1, 3));
+	}
+
 	[return: NotNullIfNotNull("target")]
 	protected abstract T? CreateProxy<T>(T? target, ServiceJsonRpcDescriptor descriptor)
 		where T : class;
