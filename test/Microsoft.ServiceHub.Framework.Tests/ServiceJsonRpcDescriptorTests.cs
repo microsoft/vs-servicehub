@@ -476,6 +476,13 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	}
 
 	[Fact]
+	public void AdditionalServiceInterfaces_Default()
+	{
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		Assert.False(descriptor.AdditionalServiceInterfaces.HasValue);
+	}
+
+	[Fact]
 	public void WithAdditionalServiceInterfaces()
 	{
 		ImmutableArray<Type> additionalServiceInterfaces2 = [typeof(IDisposable)];
@@ -491,6 +498,14 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.Equal(additionalServiceInterfaces3, descriptor3.AdditionalServiceInterfaces);
 
 		Assert.Null(descriptor.WithAdditionalServiceInterfaces(null).AdditionalServiceInterfaces);
+	}
+
+	[Fact]
+	public void WithAdditionalServiceInterfaces_RejectsUnitializedArray()
+	{
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		ImmutableArray<Type> defaultArray = default; // this is an invalid value because it is uninitialized.
+		Assert.Throws<ArgumentException>(() => descriptor.WithAdditionalServiceInterfaces(defaultArray));
 	}
 
 	private static ServiceJsonRpcDescriptor CreateDefault(ServiceMoniker? moniker = null) => new ServiceJsonRpcDescriptor(moniker ?? SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);

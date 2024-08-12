@@ -176,10 +176,11 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
 	{
-		ReadOnlySpan<Type> additionalServiceInterfaces =
-			this.AdditionalServiceInterfaces is null ? default : this.AdditionalServiceInterfaces.Value.AsSpan();
+		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
+			? (addl.Contains(typeof(T)) ? addl.Remove(typeof(T)) : addl)
+			: [];
 		return target != null
-			? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces, this.ExceptionStrategy)
+			? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces.AsSpan(), this.ExceptionStrategy)
 			: null;
 	}
 
@@ -262,6 +263,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
 	public ServiceJsonRpcDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type>? value)
 	{
+		Requires.Argument(value is not { IsDefault: true }, nameof(value), null);
 		if (this.AdditionalServiceInterfaces == value)
 		{
 			return this;
@@ -593,7 +595,10 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			if (this.owner?.AdditionalServiceInterfaces is { Length: > 0 })
 			{
-				return (T)this.JsonRpc.Attach([typeof(T), .. this.owner.AdditionalServiceInterfaces], this.LocalRpcProxyOptions);
+				ReadOnlySpan<Type> ifaceTypes = this.owner.AdditionalServiceInterfaces.Contains(typeof(T)) is true
+					? this.owner.AdditionalServiceInterfaces.Value.AsSpan()
+					: [typeof(T), .. this.owner.AdditionalServiceInterfaces];
+				return (T)this.JsonRpc.Attach(ifaceTypes, this.LocalRpcProxyOptions);
 			}
 			else
 			{
