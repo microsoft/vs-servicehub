@@ -187,6 +187,7 @@ public partial class ServiceJsonRpcDescriptor
 					return generatedType;
 				}
 
+				Type[] contractInterfaces = [serviceInterface, .. additionalInterfaces];
 				ModuleBuilder proxyModuleBuilder = GetProxyModuleBuilder(interfaces);
 
 				TypeBuilder proxyTypeBuilder = proxyModuleBuilder.DefineType(
@@ -208,26 +209,23 @@ public partial class ServiceJsonRpcDescriptor
 				EmitDisposedEvent(proxyTypeBuilder, disposedField, disposedSentinelStaticField);
 				EmitJsonRpcLocalProxyMethods(proxyTypeBuilder, targetField, exceptionStrategyField);
 
-				foreach (Type iface in (Type[])[serviceInterface, .. additionalInterfaces])
+				foreach (MethodInfo method in FindAllOnThisAndOtherInterfaces(contractInterfaces, i => i.DeclaredMethods).Where(m => !m.IsSpecialName))
 				{
-					foreach (MethodInfo? method in FindAllOnThisAndOtherInterfaces(iface.GetTypeInfo(), i => i.DeclaredMethods).Where(m => !m.IsSpecialName))
+					// Check for specially supported methods from derived interfaces.
+					if (Equals(DisposeMethod, method))
 					{
-						// Check for specially supported methods from derived interfaces.
-						if (Equals(DisposeMethod, method))
-						{
-							// This is unconditionally implemented earlier.
-							continue;
-						}
-
-						EmitMethodThunk(iface.GetTypeInfo(), proxyTypeBuilder, targetField, exceptionStrategyField, method);
+						// This is unconditionally implemented earlier.
+						continue;
 					}
 
-					foreach (EventInfo? evt in FindAllOnThisAndOtherInterfaces(iface.GetTypeInfo(), i => i.DeclaredEvents))
+					EmitMethodThunk(method.ReflectedType!.GetTypeInfo(), proxyTypeBuilder, targetField, exceptionStrategyField, method);
+				}
+
+				foreach (EventInfo evt in FindAllOnThisAndOtherInterfaces(contractInterfaces, i => i.DeclaredEvents))
+				{
+					if (evt.AddMethod is object && evt.RemoveMethod is object)
 					{
-						if (evt.AddMethod is object && evt.RemoveMethod is object)
-						{
-							EmitEventThunk(proxyTypeBuilder, targetField, evt);
-						}
+						EmitEventThunk(proxyTypeBuilder, targetField, evt);
 					}
 				}
 
@@ -848,13 +846,30 @@ public partial class ServiceJsonRpcDescriptor
 			}
 		}
 
-		private static IEnumerable<T> FindAllOnThisAndOtherInterfaces<T>(TypeInfo interfaceType, Func<TypeInfo, IEnumerable<T>> oneInterfaceQuery)
+		private static IEnumerable<T> FindAllOnThisAndOtherInterfaces<T>(IEnumerable<Type> interfaceTypes, Func<TypeInfo, IEnumerable<T>> oneInterfaceQuery)
 		{
-			Requires.NotNull(interfaceType, nameof(interfaceType));
-			Requires.NotNull(oneInterfaceQuery, nameof(oneInterfaceQuery));
+			HashSet<TypeInfo> ifaces = new();
+			foreach (TypeInfo interfaceType in interfaceTypes)
+			{
+				if (ifaces.Add(interfaceType))
+				{
+					foreach (T result in oneInterfaceQuery(interfaceType))
+					{
+						yield return result;
+					}
 
-			IEnumerable<T> result = oneInterfaceQuery(interfaceType);
-			return result.Concat(interfaceType.ImplementedInterfaces.SelectMany(i => oneInterfaceQuery(i.GetTypeInfo())));
+					foreach (TypeInfo baseIface in interfaceType.ImplementedInterfaces)
+					{
+						if (ifaces.Add(baseIface))
+						{
+							foreach (T result in oneInterfaceQuery(baseIface))
+							{
+								yield return result;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		private static T CreateProxyHelper<T>(T target, ExceptionProcessing exceptionStrategy)
