@@ -1,15 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using CS = Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Microsoft.ServiceHub.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
-public class ISB004OptionalInterfacesMustBeImplementedAnalyzer : DiagnosticAnalyzer
+public abstract class AbstractISB004OptionalInterfacesMustBeImplementedAnalyzer : DiagnosticAnalyzer
 {
 	public const string Id = "ISB004";
 
@@ -44,6 +39,8 @@ public class ISB004OptionalInterfacesMustBeImplementedAnalyzer : DiagnosticAnaly
 		});
 	}
 
+	protected abstract SyntaxNode? FindArgumentSyntax(SyntaxNode? attributeSyntax, int position);
+
 	private void AnalyzeSymbol(SymbolAnalysisContext context, INamedTypeSymbol attType)
 	{
 		if (context.Symbol is not INamedTypeSymbol namedType)
@@ -73,12 +70,9 @@ public class ISB004OptionalInterfacesMustBeImplementedAnalyzer : DiagnosticAnaly
 					Location location = namedType.Locations[0];
 
 					// Try to use a location that is specific to this interface.
-					if (exportAttribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken) is CS.AttributeSyntax attributeSyntax)
+					if (this.FindArgumentSyntax(exportAttribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken), 2 + ifaceIndex) is SyntaxNode argumentSyntax)
 					{
-						if (attributeSyntax.ArgumentList?.Arguments.Count >= 3 + ifaceIndex)
-						{
-							location = attributeSyntax.ArgumentList.Arguments[2 + ifaceIndex].GetLocation();
-						}
+						location = argumentSyntax.GetLocation();
 					}
 
 					context.ReportDiagnostic(Diagnostic.Create(Descriptor, location, ifaceType.Name));
