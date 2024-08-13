@@ -298,11 +298,28 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	}
 
 	[Fact]
-	public async Task WithAdditionalServiceInterfaces_RequestWithAddlIface()
+	public async Task WithAdditionalServiceInterfaces_RequestWithRedundantAddlIface()
 	{
 		SomeNonDisposableService service = new();
 		ISomeService2 proxy = this.CreateProxy<ISomeService2>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
 		Assert.Equal(4, await proxy.AddValue2Async(1, 3));
+	}
+
+	[Fact]
+	public async Task WithAdditionalServiceInterfaces_NonUniqueAddlIfaceList()
+	{
+		SomeNonDisposableService service = new();
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2), typeof(ISomeService2)]));
+		Assert.Equal(4, await proxy.AddValueAsync(1, 3));
+	}
+
+	[Fact]
+	public void WithAdditionalServiceInterfaces_MainInterfaceDerivesFromOptional()
+	{
+		SomeDisposableService service = new();
+
+		// Verify that creating the proxy doesn't throw (due to a failure in generating the proxy type).
+		ISomeServiceDisposable proxy = this.CreateProxy<ISomeServiceDisposable>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService)]));
 	}
 
 	[return: NotNullIfNotNull("target")]
