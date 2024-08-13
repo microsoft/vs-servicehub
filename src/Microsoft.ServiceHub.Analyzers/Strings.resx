@@ -157,4 +157,13 @@
   <data name="ISB003_Title" xml:space="preserve">
     <value>Exported brokered service validity</value>
   </data>
+  <data name="ISB004_Title" xml:space="preserve">
+    <value>Optional interfaces must be implemented</value>
+  </data>
+  <data name="ISB004_Description" xml:space="preserve">
+    <value>Exported brokered services may declare optional interfaces that they support, but these must actually be implemented by the brokered service.</value>
+  </data>
+  <data name="ISB004_MessageFormat" xml:space="preserve">
+    <value>The brokered service must implement the '{0}' interface or remove it from its list of supported optional interfaces</value>
+  </data>
 </root>
