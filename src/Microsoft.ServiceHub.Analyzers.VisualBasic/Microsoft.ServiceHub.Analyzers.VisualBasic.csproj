@@ -7,6 +7,9 @@
     <IsPackable>false</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsAnalyzerProject>true</IsAnalyzerProject>
+
+    <!-- We do not (yet) have any resx files. -->
+    <MicroBuild_LocalizeOutputAssembly>false</MicroBuild_LocalizeOutputAssembly>
   </PropertyGroup>
 
   <ItemGroup>
