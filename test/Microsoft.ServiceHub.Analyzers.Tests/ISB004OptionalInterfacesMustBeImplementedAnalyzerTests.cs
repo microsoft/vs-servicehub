@@ -2,7 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.CodeAnalysis.Testing;
-using Verify = CSharpCodeFixVerifier<Microsoft.ServiceHub.Analyzers.ISB004OptionalInterfacesMustBeImplementedAnalyzer, Microsoft.CodeAnalysis.Testing.EmptyCodeFixProvider>;
+using VerifyCS = CSharpCodeFixVerifier<Microsoft.ServiceHub.Analyzers.CSharpISB004OptionalInterfacesMustBeImplementedAnalyzer, Microsoft.CodeAnalysis.Testing.EmptyCodeFixProvider>;
+using VerifyVB = CSharpCodeFixVerifier<Microsoft.ServiceHub.Analyzers.VisualBasicISB004OptionalInterfacesMustBeImplementedAnalyzer, Microsoft.CodeAnalysis.Testing.EmptyCodeFixProvider>;
 
 public class ISB004OptionalInterfacesMustBeImplementedAnalyzerTests
 {
@@ -29,7 +30,7 @@ public class ISB004OptionalInterfacesMustBeImplementedAnalyzerTests
 
 			interface IOptional { }
 			""";
-		await Verify.VerifyAnalyzerAsync(test);
+		await VerifyCS.VerifyAnalyzerAsync(test);
 	}
 
 	[Fact]
@@ -45,7 +46,7 @@ public class ISB004OptionalInterfacesMustBeImplementedAnalyzerTests
 			
 			interface IOptional { }
 			""";
-		await Verify.VerifyAnalyzerAsync(test);
+		await VerifyCS.VerifyAnalyzerAsync(test);
 	}
 
 	[Fact]
@@ -64,6 +65,6 @@ public class ISB004OptionalInterfacesMustBeImplementedAnalyzerTests
 			interface IOptional2 { }
 			interface IOptional3 { }
 			""";
-		await Verify.VerifyAnalyzerAsync(test);
+		await VerifyCS.VerifyAnalyzerAsync(test);
 	}
 }

@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Microsoft.ServiceHub.Analyzers</PackageId>
+    <RootNamespace>Microsoft.ServiceHub.Analyzers</RootNamespace>
+
+    <Description>Static code analyzer to detect common mistakes or potential issues when using ServiceHub or IServiceBroker.</Description>
+    <PackageTags>analyzers visualstudio vssdk sdk</PackageTags>
+
+    <!-- Analyzers should not be added to the lib folder. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <IncludeSymbols>false</IncludeSymbols>
+    <IsAnalyzerProject>true</IsAnalyzerProject>
+
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackBuildOutputs</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <Target Name="PackBuildOutputs" DependsOnTargets="ResolveProjectReferences;SatelliteDllsProjectOutputGroup;SatelliteDllsProjectOutputGroupDependencies">
+    <ItemGroup>
+      <!-- Analysis of C# projects -->
+      <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers\cs\" />
+      <TfmSpecificPackageFile Include="@(SatelliteDllsProjectOutputGroupDependency)" PackagePath="analyzers\cs\%(SatelliteDllsProjectOutputGroupDependency.DestinationSubDirectory)" Condition=" '%(SatelliteDllsProjectOutputGroupDependency.DestinationSubDirectory)' != '' " />
+      <TfmSpecificPackageFile Include="@(SatelliteDllsProjectOutputGroupOutput->'%(FinalOutputPath)')" PackagePath="analyzers\cs\%(SatelliteDllsProjectOutputGroupOutput.Culture)\" />
+      <TfmSpecificPackageFile Include="%(_ResolvedProjectReferencePaths.Identity)" Condition="'%(FileName)' != 'Microsoft.ServiceHub.Analyzers.VisualBasic'" PackagePath="analyzers\cs\" />
+
+      <!-- Analysis of VB projects -->
+      <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers\vb\" />
+      <TfmSpecificPackageFile Include="@(SatelliteDllsProjectOutputGroupDependency)" PackagePath="analyzers\vb\%(SatelliteDllsProjectOutputGroupDependency.DestinationSubDirectory)" Condition=" '%(SatelliteDllsProjectOutputGroupDependency.DestinationSubDirectory)' != '' " />
+      <TfmSpecificPackageFile Include="@(SatelliteDllsProjectOutputGroupOutput->'%(FinalOutputPath)')" PackagePath="analyzers\vb\%(SatelliteDllsProjectOutputGroupOutput.Culture)\" />
+      <TfmSpecificPackageFile Include="%(_ResolvedProjectReferencePaths.Identity)" Condition="'%(FileName)' != 'Microsoft.ServiceHub.Analyzers.CSharp'" PackagePath="analyzers\vb\" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers.CSharp\Microsoft.ServiceHub.Analyzers.CSharp.csproj" />
+    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers.VisualBasic\Microsoft.ServiceHub.Analyzers.VisualBasic.csproj" />
+    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" />
+  </ItemGroup>
+
+</Project>

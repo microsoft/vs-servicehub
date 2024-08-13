@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Analyzers.CodeFixes\Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Analyzers.CSharp\Microsoft.ServiceHub.Analyzers.CSharp.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Analyzers.VisualBasic\Microsoft.ServiceHub.Analyzers.VisualBasic.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
   </ItemGroup>
