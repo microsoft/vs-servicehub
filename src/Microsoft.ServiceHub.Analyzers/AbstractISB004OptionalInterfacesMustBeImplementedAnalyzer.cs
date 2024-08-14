@@ -3,7 +3,6 @@
 
 namespace Microsoft.ServiceHub.Analyzers;
 
-[DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
 public abstract class AbstractISB004OptionalInterfacesMustBeImplementedAnalyzer : DiagnosticAnalyzer
 {
 	public const string Id = "ISB004";
