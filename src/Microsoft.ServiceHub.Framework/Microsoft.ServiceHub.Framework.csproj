@@ -21,7 +21,7 @@
     <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" PrivateAssets="none" />
+    <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers.CodeFixes\Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" PrivateAssets="none" />
   </ItemGroup>
 
   <Import Project="..\OptProf.targets" />

@@ -42,4 +42,15 @@
     <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" />
   </ItemGroup>
 
+  <ItemDefinitionGroup>
+    <!-- These are necessary in spite of SuppressDependenciesWhenPacking=true above
+         so that projects that reference this one also do not pick these up as dependencies. -->
+    <PackageReference>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference>
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  
 </Project>
