@@ -138,19 +138,37 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ISB004_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported brokered services may declare optional interfaces that they support, but these must actually be implemented by the brokered service.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[I servizi negoziati esportati possono dichiarare il supporto di interfacce facoltative, che devono essere effettivamente implementate dal servizio negoziato.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB004_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The brokered service must implement the '{0}' interface or remove it from its list of supported optional interfaces]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Il servizio negoziato deve implementare l'interfaccia '{0}' o rimuoverla dall’elenco di interfacce facoltative supportate]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB004_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Optional interfaces must be implemented]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Le interfacce facoltative devono essere implementate]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
     </Item>
   </Item>
   <Item ItemId=";Version" ItemType="0" PsrId="211" Leaf="false">
     <Disp Icon="Ver" Disp="true" LocTbl="false" Path=" \ ;Version \ 8 \ 0" />
-    <Item ItemId=";Comments" ItemType="0" PsrId="211" Leaf="true">
-      <Str Cat="Text">
-        <Val><![CDATA[Static code analyzer to detect common mistakes or potential issues when using ServiceHub or IServiceBroker.]]></Val>
-        <Tgt Cat="Text" Stat="Loc" Orig="New">
-          <Val><![CDATA[Analizzatore di codice statico per rilevare errori comuni o problemi potenziali quando si usa ServiceHub o IServiceBroker.]]></Val>
-        </Tgt>
-      </Str>
-      <Disp Icon="Str" />
-    </Item>
     <Item ItemId=";CompanyName" ItemType="0" PsrId="211" Leaf="true">
       <Str Cat="Text">
         <Val><![CDATA[Microsoft]]></Val>
