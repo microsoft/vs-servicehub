@@ -9,7 +9,6 @@ parameters:
 stages:
 - stage: release
   displayName: Publish
-  condition: and(succeeded(), eq('${{ parameters.RealSign }}', 'true'))
   jobs:
   - ${{ if parameters.ArchiveSymbols }}:
     - job: symbol_archive
@@ -34,7 +33,10 @@ stages:
 
   - ${{ if true }}:
     - job: push
-      displayName: azure-public/vssdk feed
+      ${{ if parameters.RealSign }}:
+        displayName: azure-public/vssdk feed
+      ${{ else }}:
+        displayName: devdiv/vs-impl feed # Leave this as-is, since non-signed builds must not be pushed to public feeds.
       ${{ if parameters.ArchiveSymbols }}:
         dependsOn: symbol_archive
       pool:
@@ -49,8 +51,12 @@ stages:
           packagesToPush: '$(Pipeline.Workspace)/deployables-Windows/NuGet/*.nupkg'
           packageParentPath: $(Pipeline.Workspace)/deployables-Windows/NuGet
           allowPackageConflicts: true
-          nuGetFeedType: external
-          publishFeedCredentials: azure-public/vssdk
+          ${{ if parameters.RealSign }}:
+            nuGetFeedType: external
+            publishFeedCredentials: azure-public/vssdk
+          ${{ else }}:
+            nuGetFeedType: internal
+            publishVstsFeed: vs-impl # Leave this as-is, since non-signed builds must not be pushed to public feeds.
       steps:
       - checkout: none
       - download: current
@@ -61,17 +67,18 @@ stages:
       - download: current
         artifact: deployables-Windows
         displayName: 🔻 Download deployables-Windows artifact
-      - template: WIFtoPATauth.yml
-        parameters:
-          wifServiceConnectionName: azure-public/vside package push
-          deadPATServiceConnectionId: 42175e93-c771-4a4f-a132-3cca78f44b3b # azure-public/vssdk
-      - template: WIFtoPATauth.yml
-        parameters:
-          wifServiceConnectionName: azure-public/vside package push
-          deadPATServiceConnectionId: 52ae7e6c-4251-4fe5-9ef1-0e59cecf0e84 # azure-public/vssdk NPM
-      - template: npm_push.yml
-        parameters:
-          tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm
-          feedName: azure-public/vssdk
-          feedUrl: https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/npm/registry/
-          service_connection: azure-public/vssdk NPM
+      - ${{ if parameters.RealSign }}:
+        - template: WIFtoPATauth.yml
+          parameters:
+            wifServiceConnectionName: azure-public/vside package push
+            deadPATServiceConnectionId: 42175e93-c771-4a4f-a132-3cca78f44b3b # azure-public/vssdk
+        - template: WIFtoPATauth.yml
+          parameters:
+            wifServiceConnectionName: azure-public/vside package push
+            deadPATServiceConnectionId: 52ae7e6c-4251-4fe5-9ef1-0e59cecf0e84 # azure-public/vssdk NPM
+        - template: npm_push.yml
+          parameters:
+            tgzDir: $(Pipeline.Workspace)/deployables-Windows/npm
+            feedName: azure-public/vssdk
+            feedUrl: https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/npm/registry/
+            service_connection: azure-public/vssdk NPM
