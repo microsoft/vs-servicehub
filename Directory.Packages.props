@@ -28,7 +28,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.6.32" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.8.8" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
