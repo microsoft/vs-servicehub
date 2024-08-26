@@ -9,3 +9,5 @@ pipelines:
           lastModifiedDate: 2024-08-26
         binskim:
           lastModifiedDate: 2024-08-26
+        spotbugs:
+          lastModifiedDate: 2024-08-26
