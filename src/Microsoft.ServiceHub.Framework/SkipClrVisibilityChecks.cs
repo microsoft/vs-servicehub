@@ -159,6 +159,11 @@ internal class SkipClrVisibilityChecks
 			{
 				assembliesDeclaringInternalTypes.Add(typeInfo.Assembly.GetName());
 			}
+			else if (typeInfo.DeclaringType is not null)
+			{
+				// A "public" interface may be nested inside an internal one, making *this* interface effectively internal too.
+				CheckForNonPublicTypes(typeInfo.DeclaringType.GetTypeInfo(), assembliesDeclaringInternalTypes, visitedTypes, skipEmbeddableTypesCheck);
+			}
 
 			if (typeInfo.IsGenericType && !typeInfo.IsGenericTypeDefinition)
 			{

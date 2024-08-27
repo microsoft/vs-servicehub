@@ -25,6 +25,10 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	{
 		event EventHandler<PropertyChangedEventArgs> PropertyChanged;
 
+		public interface IPublicInterfaceUnderInternalOne
+		{
+		}
+
 		Task<int> AddAsync(int a, int b);
 
 		ValueTask<int> AddValueAsync(int a, int b);
@@ -222,6 +226,12 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		Assert.NotNull(await proxy.MethodReturnsInternalTypeFromOtherAssemblyAsync(this.TimeoutToken));
 	}
 
+	[Fact]
+	public void CreateProxy_ForPublicInterfaceNestedUnderInternalInterface()
+	{
+		this.CreateProxy<ISomeService.IPublicInterfaceUnderInternalOne>(new SomeNonDisposableService());
+	}
+
 	[Theory, PairwiseData]
 	public async Task ErrorCodeAndDataArePreserved(ExceptionProcessing exceptionStrategy)
 	{
@@ -330,7 +340,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	protected T? CreateProxy<T>(T? target)
 		where T : class => this.CreateProxy(target, SomeDescriptor);
 
-	private protected class SomeNonDisposableService : ISomeService, ISomeService2
+	private protected class SomeNonDisposableService : ISomeService, ISomeService2, ISomeService.IPublicInterfaceUnderInternalOne
 	{
 		private Guid identifier = Guid.NewGuid();
 
