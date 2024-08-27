@@ -26,7 +26,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 # MSBuild project files
-[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj,msbuildproj,props,targets,props,targets}]
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj,msbuildproj,props,targets}]
 indent_size = 2
 indent_style = space
 
@@ -39,10 +39,15 @@ indent_style = space
 [*.json]
 indent_size = 2
 
+[*.ps1]
+indent_style = space
+indent_size = 4
+
 # Dotnet code style settings:
 [*.{cs,vb}]
 # Sort using and Import directives with System.* appearing first
 dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
 dotnet_style_qualification_for_field = true:warning
 dotnet_style_qualification_for_property = true:warning
 dotnet_style_qualification_for_method = true:warning
@@ -182,6 +187,12 @@ dotnet_diagnostic.DOC107.severity = warning
 dotnet_diagnostic.DOC108.severity = warning
 dotnet_diagnostic.DOC200.severity = warning
 dotnet_diagnostic.DOC202.severity = warning
+
+# CA1062: Validate arguments of public methods
+dotnet_diagnostic.CA1062.severity = warning
+
+# CA2016: Forward the CancellationToken parameter
+dotnet_diagnostic.CA2016.severity = warning
 
 # SA1601: Partial elements should be documented
 dotnet_diagnostic.SA1601.severity = silent

@@ -64,6 +64,8 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 	/// <param name="container">The container to register and proffer the services with.</param>
 	public void RegisterAndProfferServices(GlobalBrokeredServiceContainer container)
 	{
+		Requires.NotNull(container);
+
 		this.Initialize();
 
 		container.RegisterServices(this.serviceRegistration);
@@ -89,27 +91,38 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 
 			try
 			{
-				brokeredService = await export.Value.CreateBrokeredServiceAsync(cancellationToken).ConfigureAwait(false);
+				brokeredService = export.Value.CreateBrokeredService(cancellationToken);
 				if (brokeredService is null)
 				{
 					export.Dispose();
 					return null;
 				}
 
-				ServiceRpcDescriptor descriptor = await container.ApplyDescriptorSettingsInternalAsync(brokeredService.Descriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
-
-				if (descriptor is ServiceJsonRpcDescriptor { MultiplexingStreamOptions: null } oldJsonRpcDescriptor)
+				ServiceRpcDescriptor? descriptor = brokeredService.Descriptor;
+				if (descriptor is null)
 				{
-					// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
-#pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
-					descriptor = oldJsonRpcDescriptor.WithMultiplexingStream(options.MultiplexingStream);
-#pragma warning restore CS0618 // Type or member is obsolete
+					// This is the service's way of refusing to be activated.
+					// This *could* be because the service is exported with a null version,
+					// which matches on any client version, yet the client requested a version
+					// that the service doesn't support.
+					export.Dispose();
+					return null;
 				}
+
+				descriptor = await container.ApplyDescriptorSettingsInternalAsync(descriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
 				(IDuplexPipe, IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
 
 				using (options.ApplyCultureToCurrentContext())
 				{
+					if (descriptor is ServiceJsonRpcDescriptor { MultiplexingStreamOptions: null } oldJsonRpcDescriptor)
+					{
+						// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
+#pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
+						descriptor = oldJsonRpcDescriptor.WithMultiplexingStream(options.MultiplexingStream);
+#pragma warning restore CS0618 // Type or member is obsolete
+					}
+
 					connection = descriptor.ConstructRpcConnection(pipePair.Item1);
 
 					// If the service needs to be able to call back to the client, arrange for it.
@@ -119,7 +132,20 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 					if (descriptor.ClientInterface is not null && options.ClientRpcTarget is null)
 					{
 						options.ClientRpcTarget = connection.ConstructRpcClient(descriptor.ClientInterface);
+
+						// Given we're constructing with MEF, and the brokered service has already been constructed (and imported the ServiceActivationOptions),
+						// we have no choice but to tear that instance down and rebuild with the modified ServiceActivationOptions at this point.
+						// We could only avoid this if we had had access to the descriptor before constructing the brokered service.
+						(brokeredService as IDisposable)?.Dispose();
+						export.Dispose();
+
+						export = await this.ActivateBrokeredServiceAsync(serviceMoniker, contextualServiceBroker, options, cancellationToken).ConfigureAwait(false);
+						Assumes.NotNull(export);
+						brokeredService = export.Value.CreateBrokeredService(cancellationToken);
+						Assumes.NotNull(brokeredService);
 					}
+
+					await brokeredService.InitializeAsync(cancellationToken).ConfigureAwait(false);
 
 					// Arrange for proxy disposal to also dispose of our export to avoid a MEF leak.
 					connection.Completion.ContinueWith((_, s) => ((IDisposable)s!).Dispose(), export, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Forget();
@@ -132,7 +158,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			catch
 			{
 				(brokeredService as IDisposable)?.Dispose();
-				export.Dispose();
+				export?.Dispose();
 				connection?.Dispose();
 				throw;
 			}
@@ -164,13 +190,14 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			{
 				serviceDescriptor = await container.ApplyDescriptorSettingsInternalAsync(serviceDescriptor, contextualServiceBroker, options, clientRole: false, cancellationToken).ConfigureAwait(false);
 
-				brokeredService = await export.Value.CreateBrokeredServiceAsync(cancellationToken).ConfigureAwait(false);
-				if (brokeredService is null)
+				brokeredService = export.Value.CreateBrokeredService(cancellationToken);
+				if (brokeredService is null || brokeredService.Descriptor is null)
 				{
 					export.Dispose();
 					return null;
 				}
 
+				await brokeredService.InitializeAsync(cancellationToken).ConfigureAwait(false);
 				T proxy = serviceDescriptor.ConstructLocalProxy((T)brokeredService);
 
 				// Arrange for proxy disposal to also dispose of our export to avoid a MEF leak.
@@ -230,7 +257,15 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			sb.Value.ServiceActivationOptions = serviceActivationOptions;
 			sb.Value.ActivatedMoniker = serviceMoniker;
 
-			ServiceRegistration serviceRegistration = this.serviceRegistration[serviceMoniker];
+			if (!this.serviceRegistration.TryGetValue(serviceMoniker, out ServiceRegistration? serviceRegistration))
+			{
+				if (!this.serviceRegistration.TryGetValue(new ServiceMoniker(serviceMoniker.Name, null), out serviceRegistration))
+				{
+					sb.Dispose();
+					return null;
+				}
+			}
+
 			authorizationService = await contextualServiceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, cancellationToken).ConfigureAwait(false);
 			Assumes.Present(authorizationService);
 			if (!serviceRegistration.AllowGuestClients && !await authorizationService.CheckAuthorizationAsync(ClientIsOwnerProtectedOperation, cancellationToken).ConfigureAwait(false))
@@ -285,7 +320,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				// rather than detect and report it. :(
 				if (monikers.Add(moniker))
 				{
-					registrations.Add(moniker, new ServiceRegistration(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i]));
+					ServiceRegistration registration = new(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i])
+					{
+						AdditionalServiceInterfaceTypeNames = exportMetadata.OptionalInterfacesImplemented?[i] is string?[] ifaces ? ifaces.ToImmutableArray() : ImmutableArray<string>.Empty,
+					};
+					registrations.Add(moniker, registration);
 				}
 			}
 		}

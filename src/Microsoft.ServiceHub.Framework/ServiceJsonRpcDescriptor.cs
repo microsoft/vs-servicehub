@@ -1,14 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using Newtonsoft.Json.Serialization;
 using StreamJsonRpc;
+using JsonNET = Newtonsoft.Json.Serialization;
+using STJ = System.Text.Json;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -62,6 +64,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		this.MessageDelimiter = copyFrom.MessageDelimiter;
 		this.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions;
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
+		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
 	}
 
 	/// <summary>
@@ -70,7 +73,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public enum Formatters
 	{
 		/// <summary>
-		/// Format messages with UTF-8 text for a human readable JSON representation.
+		/// Format messages with UTF-8 text for a human readable JSON representation using the <see cref="Newtonsoft.Json.JsonSerializer"/> (i.e. JSON.NET) serializer.
+		/// This <em>can</em> be wire-protocol compatible with <see cref="UTF8SystemTextJson"/> if the <see cref="Newtonsoft.Json.JsonSerializerSettings"/> are configured to be compatible with System.Text.Json.
 		/// </summary>
 		UTF8,
 
@@ -78,6 +82,12 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// Format messages with MessagePack for a high throughput, compact binary representation.
 		/// </summary>
 		MessagePack,
+
+		/// <summary>
+		/// Format messages with UTF-8 text for a human readable JSON representation using the <see cref="System.Text.Json.JsonSerializer"/> serializer.
+		/// This <em>can</em> be wire-protocol compatible with <see cref="UTF8"/> if the <see cref="System.Text.Json.JsonSerializerOptions"/> are configured to be compatible with JSON.NET.
+		/// </summary>
+		UTF8SystemTextJson,
 	}
 
 	/// <summary>
@@ -125,6 +135,21 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public MultiplexingStream.Options? MultiplexingStreamOptions { get; private set; }
 
 	/// <summary>
+	/// Gets the set of interfaces that will be added to a generated proxy in addition to the one specified
+	/// as the type argument to <see cref="JsonRpcConnection.ConstructRpcClient{T}"/> or
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>.
+	/// </summary>
+	/// <value>The default value is <see langword="null"/>.</value>
+	/// <remarks>
+	/// A <see langword="null" /> value may signal an implementation of
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>
+	/// to supply some default set of optional interfaces based on service registration.
+	/// Such implementations should honor any non-<see langword="null" /> value from this property (including an empty array)
+	/// by not adding any additional interfaces beyond those specified.
+	/// </remarks>
+	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
+
+	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
 	/// </summary>
 	[ExcludeFromCodeCoverage]
@@ -151,7 +176,12 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
 	{
-		return target != null ? LocalProxyGeneration.CreateProxy<T>(target, this.ExceptionStrategy) : null;
+		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
+			? (addl.Contains(typeof(T)) ? addl.Remove(typeof(T)) : addl)
+			: [];
+		return target != null
+			? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces.AsSpan(), this.ExceptionStrategy)
+			: null;
 	}
 
 	/// <inheritdoc />
@@ -225,6 +255,25 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		return result;
 	}
 
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="AdditionalServiceInterfaces" /> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="AdditionalServiceInterfaces"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type>? value)
+	{
+		Requires.Argument(value is not { IsDefault: true }, nameof(value), null);
+		if (this.AdditionalServiceInterfaces == value)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcDescriptor)this.Clone();
+		result.AdditionalServiceInterfaces = value;
+		return result;
+	}
+
 	/// <inheritdoc />
 	public bool Equals(ServiceJsonRpcDescriptor? other)
 	{
@@ -271,15 +320,50 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		return this.CreateConnection(jsonRpc);
 	}
 
-	/// <inheritdoc />
-	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcDescriptor(this);
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with <see cref="ExceptionStrategy"/>, <see cref="MultiplexingStreamOptions"/>, <see cref="JoinableTaskFactory"/> and <see cref="TraceSource"/> matching to passed in descriptor.
+	/// </summary>
+	/// <param name="copyFrom">The descriptor to copy settings from.</param>
+	/// <returns>A clone of this instance, with the properties changed or this same instance if the properties already match.</returns>
+	internal ServiceJsonRpcDescriptor WithSettingsFrom(ServiceJsonRpcDescriptor copyFrom)
+	{
+		if (this.ExceptionStrategy == copyFrom.ExceptionStrategy &&
+			this.MultiplexingStreamOptions == copyFrom.MultiplexingStreamOptions &&
+			this.MultiplexingStream == copyFrom.MultiplexingStream &&
+			this.JoinableTaskFactory == copyFrom.JoinableTaskFactory &&
+			this.TraceSource == copyFrom.TraceSource)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcDescriptor)this.Clone();
+		result.ExceptionStrategy = copyFrom.ExceptionStrategy;
+
+		if (copyFrom.MultiplexingStreamOptions is not null)
+		{
+#pragma warning disable CS0618 // Type or member is obsolete
+			result = (ServiceJsonRpcDescriptor)result.WithMultiplexingStream((MultiplexingStream?)null);
+			result.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions.GetFrozenCopy();
+		}
+		else
+		{
+			result = (ServiceJsonRpcDescriptor)result.WithMultiplexingStream(copyFrom.MultiplexingStream);
+#pragma warning restore CS0618 // Type or member is obsolete
+		}
+
+		result = (ServiceJsonRpcDescriptor)result.WithJoinableTaskFactory(copyFrom.JoinableTaskFactory);
+		result = (ServiceJsonRpcDescriptor)result.WithTraceSource(copyFrom.TraceSource);
+
+		return result;
+	}
 
 	/// <summary>
 	/// Initializes a new instance of a <see cref="JsonRpcConnection"/> or derived type.
 	/// </summary>
 	/// <param name="jsonRpc">The <see cref="JsonRpc"/> object that will have to be passed to <see cref="JsonRpcConnection(JsonRpc)"/>.</param>
 	/// <returns>The new instance of <see cref="JsonRpcConnection"/>.</returns>
-	protected virtual JsonRpcConnection CreateConnection(JsonRpc jsonRpc) => new JsonRpcConnection(jsonRpc);
+	protected internal virtual JsonRpcConnection CreateConnection(JsonRpc jsonRpc) => new JsonRpcConnection(jsonRpc, this);
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="IJsonRpcMessageHandler"/> for use in a new server or client.
@@ -287,7 +371,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// <param name="pipe">The pipe the handler should use to send and receive messages.</param>
 	/// <param name="formatter">The <see cref="IJsonRpcMessageFormatter"/> the handler should use to encode messages.</param>
 	/// <returns>The new message handler.</returns>
-	protected virtual IJsonRpcMessageHandler CreateHandler(IDuplexPipe pipe, IJsonRpcMessageFormatter formatter)
+	protected internal virtual IJsonRpcMessageHandler CreateHandler(IDuplexPipe pipe, IJsonRpcMessageFormatter formatter)
 	{
 		Requires.NotNull(pipe, nameof(pipe));
 
@@ -301,7 +385,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				handler = new HeaderDelimitedMessageHandler(pipe, formatter);
 				break;
 			default:
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.MessageDelimiterNotSupported, this.MessageDelimiter, this.Protocol));
+				throw new NotSupportedException(Strings.FormatMessageDelimiterNotSupported(this.MessageDelimiter, this.Protocol));
 		}
 
 		return handler;
@@ -312,7 +396,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	/// <param name="handler">The message handler that the <see cref="JsonRpc"/> instance should use.</param>
 	/// <returns>The new <see cref="JsonRpc"/>.</returns>
-	protected virtual JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
+	protected internal virtual JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
 	{
 		Requires.NotNull(handler, nameof(handler));
 
@@ -323,7 +407,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// Initializes a new instance of <see cref="IJsonRpcMessageFormatter"/> for use in a new server or client.
 	/// </summary>
 	/// <returns>The new message formatter.</returns>
-	protected virtual IJsonRpcMessageFormatter CreateFormatter()
+	protected internal virtual IJsonRpcMessageFormatter CreateFormatter()
 	{
 		switch (this.Formatter)
 		{
@@ -331,10 +415,15 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				return this.CreateJsonFormatter();
 			case Formatters.MessagePack:
 				return this.CreateMessagePackFormatter();
+			case Formatters.UTF8SystemTextJson:
+				return this.CreateSystemTextJsonFormatter();
 			default:
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.FormatterNotSupported, this.Formatter, this.Protocol));
+				throw new NotSupportedException(Strings.FormatFormatterNotSupported(this.Formatter, this.Protocol));
 		}
 	}
+
+	/// <inheritdoc />
+	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcDescriptor(this);
 
 	private IJsonRpcMessageFormatter CreateMessagePackFormatter()
 	{
@@ -378,12 +467,32 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			MultiplexingStream = this.MultiplexingStream,
 			JsonSerializer =
-					{
-						ContractResolver = new CamelCasePropertyNamesContractResolver
-						{
-							NamingStrategy = new CamelCaseNamingStrategy(processDictionaryKeys: false, overrideSpecifiedNames: true),
-						},
-					},
+			{
+				ContractResolver = new JsonNET.CamelCasePropertyNamesContractResolver
+				{
+					NamingStrategy = new JsonNET.CamelCaseNamingStrategy(processDictionaryKeys: false, overrideSpecifiedNames: true),
+				},
+			},
+		};
+	}
+
+	private IJsonRpcMessageFormatter CreateSystemTextJsonFormatter()
+	{
+		return new SystemTextJsonFormatter
+		{
+			MultiplexingStream = this.MultiplexingStream,
+			JsonSerializerOptions =
+			{
+				DictionaryKeyPolicy = null,
+				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
+				DefaultIgnoreCondition = STJ.Serialization.JsonIgnoreCondition.WhenWritingNull,
+				Converters =
+				{
+					// These converters are a workaround for https://github.com/dotnet/runtime/issues/85981
+					JsonConverterWrapper<Version>.Instance,
+					JsonConverterWrapper<Uri>.Instance,
+				},
+			},
 		};
 	}
 
@@ -392,6 +501,10 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	public class JsonRpcConnection : RpcConnection
 	{
+		private const string GetOptionalInterfacesMethodName = "__jsonrpc_getOptionalInterfaces";
+
+		private readonly ServiceJsonRpcDescriptor? owner;
+
 		/// <summary>
 		/// Backing field for the <see cref="LocalRpcTargetOptions"/> property.
 		/// </summary>
@@ -408,13 +521,21 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// </devremarks>
 		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { };
 
+		/// <inheritdoc cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcDescriptor)"/>
+		public JsonRpcConnection(JsonRpc jsonRpc)
+			: this(jsonRpc, null)
+		{
+		}
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="JsonRpcConnection"/> class.
 		/// </summary>
 		/// <param name="jsonRpc">The JSON-RPC object.</param>
-		public JsonRpcConnection(JsonRpc jsonRpc)
+		/// <param name="owner">The descriptor that created this object.</param>
+		public JsonRpcConnection(JsonRpc jsonRpc, ServiceJsonRpcDescriptor? owner)
 		{
 			this.JsonRpc = jsonRpc ?? throw new ArgumentNullException(nameof(jsonRpc));
+			this.owner = owner;
 		}
 
 		/// <inheritdoc/>
@@ -470,7 +591,20 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		}
 
 		/// <inheritdoc/>
-		public override T ConstructRpcClient<T>() => this.JsonRpc.Attach<T>(this.LocalRpcProxyOptions);
+		public override T ConstructRpcClient<T>()
+		{
+			if (this.owner?.AdditionalServiceInterfaces is { Length: > 0 })
+			{
+				ReadOnlySpan<Type> ifaceTypes = this.owner.AdditionalServiceInterfaces.Contains(typeof(T)) is true
+					? this.owner.AdditionalServiceInterfaces.Value.AsSpan()
+					: [typeof(T), .. this.owner.AdditionalServiceInterfaces];
+				return (T)this.JsonRpc.Attach(ifaceTypes, this.LocalRpcProxyOptions);
+			}
+			else
+			{
+				return this.JsonRpc.Attach<T>(this.LocalRpcProxyOptions);
+			}
+		}
 
 		/// <inheritdoc/>
 		public override void Dispose() => this.JsonRpc.Dispose();

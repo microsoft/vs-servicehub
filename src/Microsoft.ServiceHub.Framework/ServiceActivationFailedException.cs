@@ -17,7 +17,7 @@ public class ServiceActivationFailedException : ServiceCompositionException
 	/// <param name="serviceMoniker">The moniker of the service that failed to activate.</param>
 	/// <param name="inner">The exception thrown from the service during activation.</param>
 	public ServiceActivationFailedException(ServiceMoniker serviceMoniker, Exception? inner)
-		: base(string.Format(CultureInfo.CurrentCulture, Strings.ServiceActivationFailed, serviceMoniker), inner)
+		: base(Strings.FormatServiceActivationFailed(serviceMoniker), inner)
 	{
 	}
 

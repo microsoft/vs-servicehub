@@ -142,23 +142,41 @@ internal class ServiceBrokerForExportedBrokeredServices : IServiceBroker, IDispo
 	/// Activates the one brokered service indicated by the <see cref="ActivatedMoniker"/> property.
 	/// </summary>
 	/// <param name="cancellationToken">A cancellation token.</param>
-	/// <returns>The activated service.</returns>
-	internal async ValueTask<IExportedBrokeredService?> CreateBrokeredServiceAsync(CancellationToken cancellationToken)
+	/// <returns>The activated service. The caller should invoke <see cref="IExportedBrokeredService.InitializeAsync(CancellationToken)"/> on the result.</returns>
+	internal IExportedBrokeredService? CreateBrokeredService(CancellationToken cancellationToken)
 	{
 		Verify.Operation(this.ActivatedMoniker is not null, "Exporting properties must be set first.");
 
 		string? requiredVersion = this.ActivatedMoniker.Version?.ToString();
+		Lazy<IExportedBrokeredService, IBrokeredServicesExportMetadata>? nullVersionedFactory = null;
+
+		// First search for an exact version match.
 		foreach (Lazy<IExportedBrokeredService, IBrokeredServicesExportMetadata> factory in this.Helper.ExportedBrokeredServices)
 		{
 			for (int i = 0; i < factory.Metadata.ServiceName.Length; i++)
 			{
-				if (this.ActivatedMoniker.Name == factory.Metadata.ServiceName[i] && requiredVersion == factory.Metadata.ServiceVersion[i])
+				if (this.ActivatedMoniker.Name == factory.Metadata.ServiceName[i])
 				{
-					Verify.Operation(!factory.IsValueCreated, "This method should only be called once.");
-					await factory.Value.InitializeAsync(cancellationToken).ConfigureAwait(false);
-					return factory.Value;
+					if (requiredVersion == factory.Metadata.ServiceVersion[i])
+					{
+						Verify.Operation(!factory.IsValueCreated, "This method should only be called once.");
+						return factory.Value;
+					}
+
+					if (factory.Metadata.ServiceVersion[i] is null)
+					{
+						// Remember this in case we don't find an exact version match.
+						nullVersionedFactory = factory;
+					}
 				}
 			}
+		}
+
+		// Fallback to the catch-all version if we found one.
+		if (nullVersionedFactory is not null)
+		{
+			Verify.Operation(!nullVersionedFactory.IsValueCreated, "This method should only be called once.");
+			return nullVersionedFactory.Value;
 		}
 
 		return null;

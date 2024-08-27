@@ -38,6 +38,19 @@ public static class ServiceBrokerAggregator
 	public static IServiceBroker ForceMarshal(IServiceBroker serviceBroker) => new ForceMarshalingBroker(serviceBroker);
 
 	/// <summary>
+	/// Creates a new <see cref="IServiceBroker"/> that does not implement <see cref="IDisposable"/>
+	/// and forwards all requests to a given <see cref="IServiceBroker"/>.
+	/// </summary>
+	/// <param name="serviceBroker">The inner service broker to forward requests to.</param>
+	/// <returns>The non-disposable wrapper.</returns>
+	/// <remarks>
+	/// This is useful when an <see cref="IServiceBroker"/> that may implement <see cref="IDisposable"/> is being shared
+	/// such that others <em>may</em> dispose of it if it is disposable, but the caller wants to retain exclusive control
+	/// over the lifetime of the broker.
+	/// </remarks>
+	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(serviceBroker);
+
+	/// <summary>
 	/// A broker which will query many other brokers sequentially, and return the first successful result.
 	/// </summary>
 	private sealed class SequentialBroker : IServiceBroker, IDisposable
@@ -183,13 +196,13 @@ public static class ServiceBrokerAggregator
 						}
 						else if (client is IDuplexPipe pipe)
 						{
-							pipe.Input.Complete(new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker)));
-							pipe.Output.Complete(new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker)));
+							pipe.Input.Complete(new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker)));
+							pipe.Output.Complete(new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker)));
 						}
 					}
 
 					// Now communicate the composition failure to the caller.
-					throw new ServiceCompositionException(string.Format(CultureInfo.CurrentCulture, Strings.TooManyServices, serviceMoniker));
+					throw new ServiceCompositionException(Strings.FormatTooManyServices(serviceMoniker));
 			}
 		}
 
@@ -199,57 +212,88 @@ public static class ServiceBrokerAggregator
 		/// <param name="sender">This parameter is ignored. The event will be raised with "this" as the sender.</param>
 		/// <param name="args">Details regarding what changes have occurred.</param>
 		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
+	}
+
+	private class DelegatingServiceBroker : IServiceBroker
+	{
+		private readonly object syncObject = new();
+		private EventHandler<BrokeredServicesChangedEventArgs>? availabilityChanged;
+
+		internal DelegatingServiceBroker(IServiceBroker inner) => this.Inner = Requires.NotNull(inner);
+
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+		{
+			add
+			{
+				lock (this.syncObject)
+				{
+					if (this.availabilityChanged is null)
+					{
+						this.Inner.AvailabilityChanged += this.OnInnerAvailabilityChanged;
+					}
+
+					this.availabilityChanged += value;
+				}
+			}
+
+			remove
+			{
+				lock (this.syncObject)
+				{
+					this.availabilityChanged -= value;
+
+					if (this.availabilityChanged is null)
+					{
+						this.Inner.AvailabilityChanged -= this.OnInnerAvailabilityChanged;
+					}
+				}
+			}
+		}
+
+		protected IServiceBroker Inner { get; }
+
+		public virtual ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			=> this.Inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
+
+		public virtual ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+			=> this.Inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
+
+		private void OnInnerAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs e)
+		{
+			// We explicitly forward all events so that our subscribers see `this` as the sender
+			// instead of `inner`.
+			this.availabilityChanged?.Invoke(this, e);
+		}
 	}
 
 	/// <summary>
 	/// Wraps an <see cref="IServiceBroker"/> such that any locally provisioned service is forced to marshal all calls anyway.
 	/// </summary>
-	private sealed class ForceMarshalingBroker : IServiceBroker, IDisposable
+	private class ForceMarshalingBroker(IServiceBroker inner) : DelegatingServiceBroker(inner)
 	{
-		private readonly IServiceBroker inner;
-
-		public ForceMarshalingBroker(IServiceBroker inner)
-		{
-			this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
-			this.inner.AvailabilityChanged += this.OnAvailabilityChanged;
-		}
-
 		/// <inheritdoc />
-		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
-
-		/// <inheritdoc />
-		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+		public override async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
 			where T : class
 		{
-			T? client = await this.inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken).ConfigureAwait(false);
-			if (client == null)
+			IDuplexPipe? pipe = await this.Inner.GetPipeAsync(serviceDescriptor.Moniker, options, cancellationToken).ConfigureAwait(false);
+			if (pipe is null)
 			{
 				return null;
 			}
 
-			(Stream, Stream) streamPair = FullDuplexStream.CreatePair();
-			serviceDescriptor.ConstructRpc(client, streamPair.Item1.UsePipe());
-			return serviceDescriptor.ConstructRpc<T>(streamPair.Item2.UsePipe());
+			try
+			{
+				return serviceDescriptor.ConstructRpc<T>(pipe);
+			}
+			catch
+			{
+				await pipe.Input.CompleteAsync().ConfigureAwait(false);
+				await pipe.Output.CompleteAsync().ConfigureAwait(false);
+				throw;
+			}
 		}
-
-		/// <inheritdoc />
-		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
-		{
-			// Marshaling is already applied.
-			return this.inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
-		}
-
-		/// <inheritdoc />
-		public void Dispose()
-		{
-			this.inner.AvailabilityChanged -= this.OnAvailabilityChanged;
-		}
-
-		/// <summary>
-		/// Raises the <see cref="AvailabilityChanged"/> event.
-		/// </summary>
-		/// <param name="sender">This parameter is ignored. The event will be raised with "this" as the sender.</param>
-		/// <param name="args">Details regarding what changes have occurred.</param>
-		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
 	}
+
+	private class NonDisposingServiceBroker(IServiceBroker inner) : DelegatingServiceBroker(inner);
 }

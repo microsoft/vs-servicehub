@@ -23,37 +23,49 @@
       </Item>
       <Item ItemId=";ISB001_DisposeOfAcquiredProxy_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Always dispose of proxies.]]></Val>
+          <Val><![CDATA[Always dispose of proxies]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Zawsze usuwaj serwery proxy.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Always dispose of proxies.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_Description" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zazwyczaj przyjmuje to postać „({0} as IDisposable)?.Dispose();”]]></Val>
+            <Val><![CDATA[Zazwyczaj przyjmuje to postać „({0} as IDisposable)?.Dispose();”.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This typically takes the form of "({0} as IDisposable)?.Dispose();"]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_DisposeOfProxyBeforeReplacingReference_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          <Val><![CDATA[Dispose of old proxy before overwriting reference to it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Usuń stary serwer proxy przed nadpisaniem odwołania do niego.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Dispose of old proxy before overwriting reference to it.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ISB001_ProxyMemberMustBeDisposedInDisposeMethod_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Serwer proxy przechowywany w elemencie „{0}.{1}” musi zostać usunięty przez metodę IDisposable.Dispose lub Dispose(bool) w ramach typu „{0}”.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -77,10 +89,13 @@
       </Item>
       <Item ItemId=";ISB002_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Unikaj przechowywania elementów ServiceBrokerClient.Rental<T> w polu lub właściwości.]]></Val>
+            <Val><![CDATA[Unikaj przechowywania elementu ServiceBrokerClient.Rental<T> w polu lub właściwości.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Avoid storing ServiceBrokerClient.Rental<T> in a field or property.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -93,19 +108,67 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ISB003_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Classes attributed with ExportBrokeredServiceAttribute must implement IExportedBrokeredService.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Klasy z atrybutem ExportBrokeredServiceAttribute muszą implementować element IExportedBrokeredService.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB003_MessageFormat" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Typ „{0}” musi zaimplementować element IExportedBrokeredService.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The type "{0}" must implement IExportedBrokeredService.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB003_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported brokered service validity]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ważność wyeksportowanej usługi obsługiwanej przez brokera]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB004_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Exported brokered services may declare optional interfaces that they support, but these must actually be implemented by the brokered service.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wyeksportowane usługi brokera mogą deklarować opcjonalne interfejsy, które obsługują, ale muszą one zostać zaimplementowane przez usługę brokera.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB004_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The brokered service must implement the '{0}' interface or remove it from its list of supported optional interfaces]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Usługa obsługiwana przez brokera musi zaimplementować interfejs „{0}” lub usunąć go z listy obsługiwanych interfejsów opcjonalnych]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB004_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Optional interfaces must be implemented]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Interfejsy opcjonalne muszą zostać zaimplementowane]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
     </Item>
   </Item>
   <Item ItemId=";Version" ItemType="0" PsrId="211" Leaf="false">
     <Disp Icon="Ver" Disp="true" LocTbl="false" Path=" \ ;Version \ 8 \ 0" />
-    <Item ItemId=";Comments" ItemType="0" PsrId="211" Leaf="true">
-      <Str Cat="Text">
-        <Val><![CDATA[Static code analyzer to detect common mistakes or potential issues when using ServiceHub or IServiceBroker.]]></Val>
-        <Tgt Cat="Text" Stat="Loc" Orig="New">
-          <Val><![CDATA[Statyczny analizator kodu, który wykrywa typowe błędy lub potencjalne problemy podczas korzystania z elementu ServiceHub lub IServiceBroker.]]></Val>
-        </Tgt>
-      </Str>
-      <Disp Icon="Str" />
-    </Item>
     <Item ItemId=";CompanyName" ItemType="0" PsrId="211" Leaf="true">
       <Str Cat="Text">
         <Val><![CDATA[Microsoft]]></Val>

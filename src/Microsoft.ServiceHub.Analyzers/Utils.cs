@@ -11,7 +11,7 @@ namespace Microsoft.ServiceHub.Analyzers
 	{
 		internal static string GetHelpLink(string analyzerId)
 		{
-			return $"https://dev.azure.com/devdiv/DevDiv/_git/DevCore?path=%2Fdoc%2Fanalyzers%2F{analyzerId}.md&version=GC{ThisAssembly.GitCommitId}";
+			return $"https://github.com/microsoft/vs-servicehub/blob/{ThisAssembly.GitCommitId}/doc/analyzers/{analyzerId}.md";
 		}
 
 		internal static IEnumerable<TOperation> FindAncestors<TOperation>(IOperation? operation)

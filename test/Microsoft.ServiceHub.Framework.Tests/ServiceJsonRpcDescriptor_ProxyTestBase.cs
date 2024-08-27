@@ -60,6 +60,10 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 
 	internal interface ISomeService2
 	{
+		event EventHandler<PropertyChangingEventArgs> PropertyChanging;
+
+		ValueTask<int> AddValue2Async(int a, int b);
+
 		Task<Guid> GetIdentifier();
 	}
 
@@ -277,6 +281,57 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		Assert.True(observablyDisposableProxy.IsDisposed);
 	}
 
+	[Fact]
+	public async Task WithAdditionalServiceInterfaces()
+	{
+		SomeNonDisposableService service = new();
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
+
+		// Test method calls
+		Assert.Equal(3, await proxy.AddAsync(1, 2));
+
+		// Test events.
+		TaskCompletionSource<string?> propertyChangedRaised = new();
+		proxy.PropertyChanged += (s, e) => propertyChangedRaised.SetResult(e.PropertyName);
+		service.OnPropertyChanged("A");
+		Assert.Equal("A", await propertyChangedRaised.Task.WithCancellation(this.TimeoutToken));
+
+		// Test method calls on the additional interface.
+		ISomeService2 proxy2 = Assert.IsAssignableFrom<ISomeService2>(proxy);
+		Assert.Equal(4, await proxy2.AddValue2Async(1, 3));
+
+		// Test events on the additional interface.
+		TaskCompletionSource<string?> propertyChangingRaised = new();
+		proxy2.PropertyChanging += (s, e) => propertyChangingRaised.SetResult(e.PropertyName);
+		service.OnPropertyChanging("b");
+		Assert.Equal("b", await propertyChangingRaised.Task.WithCancellation(this.TimeoutToken));
+	}
+
+	[Fact]
+	public async Task WithAdditionalServiceInterfaces_RequestWithRedundantAddlIface()
+	{
+		SomeNonDisposableService service = new();
+		ISomeService2 proxy = this.CreateProxy<ISomeService2>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
+		Assert.Equal(4, await proxy.AddValue2Async(1, 3));
+	}
+
+	[Fact]
+	public async Task WithAdditionalServiceInterfaces_NonUniqueAddlIfaceList()
+	{
+		SomeNonDisposableService service = new();
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2), typeof(ISomeService2)]));
+		Assert.Equal(4, await proxy.AddValueAsync(1, 3));
+	}
+
+	[Fact]
+	public void WithAdditionalServiceInterfaces_MainInterfaceDerivesFromOptional()
+	{
+		SomeDisposableService service = new();
+
+		// Verify that creating the proxy doesn't throw (due to a failure in generating the proxy type).
+		ISomeServiceDisposable proxy = this.CreateProxy<ISomeServiceDisposable>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService)]));
+	}
+
 	[return: NotNullIfNotNull("target")]
 	protected abstract T? CreateProxy<T>(T? target, ServiceJsonRpcDescriptor descriptor)
 		where T : class;
@@ -291,11 +346,15 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 
 		public event EventHandler<PropertyChangedEventArgs>? PropertyChanged;
 
+		public event EventHandler<PropertyChangingEventArgs>? PropertyChanging;
+
 		internal bool NoReturnValue_Invoked { get; set; }
 
 		public Task<int> AddAsync(int a, int b) => Task.FromResult(a + b);
 
 		public ValueTask<int> AddValueAsync(int a, int b) => new ValueTask<int>(a + b);
+
+		public ValueTask<int> AddValue2Async(int a, int b) => new ValueTask<int>(a + b);
 
 		// Throws directly (not in an async method) such that the exception is thrown rather than returning a faulted task.
 		public Task Throws() => throw new InvalidOperationException();
@@ -379,6 +438,8 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		}
 
 		internal void OnPropertyChanged(string propertyName) => this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+		internal void OnPropertyChanging(string propertyName) => this.PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
 	}
 
 	private protected class SomeDisposableService : SomeNonDisposableService, ISomeServiceDisposable

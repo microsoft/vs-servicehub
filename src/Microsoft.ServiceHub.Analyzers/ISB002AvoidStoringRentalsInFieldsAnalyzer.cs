@@ -23,11 +23,16 @@ public class ISB002AvoidStoringRentalsInFieldsAnalyzer : DiagnosticAnalyzer
 		isEnabledByDefault: true);
 
 	/// <inheritdoc />
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Descriptor);
 
 	/// <inheritdoc />
 	public override void Initialize(AnalysisContext context)
 	{
+		if (context is null)
+		{
+			throw new ArgumentNullException(nameof(context));
+		}
+
 		context.EnableConcurrentExecution();
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze);
 

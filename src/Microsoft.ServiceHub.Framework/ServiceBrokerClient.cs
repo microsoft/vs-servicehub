@@ -53,7 +53,7 @@ public class ServiceBrokerClient : IDisposableObservable
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ServiceBrokerClient"/> class.
 	/// </summary>
-	/// <param name="serviceBroker">The underlying service broker.</param>
+	/// <param name="serviceBroker">The underlying service broker. This will be disposed of if it implements <see cref="IDisposable" /> when this <see cref="ServiceBrokerClient" /> is disposed of.</param>
 	/// <param name="joinableTaskFactory">A means to avoid deadlocks if the authorization service requires the main thread. May be null.</param>
 	public ServiceBrokerClient(IServiceBroker serviceBroker, JoinableTaskFactory? joinableTaskFactory = null)
 	{
@@ -138,6 +138,7 @@ public class ServiceBrokerClient : IDisposableObservable
 	public async ValueTask<Rental<T>> GetProxyAsync<T>(ServiceRpcDescriptor serviceRpcDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 		where T : class
 	{
+		Requires.NotNull(serviceRpcDescriptor);
 		Verify.NotDisposed(this);
 
 		AsyncLazy<object?>? clientLazy;
@@ -154,7 +155,13 @@ public class ServiceBrokerClient : IDisposableObservable
 					{
 						Verify.NotDisposed(this);
 						GC.KeepAlive(typeof(ValueTask<T>)); // workaround CLR bug https://dev.azure.com/devdiv/DevDiv/_workitems/edit/1358442
-						return await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
+						T? proxy = await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
+						if (proxy is StreamJsonRpc.IJsonRpcClientProxy localProxy)
+						{
+							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnInvalidated(new BrokeredServicesChangedEventArgs(ImmutableHashSet.Create(serviceRpcDescriptor.Moniker)));
+						}
+
+						return proxy;
 					},
 					this.joinableTaskFactory);
 				this.clientCache.Add(key, clientLazy);

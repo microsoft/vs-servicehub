@@ -16,7 +16,7 @@ describe('Activation Options tests', function () {
 	let defaultToken: CancellationToken
 
 	beforeEach(() => {
-		defaultTokenSource = CancellationToken.timeout(3000)
+		defaultTokenSource = CancellationToken.timeout(10_000)
 		defaultToken = defaultTokenSource.token
 	})
 

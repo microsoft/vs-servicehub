@@ -1,7 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// Uncomment the SaveAssembly symbol and run one test to save the generated DLL for inspection in ILSpy as part of debugging.
+#if NETFRAMEWORK
+////#define SaveAssembly
+#endif
+
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -26,7 +32,7 @@ public partial class ServiceJsonRpcDescriptor
 		private static readonly List<(ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder)> TransparentProxyModuleBuilderByVisibilityCheck = new List<(ImmutableHashSet<AssemblyName>, ModuleBuilder)>();
 		private static readonly object BuilderLock = new object();
 
-		private static readonly Dictionary<TypeInfo, TypeInfo> GeneratedProxiesByInterface = new Dictionary<TypeInfo, TypeInfo>();
+		private static readonly Dictionary<ReadOnlyMemory<Type>, TypeInfo> GeneratedProxiesByInterface = new(TypeArrayUnorderedEqualityComparer.Instance);
 
 		private static readonly ConstructorInfo ObjectCtor = typeof(object).GetTypeInfo().DeclaredConstructors.Single();
 		private static readonly MethodInfo IDisposableDisposeMethod = typeof(IDisposable).GetTypeInfo().GetRuntimeMethod(nameof(IDisposable.Dispose), Type.EmptyTypes)!;
@@ -47,41 +53,47 @@ public partial class ServiceJsonRpcDescriptor
 		private static readonly MethodInfo EventHandlerInvokeMethod = typeof(EventHandler).GetMethod(nameof(EventHandler.Invoke))!;
 		private static readonly MethodInfo DelegateCombineMethod = typeof(Delegate).GetMethod(nameof(Delegate.Combine), new Type[] { typeof(Delegate), typeof(Delegate) })!;
 		private static readonly MethodInfo DelegateRemoveMethod = typeof(Delegate).GetMethod(nameof(Delegate.Remove))!;
-		private static readonly MethodInfo CreateProxyMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(CreateProxy), BindingFlags.Static | BindingFlags.NonPublic)!;
+		private static readonly MethodInfo CreateProxyMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(CreateProxyHelper), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ConstructLocalProxyMethod = typeof(IJsonRpcLocalProxy).GetMethod(nameof(IJsonRpcLocalProxy.ConstructLocalProxy))!;
 		private static readonly Type[] EventHandlerTypeInArray = new Type[] { typeof(EventHandler) };
 
-		internal static T CreateProxy<T>(T target, ExceptionProcessing exceptionStrategy)
+		internal static T CreateProxy<T>(T target, ReadOnlySpan<Type> additionalInterfaces, ExceptionProcessing exceptionStrategy)
 			where T : class
 		{
 			Requires.NotNull(target, nameof(target));
 
-			TypeInfo proxyType = Get(typeof(T).GetTypeInfo());
-			T? result = (T?)Activator.CreateInstance(proxyType, target, exceptionStrategy);
-			if (result is null)
+			TypeInfo proxyType = Get(typeof(T), additionalInterfaces);
+			try
 			{
-				throw new ServiceCompositionException("Unable to activate proxy type.");
-			}
+				T? result = (T?)Activator.CreateInstance(proxyType, target, exceptionStrategy);
+				if (result is null)
+				{
+					throw new ServiceCompositionException("Unable to activate proxy type.");
+				}
 
-			return result;
+				return result;
+			}
+			catch (TargetInvocationException ex)
+			{
+				throw new ServiceCompositionException("Unable to activate proxy type.", ex.InnerException);
+			}
 		}
 
 		/// <summary>
 		/// Gets the <see cref="ModuleBuilder"/> to use for generating a proxy for the given type.
 		/// </summary>
-		/// <param name="interfaceType">The type of the interface to generate a proxy for.</param>
+		/// <param name="interfaceTypes">The types of the interfaces the proxy will implement.</param>
 		/// <returns>The <see cref="ModuleBuilder"/> to use.</returns>
-		private static ModuleBuilder GetProxyModuleBuilder(TypeInfo interfaceType)
+		private static ModuleBuilder GetProxyModuleBuilder(Type[] interfaceTypes)
 		{
-			Requires.NotNull(interfaceType, nameof(interfaceType));
 			Assumes.True(Monitor.IsEntered(BuilderLock));
 
 			// Dynamic assemblies are relatively expensive. We want to create as few as possible.
 			// For each set of skip visibility check assemblies, we need a dynamic assembly that skips at *least* that set.
 			// The CLR will not honor any additions to that set once the first generated type is closed.
-			// We maintain a dictionary to point at dynamic modules based on the set of skip visiblity check assemblies they were generated with.
-			ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies = SkipClrVisibilityChecks.GetSkipVisibilityChecksRequirements(interfaceType);
-			skipVisibilityCheckAssemblies = skipVisibilityCheckAssemblies.Add(ExceptionHelperMethod.DeclaringType!.Assembly.GetName());
+			// We maintain a dictionary to point at dynamic modules based on the set of skip visibility check assemblies they were generated with.
+			ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies = ImmutableHashSet.CreateRange(interfaceTypes.SelectMany(t => SkipClrVisibilityChecks.GetSkipVisibilityChecksRequirements(t.GetTypeInfo())))
+				.Add(ExceptionHelperMethod.DeclaringType!.Assembly.GetName());
 			foreach ((ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder) existingSet in TransparentProxyModuleBuilderByVisibilityCheck)
 			{
 				if (existingSet.SkipVisibilitySet.IsSupersetOf(skipVisibilityCheckAssemblies))
@@ -107,7 +119,11 @@ public partial class ServiceJsonRpcDescriptor
 		private static AssemblyBuilder CreateProxyAssemblyBuilder(ImmutableHashSet<AssemblyName> assemblies)
 		{
 			var proxyAssemblyName = new AssemblyName(string.Format(CultureInfo.InvariantCulture, "localRpcProxies_{0}", GenerateGuidFromAssemblies(assemblies)));
+#if SaveAssembly
+			return AssemblyBuilder.DefineDynamicAssembly(proxyAssemblyName, AssemblyBuilderAccess.RunAndSave);
+#else
 			return AssemblyBuilder.DefineDynamicAssembly(proxyAssemblyName, AssemblyBuilderAccess.RunAndCollect);
+#endif
 		}
 
 		private static Guid GenerateGuidFromAssemblies(ImmutableHashSet<AssemblyName> assemblies)
@@ -136,33 +152,43 @@ public partial class ServiceJsonRpcDescriptor
 		/// Gets the generated type for a proxy for a given interface.
 		/// </summary>
 		/// <param name="serviceInterface">The interface the proxy must implement.</param>
+		/// <param name="additionalInterfaces">Additional interfaces that the proxy should implement.</param>
 		/// <returns>The generated type.</returns>
-		private static TypeInfo Get(TypeInfo serviceInterface)
+		private static TypeInfo Get(Type serviceInterface, ReadOnlySpan<Type> additionalInterfaces)
 		{
 			Requires.NotNull(serviceInterface, nameof(serviceInterface));
 			if (!serviceInterface.IsInterface)
 			{
-				throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.ClientProxyTypeArgumentMustBeAnInterface, serviceInterface));
+				throw new NotSupportedException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(serviceInterface));
+			}
+
+			foreach (Type additionalInterface in additionalInterfaces)
+			{
+				if (!additionalInterface.IsInterface)
+				{
+					throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.ClientProxyTypeArgumentMustBeAnInterface, additionalInterface));
+				}
 			}
 
 			TypeInfo? generatedType;
 
 			lock (BuilderLock)
 			{
-				if (GeneratedProxiesByInterface.TryGetValue(serviceInterface, out generatedType))
+				Type[] interfaces = [
+					serviceInterface,
+					.. additionalInterfaces,
+					typeof(IDisposableObservable),
+					typeof(INotifyDisposable),
+					typeof(IJsonRpcLocalProxy),
+				];
+
+				if (GeneratedProxiesByInterface.TryGetValue(interfaces, out generatedType))
 				{
 					return generatedType;
 				}
 
-				ModuleBuilder proxyModuleBuilder = GetProxyModuleBuilder(serviceInterface);
-
-				var interfaces = new Type[]
-				{
-					serviceInterface.AsType(),
-					typeof(IDisposableObservable),
-					typeof(INotifyDisposable),
-					typeof(IJsonRpcLocalProxy),
-				};
+				Type[] contractInterfaces = [serviceInterface, .. additionalInterfaces];
+				ModuleBuilder proxyModuleBuilder = GetProxyModuleBuilder(interfaces);
 
 				TypeBuilder proxyTypeBuilder = proxyModuleBuilder.DefineType(
 					string.Format(CultureInfo.InvariantCulture, "_localproxy_{0}_{1}", serviceInterface.FullName, Guid.NewGuid()),
@@ -177,13 +203,13 @@ public partial class ServiceJsonRpcDescriptor
 				FieldBuilder exceptionStrategyField = proxyTypeBuilder.DefineField("exceptionStrategy", typeof(ExceptionProcessing), fieldAttributes);
 
 				EmitClassConstructor(proxyTypeBuilder, disposedSentinelStaticField);
-				EmitConstructor(serviceInterface, proxyTypeBuilder, targetField, exceptionStrategyField);
+				EmitConstructor(serviceInterface.GetTypeInfo(), additionalInterfaces, proxyTypeBuilder, targetField, exceptionStrategyField);
 				EmitDisposeMethod(proxyTypeBuilder, targetField, disposedField, disposedSentinelStaticField);
 				EmitIsDisposedProperty(proxyTypeBuilder, disposedField, disposedSentinelStaticField);
 				EmitDisposedEvent(proxyTypeBuilder, disposedField, disposedSentinelStaticField);
 				EmitJsonRpcLocalProxyMethods(proxyTypeBuilder, targetField, exceptionStrategyField);
 
-				foreach (MethodInfo? method in FindAllOnThisAndOtherInterfaces(serviceInterface, i => i.DeclaredMethods).Where(m => !m.IsSpecialName))
+				foreach (MethodInfo method in FindAllOnThisAndOtherInterfaces(contractInterfaces, i => i.DeclaredMethods).Where(m => !m.IsSpecialName))
 				{
 					// Check for specially supported methods from derived interfaces.
 					if (Equals(DisposeMethod, method))
@@ -192,10 +218,10 @@ public partial class ServiceJsonRpcDescriptor
 						continue;
 					}
 
-					EmitMethodThunk(serviceInterface, proxyTypeBuilder, targetField, exceptionStrategyField, method);
+					EmitMethodThunk(method.ReflectedType!.GetTypeInfo(), proxyTypeBuilder, targetField, exceptionStrategyField, method);
 				}
 
-				foreach (EventInfo? evt in FindAllOnThisAndOtherInterfaces(serviceInterface, i => i.DeclaredEvents))
+				foreach (EventInfo evt in FindAllOnThisAndOtherInterfaces(contractInterfaces, i => i.DeclaredEvents))
 				{
 					if (evt.AddMethod is object && evt.RemoveMethod is object)
 					{
@@ -204,7 +230,13 @@ public partial class ServiceJsonRpcDescriptor
 				}
 
 				generatedType = proxyTypeBuilder.CreateTypeInfo()!;
-				GeneratedProxiesByInterface.Add(serviceInterface, generatedType);
+				GeneratedProxiesByInterface.Add(interfaces, generatedType);
+
+#if SaveAssembly
+				((AssemblyBuilder)proxyModuleBuilder.Assembly).Save(proxyModuleBuilder.ScopeName);
+				System.IO.File.Delete(proxyModuleBuilder.ScopeName + ".dll");
+				System.IO.File.Move(proxyModuleBuilder.ScopeName, proxyModuleBuilder.ScopeName + ".dll");
+#endif
 			}
 
 			return generatedType;
@@ -221,7 +253,7 @@ public partial class ServiceJsonRpcDescriptor
 			il.Emit(OpCodes.Ret);
 		}
 
-		private static void EmitConstructor(TypeInfo serviceInterface, TypeBuilder proxyTypeBuilder, FieldBuilder targetField, FieldBuilder exceptionStrategyField)
+		private static void EmitConstructor(TypeInfo serviceInterface, ReadOnlySpan<Type> additionalInterfaces, TypeBuilder proxyTypeBuilder, FieldBuilder targetField, FieldBuilder exceptionStrategyField)
 		{
 			ConstructorBuilder ctor = proxyTypeBuilder.DefineConstructor(
 				MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
@@ -232,6 +264,16 @@ public partial class ServiceJsonRpcDescriptor
 			// : base()
 			il.Emit(OpCodes.Ldarg_0);
 			il.Emit(OpCodes.Call, ObjectCtor);
+
+			// Verify that the target implements all the additional interfaces required.
+			Label insufficientInterfaces = il.DefineLabel();
+			foreach (Type addlIface in additionalInterfaces)
+			{
+				// if (target is not addlIface) goto throwException;
+				il.Emit(OpCodes.Ldarg_1);
+				il.Emit(OpCodes.Isinst, addlIface);
+				il.Emit(OpCodes.Brfalse_S, insufficientInterfaces);
+			}
 
 			// this.target = target;
 			il.Emit(OpCodes.Ldarg_0);
@@ -244,9 +286,18 @@ public partial class ServiceJsonRpcDescriptor
 			il.Emit(OpCodes.Stfld, exceptionStrategyField);
 
 			il.Emit(OpCodes.Ret);
+
+			if (additionalInterfaces.Length > 0)
+			{
+				// throwException: throw new InvalidCastException();
+				il.MarkLabel(insufficientInterfaces);
+				il.Emit(OpCodes.Newobj, typeof(InvalidCastException).GetConstructor(Type.EmptyTypes)!);
+				il.Emit(OpCodes.Throw);
+				il.Emit(OpCodes.Ret);
+			}
 		}
 
-		private static void EmitJsonRpcLocalProxyMethods(TypeBuilder typeBuilder, FieldBuilder targetField, FieldBuilder exceptionStragetyField)
+		private static void EmitJsonRpcLocalProxyMethods(TypeBuilder typeBuilder, FieldBuilder targetField, FieldBuilder exceptionStrategyField)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod(
 				nameof(IJsonRpcLocalProxy.ConstructLocalProxy),
@@ -259,30 +310,35 @@ public partial class ServiceJsonRpcDescriptor
 
 			ILGenerator il = method.GetILGenerator();
 
+			// Order of locals matters since we index into them.
+			il.DeclareLocal(typeParameter);
+			il.DeclareLocal(typeParameter);
+
 			Label loadNullAndReturnLabel = il.DefineLabel();
-			Label retLabel = il.DefineLabel();
 
 			// T targetObject = this.target as T;
-			LocalBuilder targetObjectLocal = il.DeclareLocal(typeParameter);
 			il.Emit(OpCodes.Ldarg_0);
 			il.Emit(OpCodes.Ldfld, targetField);
 			il.Emit(OpCodes.Isinst, typeParameter);
-			il.Emit(OpCodes.Stloc_0, targetObjectLocal);
+			il.Emit(OpCodes.Unbox_Any, typeParameter);
+			il.Emit(OpCodes.Stloc_0);
 
 			// if (targetObject == null) return null;
-			il.Emit(OpCodes.Ldloc_0, targetObjectLocal);
+			il.Emit(OpCodes.Ldloc_0);
+			il.Emit(OpCodes.Box, typeParameter);
 			il.Emit(OpCodes.Brfalse_S, loadNullAndReturnLabel);
 
-			// CreateProxy(targetObjectLocal, exceptionStrategy);
-			il.Emit(OpCodes.Ldloc_0, targetObjectLocal);
+			// CreateProxy(targetObject, exceptionStrategy);
+			il.Emit(OpCodes.Ldloc_0);
 			il.Emit(OpCodes.Ldarg_0);
-			il.Emit(OpCodes.Ldfld, exceptionStragetyField);
+			il.Emit(OpCodes.Ldfld, exceptionStrategyField);
 			il.Emit(OpCodes.Call, CreateProxyMethod);
-			il.Emit(OpCodes.Br_S, retLabel);
+			il.Emit(OpCodes.Ret);
 
 			il.MarkLabel(loadNullAndReturnLabel);
-			il.Emit(OpCodes.Ldnull);
-			il.MarkLabel(retLabel);
+			il.Emit(OpCodes.Ldloca_S, 1);
+			il.Emit(OpCodes.Initobj, typeParameter);
+			il.Emit(OpCodes.Ldloc_1);
 			il.Emit(OpCodes.Ret);
 
 			typeBuilder.DefineMethodOverride(method, ConstructLocalProxyMethod);
@@ -511,9 +567,14 @@ public partial class ServiceJsonRpcDescriptor
 				il.Emit(OpCodes.Call, ThrowIfCancellationRequestedMethod);
 			}
 
-			// var target = this.target
+			// var target = (interface)this.target
 			il.Emit(OpCodes.Ldarg_0);
 			il.Emit(OpCodes.Ldfld, targetField);
+			if (serviceInterface != targetField.FieldType)
+			{
+				il.Emit(OpCodes.Castclass, serviceInterface);
+			}
+
 			il.Emit(OpCodes.Stloc_0);
 
 			// if (target == null) throw new ObjectDisposedException();
@@ -613,6 +674,11 @@ public partial class ServiceJsonRpcDescriptor
 				Label skipLabel = il.DefineLabel();
 				il.Emit(OpCodes.Ldarg_0);
 				il.Emit(OpCodes.Ldfld, targetField);
+				if (evt.DeclaringType != targetField.FieldType)
+				{
+					il.Emit(OpCodes.Castclass, evt.DeclaringType!);
+				}
+
 				il.Emit(OpCodes.Dup);
 				il.Emit(OpCodes.Brfalse, skipLabel);
 				il.Emit(OpCodes.Ldarg_1);
@@ -631,6 +697,11 @@ public partial class ServiceJsonRpcDescriptor
 				Label skipLabel = il.DefineLabel();
 				il.Emit(OpCodes.Ldarg_0);
 				il.Emit(OpCodes.Ldfld, targetField);
+				if (evt.DeclaringType != targetField.FieldType)
+				{
+					il.Emit(OpCodes.Castclass, evt.DeclaringType!);
+				}
+
 				il.Emit(OpCodes.Dup);
 				il.Emit(OpCodes.Brfalse, skipLabel);
 				il.Emit(OpCodes.Ldarg_1);
@@ -775,13 +846,101 @@ public partial class ServiceJsonRpcDescriptor
 			}
 		}
 
-		private static IEnumerable<T> FindAllOnThisAndOtherInterfaces<T>(TypeInfo interfaceType, Func<TypeInfo, IEnumerable<T>> oneInterfaceQuery)
+		private static IEnumerable<T> FindAllOnThisAndOtherInterfaces<T>(IEnumerable<Type> interfaceTypes, Func<TypeInfo, IEnumerable<T>> oneInterfaceQuery)
 		{
-			Requires.NotNull(interfaceType, nameof(interfaceType));
-			Requires.NotNull(oneInterfaceQuery, nameof(oneInterfaceQuery));
+			HashSet<TypeInfo> ifaces = new();
+			foreach (TypeInfo interfaceType in interfaceTypes)
+			{
+				if (ifaces.Add(interfaceType))
+				{
+					foreach (T result in oneInterfaceQuery(interfaceType))
+					{
+						yield return result;
+					}
 
-			IEnumerable<T> result = oneInterfaceQuery(interfaceType);
-			return result.Concat(interfaceType.ImplementedInterfaces.SelectMany(i => oneInterfaceQuery(i.GetTypeInfo())));
+					foreach (TypeInfo baseIface in interfaceType.ImplementedInterfaces)
+					{
+						if (ifaces.Add(baseIface))
+						{
+							foreach (T result in oneInterfaceQuery(baseIface))
+							{
+								yield return result;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		private static T CreateProxyHelper<T>(T target, ExceptionProcessing exceptionStrategy)
+			where T : class
+		{
+			return CreateProxy<T>(target, default, exceptionStrategy);
+		}
+	}
+
+	private class TypeArrayUnorderedEqualityComparer : IEqualityComparer<ReadOnlyMemory<Type>>
+	{
+		internal static readonly TypeArrayUnorderedEqualityComparer Instance = new();
+
+		private TypeArrayUnorderedEqualityComparer()
+		{
+		}
+
+		public bool Equals(ReadOnlyMemory<Type> x, ReadOnlyMemory<Type> y)
+		{
+			if (x.Length != y.Length)
+			{
+				return false;
+			}
+
+			bool mismatchFound = false;
+			for (int i = 0; i < x.Span.Length; i++)
+			{
+				if (!x.Span[i].IsEquivalentTo(y.Span[i]))
+				{
+					mismatchFound = true;
+					break;
+				}
+			}
+
+			if (!mismatchFound)
+			{
+				return true;
+			}
+
+			// Try falling back to a disordered comparison.
+			// We use an n^2 search instead of allocating because the length of these arrays tends to be *very* small.
+			for (int i = 0; i < x.Span.Length; i++)
+			{
+				bool matchFound = false;
+				for (int j = 0; j < y.Span.Length; j++)
+				{
+					if (x.Span[i].IsEquivalentTo(y.Span[j]))
+					{
+						matchFound = true;
+						break;
+					}
+				}
+
+				if (!matchFound)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		public int GetHashCode([DisallowNull] ReadOnlyMemory<Type> obj)
+		{
+			int hashCode = obj.Length;
+			for (int i = 0; i < obj.Span.Length; i++)
+			{
+				hashCode = (hashCode * 31) + obj.Span[i].GetHashCode();
+			}
+
+			return hashCode;
 		}
 	}
 

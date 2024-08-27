@@ -192,7 +192,7 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 	}
 
 	[Fact]
-	public void TargetImplementsIJsonRpcLocalProxy()
+	public async Task TargetImplementsIJsonRpcLocalProxy()
 	{
 		var target = new SomeNonDisposableService();
 		ISomeService? proxy = this.CreateProxy<ISomeService>(target);
@@ -204,10 +204,23 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 
 		ISomeService2? newProxy = jsonRpcLocalProxy!.ConstructLocalProxy<ISomeService2>();
 		Assert.NotNull(newProxy);
-		Assert.Equal(proxy.GetIdentifier().Result, newProxy!.GetIdentifier().Result);
+		Assert.Equal(await proxy.GetIdentifier(), await newProxy!.GetIdentifier());
 
 		ISomeServiceNotImplemented? nullProxy = jsonRpcLocalProxy!.ConstructLocalProxy<ISomeServiceNotImplemented>();
 		Assert.Null(nullProxy);
+	}
+
+	/// <summary>
+	/// Verifies that local proxies cannot be created over an object that does not implement the required interfaces.
+	/// </summary>
+	[Fact]
+	public void WithAdditionalServiceInterfaces_NonExistingOnTarget()
+	{
+		ServiceCompositionException ex = Assert.Throws<ServiceCompositionException>(() => this.CreateProxy<ISomeService>(
+			new SomeNonDisposableService(),
+			SomeDescriptor.WithAdditionalServiceInterfaces([typeof(IDisposable)])));
+		Assert.IsType<InvalidCastException>(ex.InnerException);
+		this.Logger.WriteLine(ex.ToString());
 	}
 
 	protected override T? CreateProxy<T>(T? target, ServiceJsonRpcDescriptor descriptor)

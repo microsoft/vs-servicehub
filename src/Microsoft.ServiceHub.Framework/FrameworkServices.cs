@@ -21,7 +21,7 @@ public static class FrameworkServices
 	/// </remarks>
 	public static readonly ServiceRpcDescriptor RemoteServiceBroker = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker(nameof(RemoteServiceBroker)),
-		ServiceJsonRpcDescriptor.Formatters.UTF8,
+		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 
 	/// <summary>
@@ -33,7 +33,7 @@ public static class FrameworkServices
 	/// </remarks>
 	public static readonly ServiceRpcDescriptor Authorization = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.ServiceHub.Framework.AuthorizationService"),
-		ServiceJsonRpcDescriptor.Formatters.UTF8,
+		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 
 	/// <summary>
@@ -44,7 +44,7 @@ public static class FrameworkServices
 	/// </remarks>
 	public static readonly ServiceRpcDescriptor RemoteBrokeredServiceManifest = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.VisualStudio.RemoteBrokeredServiceManifest", new Version(0, 2)),
-		ServiceJsonRpcDescriptor.Formatters.UTF8,
+		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 
 	/// <summary>
@@ -75,7 +75,7 @@ public static class FrameworkServices
 		}
 
 		/// <inheritdoc />
-		protected override JsonRpcConnection CreateConnection(JsonRpc jsonRpc)
+		protected internal override JsonRpcConnection CreateConnection(JsonRpc jsonRpc)
 		{
 			JsonRpcConnection connection = base.CreateConnection(jsonRpc);
 			connection.LocalRpcTargetOptions.MethodNameTransform = NameNormalize;
@@ -85,7 +85,7 @@ public static class FrameworkServices
 			return connection;
 		}
 
-		protected override IJsonRpcMessageFormatter CreateFormatter()
+		protected internal override IJsonRpcMessageFormatter CreateFormatter()
 		{
 			IJsonRpcMessageFormatter formatter = base.CreateFormatter();
 
@@ -95,6 +95,9 @@ public static class FrameworkServices
 			{
 				case JsonMessageFormatter jsonFormatter:
 					ConfigureJsonFormatter(jsonFormatter);
+					break;
+				case SystemTextJsonFormatter stjFormatter:
+					ConfigureJsonFormatter(stjFormatter);
 					break;
 				default:
 					throw new NotSupportedException("Unsupported formatter type: " + formatter.GetType().FullName);
@@ -108,6 +111,10 @@ public static class FrameworkServices
 		private static void ConfigureJsonFormatter(JsonMessageFormatter jsonFormatter)
 		{
 			jsonFormatter.JsonSerializer.Converters.Add(new VersionConverter());
+		}
+
+		private static void ConfigureJsonFormatter(SystemTextJsonFormatter jsonFormatter)
+		{
 		}
 	}
 }

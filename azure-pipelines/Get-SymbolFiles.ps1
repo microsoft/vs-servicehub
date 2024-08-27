@@ -18,7 +18,7 @@ Write-Progress -Activity $ActivityName -CurrentOperation "Discovery PDB files"
 $PDBs = Get-ChildItem -rec "$Path/*.pdb"
 
 # Filter PDBs to product OR test related.
-$testregex = "unittest|tests|\.test\."
+$testregex = "unittest|tests|\.test\.|ExternalTestAssembly|ServiceBrokerTest"
 
 Write-Progress -Activity $ActivityName -CurrentOperation "De-duplicating symbols"
 $PDBsByHash = @{}
@@ -43,8 +43,13 @@ $PDBs |% {
     }
 } |% {
     # Collect the DLLs/EXEs as well.
-    $dllPath = "$($_.Directory)/$($_.BaseName).dll"
-    $exePath = "$($_.Directory)/$($_.BaseName).exe"
+    $rootName = "$($_.Directory)/$($_.BaseName)"
+    if ($rootName.EndsWith('.ni')) {
+        $rootName = $rootName.Substring(0, $rootName.Length - 3)
+    }
+
+    $dllPath = "$rootName.dll"
+    $exePath = "$rootName.exe"
     if (Test-Path $dllPath) {
         $BinaryImagePath = $dllPath
     } elseif (Test-Path $exePath) {

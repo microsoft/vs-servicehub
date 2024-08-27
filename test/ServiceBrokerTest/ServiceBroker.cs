@@ -51,7 +51,7 @@ internal class ServiceBroker : IServiceBroker
 		Func<object> factory;
 		if (serviceMoniker.Name == "Calculator")
 		{
-			descriptor = new ServiceJsonRpcDescriptor(serviceMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
+			descriptor = new ServiceJsonRpcDescriptor(serviceMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
 			factory = () => new Calculator();
 		}
 		else if (serviceMoniker.Name == "CalculatorUtf8BE32")
@@ -80,10 +80,10 @@ internal class ServiceBroker : IServiceBroker
 		}
 
 		(IDuplexPipe, IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
-		if (descriptor is ServiceJsonRpcDescriptor serviceJsonRpcDescriptor)
+		if (descriptor is not ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null })
 		{
 #pragma warning disable CS0618 // Type or member is obsolete
-			descriptor = serviceJsonRpcDescriptor.WithMultiplexingStream(options.MultiplexingStream);
+			descriptor = descriptor.WithMultiplexingStream(options.MultiplexingStream);
 #pragma warning restore CS0618 // Type or member is obsolete
 		}
 

@@ -2,10 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.ComponentModel.Composition;
+using System.IO.Pipelines;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.ServiceHub.Framework.Testing;
+using Microsoft.VisualStudio.Composition;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,9 +23,24 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 	private interface ICalculator
 	{
-		ValueTask<MockService> GetThisAsync();
+		ValueTask<ICalculator> GetThisAsync();
 
 		ValueTask<int> AddAsync(int a, int b);
+	}
+
+	private interface ISubtractingCalculator
+	{
+		ValueTask<int> SubtractAsync(int a, int b);
+	}
+
+	private interface ICallbackInterface
+	{
+		Task CallbackAsync(string message);
+	}
+
+	private interface IServiceWithCallback
+	{
+		Task CallMeAsync(string message);
 	}
 
 	private IServiceBroker ServiceBroker => this.container.GetFullAccessServiceBroker();
@@ -52,6 +69,42 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		{
 			Assumes.Present(calc);
 			Assert.Equal(5, await calc.AddAsync(2, 3));
+		}
+	}
+
+	[Fact]
+	public async Task InvokeBrokeredService_WithoutOptionalInterface()
+	{
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor);
+		using (calc as IDisposable)
+		{
+			Assumes.Present(calc);
+			Assert.IsNotAssignableFrom<ISubtractingCalculator>(calc);
+		}
+	}
+
+	[Theory, PairwiseData]
+	public async Task InvokeBrokeredService_WithOptionalInterface(bool serializedCatalog)
+	{
+		if (serializedCatalog)
+		{
+			this.container = new();
+
+			MefHost mefHost = new MefHost(serializedCatalog: true)
+			{
+				BrokeredServiceContainer = this.container,
+			};
+
+			// This has a side effect of registering MEF exported brokered services into the mock container.
+			await mefHost.CreateExportProviderAsync();
+		}
+
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext);
+		using (calc as IDisposable)
+		{
+			Assumes.Present(calc);
+			ISubtractingCalculator subCalc = Assert.IsAssignableFrom<ISubtractingCalculator>(calc);
+			Assert.Equal(-1, await subCalc.SubtractAsync(2, 3));
 		}
 	}
 
@@ -85,7 +138,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
-			realObject = await calc.GetThisAsync();
+			realObject = (MockService)await calc.GetThisAsync();
 			Assert.Equal(1, realObject.InitializeInvocationCount);
 		}
 
@@ -100,7 +153,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
-			realObject = await calc.GetThisAsync();
+			realObject = (MockService)await calc.GetThisAsync();
 			Assert.Equal(0, realObject.DisposalInvocationCount);
 		}
 
@@ -117,7 +170,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
-			realObject = await calc.GetThisAsync();
+			realObject = (MockService)await calc.GetThisAsync();
 			Assert.Equal(0, realObject.DisposalInvocationCount);
 		}
 
@@ -138,17 +191,110 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
-			realObject1 = await calc.GetThisAsync();
+			realObject1 = (MockService)await calc.GetThisAsync();
 		}
 
 		calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
-			realObject2 = await calc.GetThisAsync();
+			realObject2 = (MockService)await calc.GetThisAsync();
 		}
 
 		Assert.NotSame(realObject1, realObject2);
+	}
+
+	[Fact]
+	public async Task NullVersion_NullDescriptor_GetPipe()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(9, 0)));
+		Assert.Null(calc);
+		Assert.True(Assert.Single(NullVersionedCalculator.CreatedInstances).IsDisposed);
+	}
+
+	[Fact]
+	public async Task NullVersion_NonNullDescriptor_GetPipe()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(8, 0)));
+		Assert.NotNull(calc);
+		Assert.Single(NullVersionedCalculator.CreatedInstances);
+	}
+
+	[Fact]
+	public async Task NullVersion_NonNullDescriptor_GetPipe_NullVersion()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", null));
+		Assert.NotNull(calc);
+		Assert.Single(NullVersionedCalculator.CreatedInstances);
+	}
+
+	[Fact]
+	public async Task NullVersion_NullDescriptor_GetProxy()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(9, 0)));
+		Assert.Null(calc);
+		Assert.True(Assert.Single(NullVersionedCalculator.CreatedInstances).IsDisposed);
+	}
+
+	[Fact]
+	public async Task NullVersion_NonNullDescriptor_GetProxy()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(8, 0)));
+		Assert.NotNull(calc);
+		Assert.Single(NullVersionedCalculator.CreatedInstances);
+	}
+
+	[Fact]
+	public async Task NullVersion_NonNullDescriptor_GetProxy_NullVersion()
+	{
+		NullVersionedCalculator.CreatedInstances.Clear();
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(null));
+		Assert.NotNull(calc);
+		Assert.Single(NullVersionedCalculator.CreatedInstances);
+	}
+
+	[Theory, CombinatorialData]
+	public async Task ActivateBrokeredServiceWithClientCallback(bool usePipe)
+	{
+		string? receivedMessage = null;
+		ClientCallback client = new()
+		{
+			Callback = (string message) => receivedMessage = message,
+		};
+		IServiceWithCallback? svc;
+		if (usePipe)
+		{
+			// We do *not* pass the client RPC target in as options because for a genuine pipe, it wouldn't be available till we set up the RPC connection later.
+			IDuplexPipe? pipe = await this.ServiceBroker.GetPipeAsync(CallBackService.SharedDescriptor.Moniker, options: default, this.TimeoutToken);
+			Assert.NotNull(pipe);
+
+			// This is when a pipe client naturally sets up the client RPC target.
+			svc = CallBackService.SharedDescriptor.ConstructRpc<IServiceWithCallback>(client, pipe);
+		}
+		else
+		{
+			ServiceActivationOptions options = new()
+			{
+				ClientRpcTarget = client,
+			};
+			svc = await this.ServiceBroker.GetProxyAsync<IServiceWithCallback>(CallBackService.SharedDescriptor, options, this.TimeoutToken);
+			Assert.NotNull(svc);
+		}
+
+		try
+		{
+			await svc.CallMeAsync("hi");
+			Assert.Equal("hi", receivedMessage);
+		}
+		finally
+		{
+			(svc as IDisposable)?.Dispose();
+		}
 	}
 
 	[ExportBrokeredService("Calculator", "1.0")]
@@ -170,7 +316,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 		internal int DisposalInvocationCount { get; private set; }
 
-		public ValueTask<MockService> GetThisAsync() => new(this);
+		public ValueTask<ICalculator> GetThisAsync() => new(this);
 
 		public ValueTask<int> AddAsync(int a, int b) => new(a + b);
 
@@ -187,7 +333,8 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	}
 
 	[ExportBrokeredService("Calculator", "1.1")]
-	private class MockServiceWithImports : MockService
+	[ExportBrokeredService("Calculator", "1.2", typeof(ISubtractingCalculator))]
+	private class MockServiceWithImports : MockService, ISubtractingCalculator
 	{
 		internal static readonly new ServiceRpcDescriptor SharedDescriptor = new ServiceJsonRpcDescriptor(
 			new ServiceMoniker("Calculator", new Version("1.1")),
@@ -199,7 +346,17 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 				ProtocolMajorVersion = 3,
 			});
 
-		public override ServiceRpcDescriptor Descriptor => SharedDescriptor;
+		internal static readonly ServiceRpcDescriptor SharedDescriptorVNext = new ServiceJsonRpcDescriptor(
+			new ServiceMoniker("Calculator", new Version("1.2")),
+			clientInterface: null,
+			ServiceJsonRpcDescriptor.Formatters.MessagePack,
+			ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
+			new Nerdbank.Streams.MultiplexingStream.Options
+			{
+				ProtocolMajorVersion = 3,
+			});
+
+		public override ServiceRpcDescriptor Descriptor => this.ServiceMoniker.Version?.Minor == 2 ? SharedDescriptorVNext : SharedDescriptor;
 
 		[Import]
 		internal ServiceMoniker ServiceMoniker { get; set; } = null!;
@@ -212,5 +369,93 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 		[Import]
 		internal AuthorizationServiceClient AuthorizationServiceClient { get; set; } = null!;
+
+		public ValueTask<int> SubtractAsync(int a, int b) => new(a - b);
+	}
+
+	[ExportBrokeredService("CallBackService", "0.1")]
+	private class CallBackService : IServiceWithCallback, IExportedBrokeredService
+	{
+		internal static readonly ServiceRpcDescriptor SharedDescriptor = new ServiceJsonRpcDescriptor(
+			new ServiceMoniker("CallBackService", new Version(0, 1)),
+			typeof(ICallbackInterface),
+			ServiceJsonRpcDescriptor.Formatters.UTF8,
+			ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+
+		private CallBackService()
+		{
+		}
+
+		public ServiceRpcDescriptor Descriptor => SharedDescriptor;
+
+		[Import]
+		internal ServiceActivationOptions ServiceActivationOptions { get; set; }
+
+		public async Task CallMeAsync(string message)
+		{
+			Verify.Operation(this.ServiceActivationOptions.ClientRpcTarget is not null, "No callback provided.");
+			await ((ICallbackInterface)this.ServiceActivationOptions.ClientRpcTarget).CallbackAsync(message);
+		}
+
+		public Task InitializeAsync(CancellationToken cancellationToken)
+		{
+			return Task.CompletedTask;
+		}
+	}
+
+	private class ClientCallback : ICallbackInterface
+	{
+		internal Action<string>? Callback { get; set; }
+
+		public Task CallbackAsync(string message)
+		{
+			this.Callback?.Invoke(message);
+			return Task.CompletedTask;
+		}
+	}
+
+	[ExportBrokeredService("Calculator", null)]
+	private class NullVersionedCalculator : IExportedBrokeredService, ICalculator, IDisposable
+	{
+		internal static readonly Queue<NullVersionedCalculator> CreatedInstances = new();
+
+		private NullVersionedCalculator()
+		{
+			CreatedInstances.Enqueue(this);
+		}
+
+		public ServiceRpcDescriptor? Descriptor => this.ServiceMoniker.Version switch
+		{
+			null or { Major: 8 } => CreateDescriptor(this.ServiceMoniker.Version),
+			_ => null,
+		};
+
+		internal bool IsDisposed { get; private set; }
+
+		[Import]
+		private ServiceMoniker ServiceMoniker { get; set; } = null!;
+
+		public ValueTask<int> AddAsync(int a, int b)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Dispose()
+		{
+			this.IsDisposed = true;
+		}
+
+		public ValueTask<ICalculator> GetThisAsync()
+		{
+			throw new NotImplementedException();
+		}
+
+		public Task InitializeAsync(CancellationToken cancellationToken)
+		{
+			return Task.CompletedTask;
+		}
+
+		internal static ServiceRpcDescriptor CreateDescriptor(Version? version) =>
+			new ServiceJsonRpcDescriptor(new ServiceMoniker("Calculator", version), ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
 	}
 }

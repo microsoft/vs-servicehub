@@ -121,18 +121,18 @@
     <value>This typically takes the form of "({0} as IDisposable)?.Dispose();". Be sure to do this within a finally block that ensures the proxy is disposed of even in exceptional cases.</value>
   </data>
   <data name="ISB001_DisposeOfAcquiredProxy_MessageFormat" xml:space="preserve">
-    <value>Always dispose of proxies.</value>
+    <value>Always dispose of proxies</value>
     <comment>{0} is the name of the assigned local or member.</comment>
   </data>
   <data name="ISB001_DisposeOfProxyBeforeReplacingReference_Description" xml:space="preserve">
-    <value>This typically takes the form of "({0} as IDisposable)?.Dispose();"</value>
+    <value>This typically takes the form of "({0} as IDisposable)?.Dispose();".</value>
   </data>
   <data name="ISB001_DisposeOfProxyBeforeReplacingReference_MessageFormat" xml:space="preserve">
-    <value>Dispose of old proxy before overwriting reference to it.</value>
+    <value>Dispose of old proxy before overwriting reference to it</value>
     <comment>{0} is the name of the assigned local or member.</comment>
   </data>
   <data name="ISB001_ProxyMemberMustBeDisposedInDisposeMethod_MessageFormat" xml:space="preserve">
-    <value>The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type.</value>
+    <value>The proxy stored in "{0}.{1}" must be disposed by an IDisposable.Dispose or Dispose(bool) method on the "{0}" type</value>
     <comment>{0} is the containing type for the {1} member.</comment>
   </data>
   <data name="ISB001_Title" xml:space="preserve">
@@ -142,9 +142,28 @@
     <value>Only use rentals as a local variable inside an async method and dispose the rental when done. If you need to store proxies for longer than the duration of an async method, use IServiceBroker instead.</value>
   </data>
   <data name="ISB002_MessageFormat" xml:space="preserve">
-    <value>Avoid storing ServiceBrokerClient.Rental&lt;T&gt; in a field or property.</value>
+    <value>Avoid storing ServiceBrokerClient.Rental&lt;T&gt; in a field or property</value>
   </data>
   <data name="ISB002_Title" xml:space="preserve">
     <value>Avoid storing rentals in fields</value>
+  </data>
+  <data name="ISB003_Description" xml:space="preserve">
+    <value>Classes attributed with ExportBrokeredServiceAttribute must implement IExportedBrokeredService.</value>
+  </data>
+  <data name="ISB003_MessageFormat" xml:space="preserve">
+    <value>The type "{0}" must implement IExportedBrokeredService</value>
+    <comment>{0} is a type name.</comment>
+  </data>
+  <data name="ISB003_Title" xml:space="preserve">
+    <value>Exported brokered service validity</value>
+  </data>
+  <data name="ISB004_Title" xml:space="preserve">
+    <value>Optional interfaces must be implemented</value>
+  </data>
+  <data name="ISB004_Description" xml:space="preserve">
+    <value>Exported brokered services may declare optional interfaces that they support, but these must actually be implemented by the brokered service.</value>
+  </data>
+  <data name="ISB004_MessageFormat" xml:space="preserve">
+    <value>The brokered service must implement the '{0}' interface or remove it from its list of supported optional interfaces</value>
   </data>
 </root>

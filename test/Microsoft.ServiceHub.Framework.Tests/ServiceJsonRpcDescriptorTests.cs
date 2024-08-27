@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft;
@@ -70,8 +71,11 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	[Fact]
 	public void Ctor_SetsPropertiesWithClone()
 	{
+		ImmutableArray<Type> additionalServiceInterfaces = [typeof(IDisposable)];
 		var descriptor = new TestServiceJsonRpcDescriptor(SomeMoniker, null, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStreamOptions);
-		descriptor = (TestServiceJsonRpcDescriptor)descriptor.WithExceptionStrategy(descriptor.ExceptionStrategy == ExceptionProcessing.ISerializable ? ExceptionProcessing.CommonErrorData : ExceptionProcessing.ISerializable);
+		descriptor = (TestServiceJsonRpcDescriptor)descriptor
+			.WithExceptionStrategy(descriptor.ExceptionStrategy == ExceptionProcessing.ISerializable ? ExceptionProcessing.CommonErrorData : ExceptionProcessing.ISerializable)
+			.WithAdditionalServiceInterfaces(additionalServiceInterfaces);
 
 		TestServiceJsonRpcDescriptor descriptorCopied = descriptor.CopyWithClone();
 
@@ -83,6 +87,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.Equal(MultiplexingStreamOptions.SeededChannels, descriptorCopied.MultiplexingStreamOptions?.SeededChannels);
 		Assert.True(descriptorCopied.MultiplexingStreamOptions?.IsFrozen);
 		Assert.Equal(descriptor.ExceptionStrategy, descriptorCopied.ExceptionStrategy);
+		Assert.Equal(additionalServiceInterfaces, descriptor.AdditionalServiceInterfaces);
 	}
 
 	[Fact]
@@ -164,6 +169,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	}
 
 	[Theory]
+	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]
 	[InlineData(ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader)]
@@ -467,6 +473,39 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.NotSame(descriptor, modified);
 		Assert.Equal(ExceptionProcessing.ISerializable, modified.ExceptionStrategy);
 		Assert.Equal(ExceptionProcessing.CommonErrorData, descriptor.ExceptionStrategy);
+	}
+
+	[Fact]
+	public void AdditionalServiceInterfaces_Default()
+	{
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		Assert.False(descriptor.AdditionalServiceInterfaces.HasValue);
+	}
+
+	[Fact]
+	public void WithAdditionalServiceInterfaces()
+	{
+		ImmutableArray<Type> additionalServiceInterfaces2 = [typeof(IDisposable)];
+		ImmutableArray<Type> additionalServiceInterfaces3 = [typeof(System.IAsyncDisposable)];
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		ServiceJsonRpcDescriptor descriptor2 = descriptor.WithAdditionalServiceInterfaces(additionalServiceInterfaces2);
+		Assert.NotSame(descriptor, descriptor2);
+		Assert.Equal(additionalServiceInterfaces2, descriptor2.AdditionalServiceInterfaces);
+
+		Assert.Same(descriptor2, descriptor2.WithAdditionalServiceInterfaces(additionalServiceInterfaces2));
+		ServiceJsonRpcDescriptor descriptor3 = descriptor2.WithAdditionalServiceInterfaces(additionalServiceInterfaces3);
+		Assert.NotSame(descriptor2, descriptor3);
+		Assert.Equal(additionalServiceInterfaces3, descriptor3.AdditionalServiceInterfaces);
+
+		Assert.Null(descriptor.WithAdditionalServiceInterfaces(null).AdditionalServiceInterfaces);
+	}
+
+	[Fact]
+	public void WithAdditionalServiceInterfaces_RejectsUnitializedArray()
+	{
+		ServiceJsonRpcDescriptor descriptor = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		ImmutableArray<Type> defaultArray = default; // this is an invalid value because it is uninitialized.
+		Assert.Throws<ArgumentException>(() => descriptor.WithAdditionalServiceInterfaces(defaultArray));
 	}
 
 	private static ServiceJsonRpcDescriptor CreateDefault(ServiceMoniker? moniker = null) => new ServiceJsonRpcDescriptor(moniker ?? SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);

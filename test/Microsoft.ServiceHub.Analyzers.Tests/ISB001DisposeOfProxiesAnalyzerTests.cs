@@ -3,7 +3,6 @@
 
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.ServiceHub.Analyzers;
-using Xunit;
 using Verify = CSharpCodeFixVerifier<Microsoft.ServiceHub.Analyzers.ISB001DisposeOfProxiesAnalyzer, Microsoft.CodeAnalysis.Testing.EmptyCodeFixProvider>;
 
 public class ISB001DisposeOfProxiesAnalyzerTests
@@ -109,6 +108,55 @@ class Test {
         using (client as IDisposable) {
             """".ToString(); // something else that might throw
         }
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_DisposedByUsingWithoutCast()
+	{
+		string test = Preamble + @"
+interface IFooDisposable : IFoo, IDisposable {}
+class Test {
+    async Task Foo(IServiceBroker sb) {
+        IFooDisposable client = await sb.GetProxyAsync<IFooDisposable>(Stock.Descriptor);
+        using (client) {
+            """".ToString(); // something else that might throw
+        }
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_DisposedByUsingLocalDeclaration()
+	{
+		string test = Preamble + @"
+interface IFooDisposable : IFoo, IDisposable {}
+class Test {
+    async Task Foo(IServiceBroker sb) {
+        using IFooDisposable client = await sb.GetProxyAsync<IFooDisposable>(Stock.Descriptor);
+        """".ToString(); // something else that might throw
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task ServiceBrokerClient_DisposedByUsingLocalDeclaration()
+	{
+		string test = Preamble + @"
+class Test {
+    void Foo(IServiceBroker sb) {
+        using ServiceBrokerClient client = new(sb);
+        """".ToString(); // something else that might throw
     }
 }
 ";

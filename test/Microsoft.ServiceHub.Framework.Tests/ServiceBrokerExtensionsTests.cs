@@ -24,15 +24,15 @@ public class ServiceBrokerExtensionsTests
 	}
 
 	[Fact]
-	public void GetPipeAsync_PropagatesArguments()
+	public async Task GetPipeAsync_PropagatesArguments()
 	{
-		Assert.Same(MockPipe.Instance, ServiceBrokerExtensions.GetPipeAsync(MockServiceBroker.Instance, SomeMoniker, this.cancelableToken).Result);
+		Assert.Same(MockPipe.Instance, await ServiceBrokerExtensions.GetPipeAsync(MockServiceBroker.Instance, SomeMoniker, this.cancelableToken));
 	}
 
 	[Fact]
-	public void GetProxyAsync_PropagatesArguments()
+	public async Task GetProxyAsync_PropagatesArguments()
 	{
-		Assert.NotNull(ServiceBrokerExtensions.GetProxyAsync<object>(MockServiceBroker.Instance, SomeDescriptor, this.cancelableToken).Result);
+		Assert.NotNull(await ServiceBrokerExtensions.GetProxyAsync<object>(MockServiceBroker.Instance, SomeDescriptor, this.cancelableToken));
 	}
 
 	[Fact]

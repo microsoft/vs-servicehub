@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using Microsoft.ServiceHub.Framework;
 
@@ -30,17 +32,28 @@ public class ExportBrokeredServiceAttribute : ExportAttribute
 {
 	private ServiceAudience audience = ServiceAudience.Process;
 
+	/// <inheritdoc cref="ExportBrokeredServiceAttribute(string, string, Type[])"/>
+	public ExportBrokeredServiceAttribute(string name, string? version)
+		: this(name, version, Type.EmptyTypes)
+	{
+	}
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ExportBrokeredServiceAttribute"/> class.
 	/// </summary>
 	/// <param name="name">The name of the service (same as <see cref="ServiceMoniker.Name"/>.)</param>
 	/// <param name="version">The version of the proffered service (same as <see cref="ServiceMoniker.Version"/>). May be null.</param>
-	public ExportBrokeredServiceAttribute(string name, string? version)
+	/// <param name="optionalInterfaces">An array of <em>optional</em> interfaces that the exported brokered service implements and wishes to advertise as available to the client.</param>
+	public ExportBrokeredServiceAttribute(string name, string? version, params Type[] optionalInterfaces)
 		: base(typeof(IExportedBrokeredService))
 	{
 		Requires.NotNullOrEmpty(name, nameof(name));
 		this.ServiceName = name;
 		this.ServiceVersion = version;
+
+		// We must render this as an array of strings so that when the metadata is read back from the MEF cache,
+		// it doesn't require loading the assembly that declares the optional interface.
+		this.OptionalInterfacesImplemented = optionalInterfaces.Select(t => t.AssemblyQualifiedName!).ToArray();
 	}
 
 	/// <summary>
@@ -52,6 +65,12 @@ public class ExportBrokeredServiceAttribute : ExportAttribute
 	/// Gets the <see cref="ServiceMoniker.Version"/> of the exported brokered service.
 	/// </summary>
 	public string? ServiceVersion { get; }
+
+	/// <summary>
+	/// Gets an array of <see cref="Type.AssemblyQualifiedName">assembly-qualified names</see> of <em>optional</em> interfaces
+	/// that the exported brokered service implements.
+	/// </summary>
+	public string[] OptionalInterfacesImplemented { get; } = [];
 
 	/// <summary>
 	/// Gets or sets a value indicating which clients should be allowed to directly acquire this service.
@@ -120,6 +139,10 @@ internal interface IBrokeredServicesExportMetadata
 
 	/// <inheritdoc cref="ExportBrokeredServiceAttribute.ServiceVersion"/>
 	string?[] ServiceVersion { get; }
+
+	/// <inheritdoc cref="ExportBrokeredServiceAttribute.OptionalInterfacesImplemented"/>
+	[DefaultValue(null)]
+	string[]?[]? OptionalInterfacesImplemented { get; }
 
 	/// <inheritdoc cref="ExportBrokeredServiceAttribute.Audience"/>
 	ServiceAudience[] Audience { get; }

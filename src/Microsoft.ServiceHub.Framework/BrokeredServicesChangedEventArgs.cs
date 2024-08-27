@@ -2,7 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
-using Newtonsoft.Json;
+using JsonNET = Newtonsoft.Json;
+using STJ = System.Text.Json.Serialization;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -26,7 +27,8 @@ public class BrokeredServicesChangedEventArgs : EventArgs
 	/// </summary>
 	/// <param name="impactedServices">The set of services that are impacted by the change.</param>
 	/// <param name="otherServicesImpacted">A value indicating whether other services not included in <see cref="ImpactedServices"/> may also be impacted.</param>
-	[JsonConstructor]
+	[JsonNET.JsonConstructor]
+	[STJ.JsonConstructor]
 	public BrokeredServicesChangedEventArgs(IImmutableSet<ServiceMoniker> impactedServices, bool otherServicesImpacted)
 	{
 		Requires.NotNull(impactedServices, nameof(impactedServices));

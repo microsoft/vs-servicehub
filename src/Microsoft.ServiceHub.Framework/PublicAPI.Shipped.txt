@@ -287,3 +287,224 @@ virtual Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithMultiplexingStre
 virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.Equals(Microsoft.ServiceHub.Framework.Services.ProtectedOperation? other) -> bool
 virtual Microsoft.ServiceHub.Framework.Services.ProtectedOperation.IsSupersetOf(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! other) -> bool
 Microsoft.ServiceHub.Framework.ServerFactory
+abstract Microsoft.VisualStudio.Shell.ServiceBroker.ServiceBrokerOfExportedServices.GetBrokeredServiceContainerAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer!>!
+abstract Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.LocalUserCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Microsoft.ServiceHub.Framework.IIpcServer
+Microsoft.ServiceHub.Framework.IIpcServer.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IIpcServer.Name.get -> string!
+Microsoft.ServiceHub.Framework.IIpcServer.TraceSource.get -> System.Diagnostics.TraceSource!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Completion.get -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose() -> void
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.get -> System.Diagnostics.TraceSource?
+Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.TraceSource.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ClientOptions() -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.CpuSpinOverFirstChanceExceptions.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.CpuSpinOverFirstChanceExceptions.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.FailFast.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.FailFast.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.AllowMultipleClients.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Name.get -> string?
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Name.init -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.ServerOptions() -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.get -> System.Diagnostics.TraceSource?
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.TraceSource.init -> void
+Microsoft.ServiceHub.Framework.ServiceActivationOptions.CultureApplication.CultureApplication() -> void
+Microsoft.ServiceHub.Framework.ServiceBrokerClient.Rental<T>.Rental() -> void
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.JoinableTaskFactory.get -> Microsoft.VisualStudio.Threading.JoinableTaskFactory?
+Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.WithJoinableTaskFactory(Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+Microsoft.ServiceHub.Framework.Services.IBrokeredServiceManifest
+Microsoft.ServiceHub.Framework.Services.IBrokeredServiceManifest.GetAvailableServicesAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyCollection<Microsoft.ServiceHub.Framework.ServiceMoniker!>!>
+Microsoft.ServiceHub.Framework.Services.IBrokeredServiceManifest.GetAvailableVersionsAsync(string! serviceName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableSortedSet<System.Version?>!>
+Microsoft.VisualStudio.Shell.ServiceBroker.AuthorizingBrokeredServiceFactory
+Microsoft.VisualStudio.Shell.ServiceBroker.BrokeredServiceFactory
+Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy
+Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy.FilterOverridesRequest = 1 -> Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy
+Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy.RequestOverridesDefault = 0 -> Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.AllowTransitiveGuestClients.get -> bool
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.AllowTransitiveGuestClients.set -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.Audience.get -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.Audience.set -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.ExportBrokeredServiceAttribute(string! name, string? version) -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.ServiceName.get -> string!
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.ServiceVersion.get -> string?
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainer
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainer.GetFullAccessServiceBroker() -> Microsoft.ServiceHub.Framework.IServiceBroker!
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainer.Proffer(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Shell.ServiceBroker.AuthorizingBrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainer.Proffer(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Shell.ServiceBroker.BrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerDiagnostics
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerDiagnostics.ExportDiagnosticsAsync(string! filePath, Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience serviceAudience, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal.GetLimitedAccessServiceBroker(Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience audience, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! clientCredentials, Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy credentialPolicy) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+Microsoft.VisualStudio.Shell.ServiceBroker.IBrokeredServiceContainerInternal.LocalUserCredentials.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService
+Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService.Descriptor.get -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor?
+Microsoft.VisualStudio.Shell.ServiceBroker.IExportedBrokeredService.InitializeAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.AllClientsIncludingGuests = Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.Local | Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.RemoteExclusiveClient | Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.LiveShareGuest -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.LiveShareGuest = 1024 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.Local = 3 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.None = 0 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.Process = 1 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.PublicSdk = 268435456 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.RemoteExclusiveClient = 256 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience.RemoteExclusiveServer = 2048 -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceBrokerOfExportedServices
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceBrokerOfExportedServices.RegisterAndProfferServices(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer! container) -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceBrokerOfExportedServices.RegisterAndProfferServicesAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Shell.ServiceBroker.ServiceBrokerOfExportedServices.ServiceBrokerOfExportedServices() -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.SVsBrokeredServiceContainer
+Microsoft.VisualStudio.Shell.ServiceBroker.SVsFullAccessServiceBroker
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ApplyChaosMonkeyConfigurationAsync(string! chaosMonkeyConfigurationPath, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.BrokeredServiceManifest
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.BrokeredServiceManifest.BrokeredServiceManifest(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer! container, Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience serviceAudience) -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.BrokeredServiceManifest.GetAvailableServicesAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyCollection<Microsoft.ServiceHub.Framework.ServiceMoniker!>!>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.BrokeredServiceManifest.GetAvailableVersionsAsync(string! serviceName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Collections.Immutable.ImmutableSortedSet<System.Version?>!>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ExportDiagnosticsAsync(string! filePath, Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience serviceAudience, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetFullAccessServiceBroker() -> Microsoft.ServiceHub.Framework.IServiceBroker!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetLimitedAccessRemoteServiceBroker(Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience audience, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! clientCredentials, Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy credentialPolicy) -> Microsoft.ServiceHub.Framework.IRemoteServiceBroker!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetLimitedAccessServiceBroker(Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience audience, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! clientCredentials, Microsoft.VisualStudio.Shell.ServiceBroker.ClientCredentialsPolicy credentialPolicy) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetSecureServiceBroker(Microsoft.ServiceHub.Framework.ServiceActivationOptions options) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetServicesThatMayBeExpected(Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource remoteSource) -> System.Collections.Generic.IEnumerable<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetTraceSourceForBrokeredServiceAsync(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, bool clientRole, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Diagnostics.TraceSource?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GlobalBrokeredServiceContainer(System.Collections.Immutable.ImmutableDictionary<Microsoft.ServiceHub.Framework.ServiceMoniker!, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration!>! services, bool isClientOfExclusiveServer, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory, System.Diagnostics.TraceSource! traceSource) -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered.Monikers.get -> System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered.Source.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.Proffer(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, System.Collections.Generic.IReadOnlyCollection<Microsoft.ServiceHub.Framework.ServiceMoniker!>! serviceMonikers) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.Proffer(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Shell.ServiceBroker.AuthorizingBrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.Proffer(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Shell.ServiceBroker.BrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.Dispose() -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.Monikers.get -> System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedRemoteServiceBroker.Source.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.Dispose() -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.Monikers.get -> System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceBroker.Source.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.Dispose() -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.Monikers.get -> System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.Source.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedViewIntrinsicService
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedViewIntrinsicService.GetPipeAsync(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View! view, Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedViewIntrinsicService.GetProxyAsync<T>(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View! view, Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options = default(Microsoft.ServiceHub.Framework.ServiceActivationOptions), System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T?>
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferIntrinsicService(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration! newRegistration, Microsoft.VisualStudio.Shell.ServiceBroker.BrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferIntrinsicService(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration! newRegistration, Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ViewIntrinsicBrokeredServiceFactory! factory) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferRemoteBroker(Microsoft.ServiceHub.Framework.IRemoteServiceBroker! serviceBroker, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource source, System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>? serviceMonikers = null) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferRemoteBroker(Microsoft.ServiceHub.Framework.IRemoteServiceBroker! serviceBroker, Nerdbank.Streams.MultiplexingStream? multiplexingStream, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource source, System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>? serviceMonikers = null) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferRemoteBroker(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource source, System.Collections.Immutable.ImmutableHashSet<Microsoft.ServiceHub.Framework.ServiceMoniker!>? serviceMonikers = null) -> System.IDisposable!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RegisteredServices.get -> System.Collections.Immutable.ImmutableDictionary<Microsoft.ServiceHub.Framework.ServiceMoniker!, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RegisterServices(System.Collections.Generic.IReadOnlyDictionary<Microsoft.ServiceHub.Framework.ServiceMoniker!, Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration!>! services) -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult.Declined = 2 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult.DeclinedNotFound = 4 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult.Fulfilled = 1 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType.Pipe = 1 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType.Proxy = 0 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.EventHandlerFaulted = 4 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.LoadPackage = 3 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.Proffered = 1 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.Registered = 0 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.Request = 2 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.UnregisterServices(System.Collections.Generic.IEnumerable<Microsoft.ServiceHub.Framework.ServiceMoniker!>! services) -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.Audience.get -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.AvailabilityChanged -> System.EventHandler<Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs!>?
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.CancelServiceRequestAsync(System.Guid serviceRequestId) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.HandshakeAsync(Microsoft.ServiceHub.Framework.ServiceBrokerClientMetadata clientMetadata, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.RequestServiceChannelAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions serviceActivationOptions, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceConnectionInfo>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ViewIntrinsicBrokeredServiceFactory
+Microsoft.VisualStudio.Utilities.ServiceBroker.IMissingServiceDiagnosticsService
+Microsoft.VisualStudio.Utilities.ServiceBroker.IMissingServiceDiagnosticsService.AnalyzeMissingServiceAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! missingServiceMoniker, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Microsoft.VisualStudio.Utilities.ServiceBroker.MissingServiceAnalysis!>!
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.ChaosConfigurationDeniedRequest = 2 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.LocalServiceHiddenOnExclusiveClient = 3 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.LocalServiceHiddenOnRemoteClient = 8 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.NoExplanation = 0 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.NotLocallyRegistered = 1 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.ServiceAudienceMismatch = 4 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.ServiceFactoryFault = 7 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.ServiceFactoryNotProffered = 5 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode.ServiceFactoryReturnedNull = 6 -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingServiceAnalysis
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingServiceAnalysis.ErrorCode.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.MissingBrokeredServiceErrorCode
+Microsoft.VisualStudio.Utilities.ServiceBroker.MissingServiceAnalysis.ExpectedSource.get -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource?
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AllowGuestClients.get -> bool
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.Audience.get -> Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.DebuggerDisplay.get -> string!
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.IsExposedLocally.get -> bool
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.IsExposedRemotely.get -> bool
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.ProfferingPackageId.get -> object?
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.ServiceRegistration(Microsoft.VisualStudio.Shell.ServiceBroker.ServiceAudience audience, object? profferingPackageId, bool allowGuestClients) -> void
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.OtherProcessOnSameMachine = 1 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.SameProcess = 0 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.TrustedExclusiveClient = 5 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.TrustedExclusiveServer = 4 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.TrustedServer = 2 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource.UntrustedServer = 3 -> Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceSource
+override Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedViewIntrinsicService.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+override Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedViewIntrinsicService.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+override Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.ToString() -> string!
+static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
+static Microsoft.ServiceHub.Framework.ServerFactory.ConnectAsync(string! pipeName, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
+static Microsoft.ServiceHub.Framework.ServerFactory.Create(System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions options = default(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions)) -> Microsoft.ServiceHub.Framework.IIpcServer!
+static Microsoft.ServiceHub.Framework.ServerFactory.CreateAsync(string! pipeName, System.Diagnostics.TraceSource? logger, System.Func<System.IO.Stream!, System.Threading.Tasks.Task!>! onConnectedCallback) -> System.Threading.Tasks.Task<(System.IDisposable! Server, string! ServerName)>!
+static Microsoft.ServiceHub.Framework.ServerFactory.PrependPipePrefix(string! leafPipeName) -> string!
+static Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.MissingServiceDiagnostics.get -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+static readonly Microsoft.ServiceHub.Framework.FrameworkServices.RemoteBrokeredServiceManifest -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+virtual Microsoft.ServiceHub.Framework.IpcRelayServiceBroker.Dispose(bool disposing) -> void
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ApplyDescriptorSettings(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! descriptor, bool clientRole) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.GetTraceSourceForConnectionAsync(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, bool clientRole, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.Diagnostics.TraceSource?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.OnRequestHandled(Microsoft.ServiceHub.Framework.ServiceMoniker! moniker, Microsoft.ServiceHub.Framework.ServiceRpcDescriptor? descriptor, Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestType type, Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.RequestResult result, Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered? proffered) -> void
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.Proffer(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.IProffered! proffered) -> System.IDisposable!
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ProfferedServiceFactory.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.GetPipeAsync(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Pipelines.IDuplexPipe?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View.GetProxyAsync<T>(Microsoft.ServiceHub.Framework.ServiceRpcDescriptor! serviceDescriptor, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<T?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.LoadProfferingPackageAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson = 2 -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(System.IO.Stream! duplexStream, Nerdbank.Streams.MultiplexingStream.Options? options, System.Diagnostics.TraceSource? traceSource, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(string! pipeName, System.Diagnostics.TraceSource? traceSource, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+static Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(System.IO.Pipelines.IDuplexPipe! pipe, System.Diagnostics.TraceSource? traceSource, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Microsoft.ServiceHub.Framework.RemoteServiceBroker!>!
+Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor
+Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.ApplySettingsToInnerDescriptor() -> void
+Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.DelegatingServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor! descriptor) -> void
+Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.DelegatingServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor! innerDescriptor) -> void
+override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.ConstructRpcConnection(System.IO.Pipelines.IDuplexPipe! pipe) -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor.RpcConnection!
+override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateConnection(StreamJsonRpc.JsonRpc! jsonRpc) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection!
+override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
+override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateHandler(System.IO.Pipelines.IDuplexPipe! pipe, StreamJsonRpc.IJsonRpcMessageFormatter! formatter) -> StreamJsonRpc.IJsonRpcMessageHandler!
+override Microsoft.ServiceHub.Framework.DelegatingServiceJsonRpcDescriptor.CreateJsonRpc(StreamJsonRpc.IJsonRpcMessageHandler! handler) -> StreamJsonRpc.JsonRpc!
+static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.NonDisposable(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker) -> Microsoft.ServiceHub.Framework.IServiceBroker!
+override Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.GetHashCode() -> int
+override Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.GetHashCode() -> int
+static Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.operator !=(Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions left, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions right) -> bool
+static Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.operator ==(Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions left, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions right) -> bool
+static Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.operator !=(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions left, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions right) -> bool
+static Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.operator ==(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions left, Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions right) -> bool
+virtual Microsoft.ServiceHub.Framework.ServiceBrokerClient.ClientProxiesInvalidatedEventHandler.Invoke(Microsoft.ServiceHub.Framework.ServiceBrokerClient! sender, Microsoft.ServiceHub.Framework.BrokeredServicesChangedEventArgs! args, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+virtual Microsoft.VisualStudio.Shell.ServiceBroker.AuthorizingBrokeredServiceFactory.Invoke(Microsoft.ServiceHub.Framework.ServiceMoniker! moniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.ServiceHub.Framework.Services.AuthorizationServiceClient! authorizationServiceClient, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<object?>
+virtual Microsoft.VisualStudio.Shell.ServiceBroker.BrokeredServiceFactory.Invoke(Microsoft.ServiceHub.Framework.ServiceMoniker! moniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<object?>
+virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.ViewIntrinsicBrokeredServiceFactory.Invoke(Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.View! view, Microsoft.ServiceHub.Framework.ServiceMoniker! moniker, Microsoft.ServiceHub.Framework.ServiceActivationOptions options, Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<object?>
+~override Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.Equals(object obj) -> bool
+~override Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ToString() -> string
+~override Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Equals(object obj) -> bool
+~override Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.ToString() -> string
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.Equals(Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions other) -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Equals(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions other) -> bool

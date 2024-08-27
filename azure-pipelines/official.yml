@@ -19,16 +19,18 @@ schedules:
     - main
 
 parameters:
-- name: SignTypeSelection
-  displayName: Sign type
-  type: string
-  default: Test
-  values: [ 'Test', 'Real' ]
+# As an entrypoint pipeline yml file, all parameters here show up in the Queue Run dialog.
+# If any paramaters should NOT be queue-time options, they should be removed from here
+# and references to them in this file replaced with hard-coded values.
+- name: ForceOfficialBuild
+  displayName: Official build (sign, compliance, etc.)
+  type: boolean
+  default: false # this should remain false so PR builds using this pipeline are unofficial
 - name: ShouldSkipOptimize
   displayName: Skip OptProf optimization
   type: boolean
   default: false
-- name: includeMacOS
+- name: EnableMacOSBuild
   displayName: Build on macOS
   type: boolean
   default: false # macOS is often bogged down in Azure Pipelines
@@ -36,35 +38,94 @@ parameters:
   displayName: Run tests
   type: boolean
   default: true
-- name: EnableCompliance
-  displayName: Run Compliance Tools
-  type: boolean
-  default: false
 - name: EnableAPIScan
-  displayName: Include APIScan with Compliance tools
+  displayName: Include APIScan with compliance tools
   type: boolean
-  default: true
+  default: true # enable in individual repos only AFTER updating TSAOptions.json with your own values
 
-stages:
+resources:
+  repositories:
+  - repository: MicroBuildTemplate
+    type: git
+    name: 1ESPipelineTemplates/MicroBuildTemplate
+    ref: refs/tags/release
 
-- stage: Build
-  variables:
-    MSBuildTreatWarningsAsErrors: true
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-    BuildConfiguration: Release
-    NUGET_PACKAGES: $(Agent.TempDirectory)/.nuget/packages
-    SignTypeSelection: ${{ parameters.SignTypeSelection }}
-    Packaging.EnableSBOMSigning: false
-    Codeql.Enabled: true
+variables:
+- template: GlobalVariables.yml
 
-  jobs:
-  - template: build.yml
+extends:
+  ${{ if or(parameters.ForceOfficialBuild, eq(variables['Build.Reason'],'Schedule')) }}:
+    template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
     parameters:
-      EnableCompliance: ${{ parameters.EnableCompliance }}
-      EnableAPIScan: ${{ parameters.EnableAPIScan }}
-      windowsPool: VSEngSS-MicroBuild2022-1ES
-      ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
-      includeMacOS: ${{ parameters.includeMacOS }}
-      RunTests: ${{ parameters.RunTests }}
-
-- template: prepare-insertion-stages.yml
+      sdl:
+        sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
+        codeSignValidation:
+          enabled: true
+          break: true
+          additionalTargetsGlobPattern: -|Variables-*\*.ps1;-|APIScanInputs-*\**;-|test_symbols-*\**;-|MicroBuild\**
+        policheck:
+          enabled: true
+          exclusionsFile: $(System.DefaultWorkingDirectory)\azure-pipelines\PoliCheckExclusions.xml
+        suppression:
+          suppressionFile: $(System.DefaultWorkingDirectory)\azure-pipelines\falsepositives.gdnsuppress
+        sbom:
+          enabled: true
+      stages:
+      - stage: Build
+        variables:
+        - template: /azure-pipelines/BuildStageVariables.yml@self
+        jobs:
+        - template: /azure-pipelines/build.yml@self
+          parameters:
+            Is1ESPT: true
+            RealSign: true
+            ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
+            EnableAPIScan: ${{ and(parameters.EnableAPIScan, ne(variables['Build.Reason'], 'pullRequest')) }}
+            windowsPool: VSEngSS-MicroBuild2022-1ES
+            linuxPool:
+              name: AzurePipelines-EO
+              demands:
+              - ImageOverride -equals 1ESPT-Ubuntu22.04
+              os: Linux
+            macOSPool:
+              name: Azure Pipelines
+              vmImage: macOS-12
+              os: macOS
+            EnableMacOSBuild: ${{ parameters.EnableMacOSBuild }}
+            RunTests: ${{ parameters.RunTests }}
+      - template: /azure-pipelines/prepare-insertion-stages.yml@self
+        parameters:
+          RealSign: true
+  ${{ else }}:
+    template: azure-pipelines/MicroBuild.1ES.Unofficial.yml@MicroBuildTemplate
+    parameters:
+      sdl:
+        sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
+        suppression:
+          suppressionFile: $(System.DefaultWorkingDirectory)\azure-pipelines\falsepositives.gdnsuppress
+      stages:
+      - stage: Build
+        variables:
+        - template: /azure-pipelines/BuildStageVariables.yml@self
+        jobs:
+        - template: /azure-pipelines/build.yml@self
+          parameters:
+            Is1ESPT: true
+            RealSign: false
+            ShouldSkipOptimize: ${{ parameters.ShouldSkipOptimize }}
+            EnableAPIScan: false
+            windowsPool: VSEngSS-MicroBuild2022-1ES
+            linuxPool:
+              name: AzurePipelines-EO
+              demands:
+              - ImageOverride -equals 1ESPT-Ubuntu22.04
+              os: Linux
+            macOSPool:
+              name: Azure Pipelines
+              vmImage: macOS-12
+              os: macOS
+            EnableMacOSBuild: ${{ parameters.EnableMacOSBuild }}
+            RunTests: ${{ parameters.RunTests }}
+      - template: /azure-pipelines/prepare-insertion-stages.yml@self
+        parameters:
+          RealSign: false

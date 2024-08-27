@@ -39,9 +39,14 @@ public class MockBrokeredServiceContainer : GlobalBrokeredServiceContainer
 	/// <inheritdoc />
 	public override IReadOnlyDictionary<string, string> LocalUserCredentials => ImmutableDictionary<string, string>.Empty;
 
+	/// <inheritdoc cref="GlobalBrokeredServiceContainer.RegisterServices(IReadOnlyDictionary{ServiceMoniker, ServiceRegistration})"/>
+	public new void RegisterServices(IReadOnlyDictionary<ServiceMoniker, ServiceRegistration> services) => base.RegisterServices(services);
+
 	/// <inheritdoc />
 	protected override IDisposable Proffer(IProffered proffered)
 	{
+		Requires.NotNull(proffered);
+
 		this.RegisterServicesIfNecessary(proffered);
 		return base.Proffer(proffered);
 	}

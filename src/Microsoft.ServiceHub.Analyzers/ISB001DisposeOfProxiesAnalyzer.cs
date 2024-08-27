@@ -43,7 +43,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		isEnabledByDefault: true);
 
 	/// <inheritdoc />
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
 		NonDisposalDescriptor,
 		OverwrittenMemberDescriptor,
 		ProxyMemberMustBeDisposedInDisposeMethodDescriptor);
@@ -51,6 +51,11 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 	/// <inheritdoc />
 	public override void Initialize(AnalysisContext context)
 	{
+		if (context is null)
+		{
+			throw new ArgumentNullException(nameof(context));
+		}
+
 		context.EnableConcurrentExecution();
 		context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze);
 
@@ -157,6 +162,9 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 			case IUsingOperation { Resources: IConversionOperation { Operand: ILocalReferenceOperation { Local: { } local } } }:
 				// using (proxy as IDisposable)
 				return SymbolEqualityComparer.Default.Equals(local, symbol);
+			case IUsingOperation { Resources: ILocalReferenceOperation { Local: { } local } }:
+				// using (proxy)
+				return SymbolEqualityComparer.Default.Equals(local, symbol);
 			default:
 				return false;
 		}
@@ -250,6 +258,12 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 
 			// 4. Inside the resource expression of a using block.
 			if (Utils.FindAncestors<IUsingOperation>(operation).FirstOrDefault()?.Resources.Descendants().Contains(operation) ?? false)
+			{
+				return;
+			}
+
+			// 5. Inside the resource expression of a using declaration.
+			if (Utils.FindAncestors<IUsingDeclarationOperation>(operation).Any())
 			{
 				return;
 			}
