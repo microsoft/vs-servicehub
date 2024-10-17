@@ -857,7 +857,6 @@ __metadata:
     nerdbank-streams: "npm:^2.11.79"
     nyc: "npm:^15.1.0"
     prettier: "npm:^3.0.0"
-    q: "npm:^1.5.1"
     strict-event-emitter-types: "npm:^2.0.0"
     string-hash: "npm:^1.1.3"
     ts-jest: "npm:^29.1.1"
@@ -5701,13 +5700,6 @@ __metadata:
   version: 6.1.0
   resolution: "pure-rand@npm:6.1.0"
   checksum: 10/256aa4bcaf9297256f552914e03cbdb0039c8fe1db11fa1e6d3f80790e16e563eb0a859a1e61082a95e224fc0c608661839439f8ecc6a3db4e48d46d99216ee4
-  languageName: node
-  linkType: hard
-
-"q@npm:^1.5.1":
-  version: 1.5.1
-  resolution: "q@npm:1.5.1"
-  checksum: 10/70c4a30b300277165cd855889cd3aa681929840a5940413297645c5691e00a3549a2a4153131efdf43fe8277ee8cf5a34c9636dcb649d83ad47f311a015fd380
   languageName: node
   linkType: hard
 
