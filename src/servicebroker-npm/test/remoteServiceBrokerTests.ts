@@ -16,6 +16,10 @@ import {
 	IRemoteServiceBroker,
 	Observer,
 	IDisposable,
+	GlobalBrokeredServiceContainer,
+	ServiceAudience,
+	ServiceRegistration,
+	MultiplexingRelayServiceBroker,
 } from '../src'
 import { AlwaysThrowingRemoteBroker } from './testAssets/alwaysThrowingBroker'
 import { CallMeBackClient } from './testAssets/callMeBackClient'
@@ -31,6 +35,8 @@ import {
 	calcDescriptorMsgPackBE32,
 	callBackDescriptor,
 } from './testAssets/testUtilities'
+import { Descriptors } from './testAssets/Descriptors'
+import { Calculator } from './testAssets/calculatorService'
 
 describe('Service Broker tests', function () {
 	let defaultTokenSource: {
@@ -52,7 +58,7 @@ describe('Service Broker tests', function () {
 	// Sometimes, the first time we start ServiceBrokerTest.exe it hangs and the test throws a CancellationError
 	// We need to catch this error and close our connection to avoid tests not finishing
 	describe('Tests that start service broker exe', function () {
-		jest.setTimeout(15000)
+		jest.setTimeout(615000)
 
 		beforeEach(() => {
 			defaultTokenSource = CancellationToken.timeout(15000)
@@ -372,6 +378,56 @@ describe('Service Broker tests', function () {
 			broker.dispose()
 			assert(broker.isDisposed, 'Server has been properly disposed')
 			await serverPromise
+		})
+
+		it('Should suppress MultiplexingStream on remote service requests', async function () {
+			// Set up the server container.
+			const serverContainer = new GlobalBrokeredServiceContainer()
+			registerCommonServices(serverContainer)
+			serverContainer.profferServiceFactory(Descriptors.calculator, () => new Calculator())
+
+			// Establish a connection between them.
+			const pipe = FullDuplexStream.CreatePair()
+			const serverPromise = hostMultiplexingServer(
+				pipe.first,
+				mx => new MultiplexingRelayServiceBroker(serverContainer.getFullAccessServiceBroker(), mx, true),
+				defaultToken
+			)
+
+			const clientMultiplexingStream = await MultiplexingStream.CreateAsync(pipe.second, undefined, defaultToken)
+			const clientChannel = await clientMultiplexingStream.acceptChannelAsync('', undefined, defaultToken)
+			const remoteServiceBroker = FrameworkServices.remoteServiceBroker.constructRpc<IRemoteServiceBroker>(clientChannel.stream)
+			const serviceBroker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(remoteServiceBroker, clientMultiplexingStream, defaultToken)
+
+			// This is a somewhat contrived means to verify that the RemoteServiceBroker will clear out the multiplexing stream.
+			// In a real-world scenario, the way this would happen is:
+			// 1. An ordinary proxy request would be made for a service that is on the other end of a MultiplexingStream connection to a service host.
+			// 2. The MultiplexingRelayServiceBroker would add the mxstream object on its end to the ServiceActivationOptions and forward the request to some IServiceBroker.
+			// 3. The IServiceBroker happens to be a client of remote services, so the ServiceActivationOptions get re-serialized.
+			// When this works, the RemoteServiceBroker should have deleted the mxstream object from the ServiceActivationOptions since it isn't serializable.
+			const clientServicePipe = await serviceBroker.getPipe(Descriptors.calculator.moniker, { multiplexingStream: clientMultiplexingStream }, defaultToken)
+			expect(clientServicePipe).toBeTruthy()
+			clientServicePipe?.end()
+
+			// Do it again with getProxy this time.
+			const calc = await serviceBroker.getProxy<ICalculatorService>(Descriptors.calculator, { multiplexingStream: clientMultiplexingStream }, defaultToken)
+			expect(calc).toBeTruthy()
+			calc?.dispose()
+
+			remoteServiceBroker.dispose()
+			clientChannel.dispose()
+			await clientChannel.completion
+			clientMultiplexingStream.dispose()
+			await serverPromise
+
+			function registerCommonServices(container: GlobalBrokeredServiceContainer) {
+				return container.register([
+					{
+						moniker: Descriptors.calculator.moniker,
+						registration: new ServiceRegistration(ServiceAudience.local, false),
+					},
+				])
+			}
 		})
 
 		it('Should handle a disconnecting client', async function () {

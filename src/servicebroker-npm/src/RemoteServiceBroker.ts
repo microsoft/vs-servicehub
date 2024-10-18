@@ -188,8 +188,13 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		cancellationToken: CancellationToken = CancellationToken.CONTINUE
 	): Promise<(T & IDisposable) | null> {
 		assert(serviceDescriptor)
-		options = options ? options : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
-		options = await this.applyAuthorization(options, cancellationToken)
+
+		// Copy the options object because we may mutate it and the caller doesn't expect their copy to be mutated.
+		options = options ? { ...options } : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
+		await this.applyAuthorization(options, cancellationToken)
+
+		// Clear the multiplexing stream if present because it isn't serializable.
+		delete options.multiplexingStream
 
 		let pipe: NodeJS.ReadWriteStream | Channel | undefined
 		let remoteConnectionInfo: RemoteServiceConnectionInfo = {}
@@ -233,8 +238,14 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		cancellationToken: CancellationToken = CancellationToken.CONTINUE
 	): Promise<NodeJS.ReadWriteStream | null> {
 		assert(serviceMoniker)
-		options = options ? options : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
-		options = await this.applyAuthorization(options, cancellationToken)
+
+		// Copy the options object because we may mutate it and the caller doesn't expect their copy to be mutated.
+		options = options ? { ...options } : { clientCulture: this.defaultClientCulture, clientUICulture: this.defaultClientUICulture }
+		await this.applyAuthorization(options, cancellationToken)
+
+		// Clear the multiplexing stream if present because it isn't serializable.
+		delete options.multiplexingStream
+
 		if (options.clientRpcTarget) {
 			throw new Error('Cannot connect pipe to service with client RPC target')
 		}
@@ -283,11 +294,9 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 		}
 	}
 
-	private async applyAuthorization(options: ServiceActivationOptions, cancellationToken: CancellationToken): Promise<ServiceActivationOptions> {
+	private async applyAuthorization(options: ServiceActivationOptions, cancellationToken: CancellationToken) {
 		if (this.authorizationClient && !options.clientCredentials) {
 			options.clientCredentials = await this.authorizationClient.getCredentials(cancellationToken)
 		}
-
-		return options
 	}
 }
