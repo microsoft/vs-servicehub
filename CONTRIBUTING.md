@@ -75,4 +75,7 @@ Building, testing, and packing the .NET code in this repository can be done by u
 * Test: `yarn test`
 * Pack: `pack.ps1`
 
+For a good language service experience in VS Code, follow [these instructions](https://yarnpkg.com/getting-started/editor-sdks#vscode).
+In particular, the part about selecting the "Workspace Version" of TypeScript.
+
 [pwsh]: https://docs.microsoft.com/powershell/scripting/install/installing-powershell?view=powershell-6
