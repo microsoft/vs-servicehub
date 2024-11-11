@@ -1,3 +1,6 @@
+Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor
+Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor.NodeToManagedServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor! copyFrom) -> void
+Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor.NodeToManagedServiceJsonRpcDescriptor(Microsoft.ServiceHub.Framework.ServiceMoniker! serviceMoniker, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.Formatters formatter, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.MessageDelimiters messageDelimiter) -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.AdditionalServiceInterfaces.get -> System.Collections.Immutable.ImmutableArray<System.Type!>?
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpcConnection(StreamJsonRpc.JsonRpc! jsonRpc, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor? owner) -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithAdditionalServiceInterfaces(System.Collections.Immutable.ImmutableArray<System.Type!>? value) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor!
@@ -6,3 +9,6 @@ Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.Option
 Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.AdditionalProxyInterfaceTypeLoadFailure = 5 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
 Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.get -> System.Collections.Immutable.ImmutableArray<string!>
 Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.init -> void
+override Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor.Clone() -> Microsoft.ServiceHub.Framework.ServiceRpcDescriptor!
+override Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor.CreateConnection(StreamJsonRpc.JsonRpc! jsonRpc) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection!
+override Microsoft.ServiceHub.Framework.NodeToManagedServiceJsonRpcDescriptor.CreateFormatter() -> StreamJsonRpc.IJsonRpcMessageFormatter!
