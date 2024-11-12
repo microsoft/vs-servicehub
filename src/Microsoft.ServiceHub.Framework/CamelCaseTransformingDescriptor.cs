@@ -10,25 +10,25 @@ namespace Microsoft.ServiceHub.Framework;
 /// A <see cref="ServiceJsonRpcDescriptor"/> derived type that applies camelCase naming transforms to method and event names
 /// and trims off any trailing "Async" suffix.
 /// </summary>
-public class NodeToManagedServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
+public class CamelCaseTransformingDescriptor : ServiceJsonRpcDescriptor
 {
 	private const string AsyncSuffix = "Async";
 	private static readonly Func<string, string> NameNormalize = name => CommonMethodNameTransforms.CamelCase(name.EndsWith(AsyncSuffix, StringComparison.OrdinalIgnoreCase) ? name.Substring(0, name.Length - AsyncSuffix.Length) : name);
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="NodeToManagedServiceJsonRpcDescriptor"/> class.
+	/// Initializes a new instance of the <see cref="CamelCaseTransformingDescriptor"/> class.
 	/// </summary>
 	/// <inheritdoc cref="ServiceJsonRpcDescriptor(ServiceMoniker, Formatters, MessageDelimiters)" />
-	public NodeToManagedServiceJsonRpcDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter)
+	public CamelCaseTransformingDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter)
 		: base(serviceMoniker, formatter, messageDelimiter)
 	{
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="NodeToManagedServiceJsonRpcDescriptor"/> class.
+	/// Initializes a new instance of the <see cref="CamelCaseTransformingDescriptor"/> class.
 	/// </summary>
 	/// <inheritdoc cref="ServiceJsonRpcDescriptor(ServiceJsonRpcDescriptor)"/>
-	public NodeToManagedServiceJsonRpcDescriptor(NodeToManagedServiceJsonRpcDescriptor copyFrom)
+	public CamelCaseTransformingDescriptor(CamelCaseTransformingDescriptor copyFrom)
 		: base(copyFrom)
 	{
 	}
@@ -67,7 +67,7 @@ public class NodeToManagedServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
 	}
 
 	/// <inheritdoc/>
-	protected override ServiceRpcDescriptor Clone() => new NodeToManagedServiceJsonRpcDescriptor(this);
+	protected override ServiceRpcDescriptor Clone() => new CamelCaseTransformingDescriptor(this);
 
 	private static void ConfigureJsonFormatter(JsonMessageFormatter jsonFormatter)
 	{

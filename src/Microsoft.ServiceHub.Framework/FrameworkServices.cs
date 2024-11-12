@@ -17,7 +17,7 @@ public static class FrameworkServices
 	/// This descriptor defines the default protocol used to communicate with an <see cref="IRemoteServiceBroker"/>.
 	/// The moniker is irrelevant because this service is not queried for.
 	/// </remarks>
-	public static readonly ServiceRpcDescriptor RemoteServiceBroker = new NodeToManagedServiceJsonRpcDescriptor(
+	public static readonly ServiceRpcDescriptor RemoteServiceBroker = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker(nameof(RemoteServiceBroker)),
 		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
@@ -29,7 +29,7 @@ public static class FrameworkServices
 	/// This descriptor defines the default protocol used to communicate with an <see cref="IAuthorizationService"/>.
 	/// Requests for this service should include client credentials to impersonate a client other than the local process hosting the authorization service.
 	/// </remarks>
-	public static readonly ServiceRpcDescriptor Authorization = new NodeToManagedServiceJsonRpcDescriptor(
+	public static readonly ServiceRpcDescriptor Authorization = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.ServiceHub.Framework.AuthorizationService"),
 		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
@@ -40,7 +40,7 @@ public static class FrameworkServices
 	/// <remarks>
 	/// This descriptor defines the default protocol used to communicate with an <see cref="IBrokeredServiceManifest"/>.
 	/// </remarks>
-	public static readonly ServiceRpcDescriptor RemoteBrokeredServiceManifest = new NodeToManagedServiceJsonRpcDescriptor(
+	public static readonly ServiceRpcDescriptor RemoteBrokeredServiceManifest = new CamelCaseTransformingDescriptor(
 		new ServiceMoniker("Microsoft.VisualStudio.RemoteBrokeredServiceManifest", new Version(0, 2)),
 		ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson,
 		ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
