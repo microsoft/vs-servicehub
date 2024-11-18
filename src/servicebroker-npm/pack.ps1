@@ -17,7 +17,6 @@ try {
         yarn
     }
 
-
     yarn build # tsc
     if ($lastexitcode -ne 0) { throw }
 
