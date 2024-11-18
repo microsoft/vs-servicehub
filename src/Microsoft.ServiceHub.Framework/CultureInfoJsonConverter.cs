@@ -20,7 +20,19 @@ internal class CultureInfoJsonConverter : JsonConverter
 		switch (reader.TokenType)
 		{
 			case JsonToken.Null: return null;
-			case JsonToken.String: return new CultureInfo((string)reader.Value!);
+			case JsonToken.String:
+				{
+					try
+					{
+						return new CultureInfo((string)reader.Value!);
+					}
+					catch (CultureNotFoundException)
+					{
+						// The DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 environment variable causes this.
+						return null;
+					}
+				}
+
 			default: throw new JsonSerializationException($"Error parsing {nameof(CultureInfo)}. Unexpected token type: {reader.TokenType}.");
 		}
 	}
