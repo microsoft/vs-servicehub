@@ -9,7 +9,7 @@
     <CodeAnalysisVersion>4.10.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
-    <VSThreadingVersion>17.10.48</VSThreadingVersion>
+    <VSThreadingVersion>17.12.21</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="IsExternalInit" Version="1.0.3" />
@@ -41,7 +41,7 @@
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.106" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.11.79" />
     <PackageVersion Include="NuGet.Protocol" Version="6.10.1" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.20.11" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.20.17" />
     <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Text.Json" Version="8.0.4" />
