@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
@@ -96,11 +97,39 @@ public static class ServerFactory
 		// that were not defined in the enumeration.
 		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
-
+		var name = TrimWindowsPrefixForDotNet(pipeName);
 		NamedPipeClientStream pipeStream = new(".", TrimWindowsPrefixForDotNet(pipeName), PipeDirection.InOut, pipeOptions);
 		try
 		{
 			await ConnectWithRetryAsync(pipeStream, fullPipeOptions, cancellationToken, maxRetries: options.FailFast ? 0 : int.MaxValue, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			return pipeStream;
+		}
+		catch
+		{
+			await pipeStream.DisposeAsync().ConfigureAwait(false);
+			throw;
+		}
+	}
+
+	[SupportedOSPlatform("windows")]
+	public static async Task<Stream> ConnectWindowsAsync(string pipeName, ClientOptions options, CancellationToken cancellationToken)
+	{
+		Requires.NotNull(pipeName, nameof(pipeName));
+
+		PipeOptions fullPipeOptions = StandardPipeOptions;
+		PipeOptions pipeOptions = StandardPipeOptions;
+
+
+#if NETFRAMEWORK
+		// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
+		// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
+		// that were not defined in the enumeration.
+		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
+#endif
+		AsyncNamedPipeClientStream pipeStream = new(".", pipeName, PipeDirection.InOut, pipeOptions);
+		try
+		{
+			await pipeStream.ConnectAsync(cancellationToken).ConfigureAwait(false);
 			return pipeStream;
 		}
 		catch

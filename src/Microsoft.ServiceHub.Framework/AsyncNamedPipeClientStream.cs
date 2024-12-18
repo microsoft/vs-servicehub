@@ -12,7 +12,7 @@ using static Nerdbank.Streams.MultiplexingStream;
 namespace Microsoft.ServiceHub.Framework
 {
 	[SupportedOSPlatform("windows")]
-	public class AsyncNamedPipeClientStream// : PipeStream
+	public class AsyncNamedPipeClientStream : PipeStream
 	{
 #if NETSTANDARD
 		private const int DefaultPipeAccessRights = 131483;
@@ -25,14 +25,14 @@ namespace Microsoft.ServiceHub.Framework
 		private const int ERROR_SEM_TIMEOUT = 0x79;
 		private const int GENERIC_READ = unchecked(((int)0x80000000));
 		private const int GENERIC_WRITE = (0x40000000);
-		private readonly string? normalizedPipePath;
+		private readonly string? pipePath;
 		private readonly TokenImpersonationLevel impersonationLevel;
 		private readonly System.IO.Pipes.PipeOptions pipeOptions;
 		private readonly HandleInheritability inheritability;
 		private readonly PipeDirection direction;
 		private readonly int accessRights;
-		private SafePipeHandle pipeHandle;
-		private ThreadPoolBoundHandle threadPoolHandle;
+		private SafePipeHandle? pipeHandle;
+		private ThreadPoolBoundHandle? threadPoolHandle;
 
 		public bool IsCurrentUserOnly { get; } = false;
 
@@ -40,22 +40,22 @@ namespace Microsoft.ServiceHub.Framework
 
 		public enum PipeStatus
 		{
-			Open = 0,
-			Waiting = 1,
-			Closed = 2,
-			Connectd = 3,
+			Error = 0,
+			Pending = 1,
+			Connected = 2,
 		}
 
 		public AsyncNamedPipeClientStream(
 			string serverName,
-			string normalizedPipePath,
+			string pipeName,
 			PipeDirection direction,
 			System.IO.Pipes.PipeOptions options,
 			TokenImpersonationLevel impersionationLevel = TokenImpersonationLevel.None,
 			HandleInheritability inheritability = HandleInheritability.None,
 			int accessRights = DefaultPipeAccessRights)
+			: base(direction, 4096)
 		{
-			this.normalizedPipePath = normalizedPipePath;
+			this.pipePath = GetPipePath(serverName, pipeName);
 			this.impersonationLevel = impersionationLevel;
 			this.pipeOptions = options;
 			this.inheritability = inheritability;
@@ -63,134 +63,67 @@ namespace Microsoft.ServiceHub.Framework
 			this.accessRights = accessRights;
 
 			this.IsCurrentUserOnly = this.GetIsCurrentUserOnly(options);
-			this.CurrentPipeStatus = PipeStatus.Waiting;
+			this.CurrentPipeStatus = PipeStatus.Pending;
 		}
 
-		public async Task ConnectAsync(CancellationToken cancellationToken)
+		public async Task ConnectAsync(
+			CancellationToken cancellationToken,
+			int delayScaleMultiple = 100,
+			int delayMax = 5 * 60 * 1000,
+			int maxRetries = 5)
 		{
+			var errorCodeMap = new Dictionary<int, int>();
+			int retries = 0;
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				if (this.TryConnect(50))
+				if (retries > maxRetries || this.TryConnect(ref errorCodeMap))
 				{
 					break;
 				}
 
-				await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+				retries++;
+				await Task.Delay(Math.Min(delayMax, delayScaleMultiple * retries), cancellationToken).ConfigureAwait(false);
+			}
+
+			if (retries > maxRetries || !this.IsConnected)
+			{
+				throw new TimeoutException($"Failed with errors: {string.Join(", ", errorCodeMap.Select(x => $"(code: {x.Key}, count: {x.Value})"))}");
 			}
 		}
 
-		// Declare CreateNamedPipe function from kernel32.dll
-		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-		private static extern IntPtr CreateNamedPipe(
-			string lpName,
-			uint dwOpenMode,
-			uint dwPipeMode,
-			uint nMaxInstances,
-			uint nOutBufferSize,
-			uint nInBufferSize,
-			uint nDefaultTimeOut,
-			ref SECURITY_ATTRIBUTES lpSecurityAttributes);
+		[DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true)]
+		private static extern SafePipeHandle CreateNamedPipeClient(
+			string? lpFileName,
+			int dwDesiredAccess,
+			System.IO.FileShare dwShareMode,
+			ref SECURITY_ATTRIBUTES secAttrs,
+			FileMode dwCreationDisposition,
+			int dwFlagsAndAttributes,
+			IntPtr hTemplateFile);
 
-		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-		private static extern bool WaitNamedPipe(
-			  string lpNamedPipeName,
-			  uint nTimeOut);
-
-		private static SafePipeHandle CreateNamedPipeClient(string? path, ref SECURITY_ATTRIBUTES secAttrs, int pipeFlags, int access)
+		private bool TryConnect(ref Dictionary<int, int> errorCodeMap)
 		{
-			IntPtr handle = CreateNamedPipe(path ?? string.Empty, (uint)FileMode.Open, (int)PipeTransmissionMode.Message, 1, 4096, 4096, 100, ref secAttrs);
-			bool ownsHandle = true;
-			return new SafePipeHandle(handle, ownsHandle);
-		}
+			var pipeFlags = this.GetPipeFlags();
+			var access = this.GetAccess();
+			SECURITY_ATTRIBUTES secAttrs = this.GetSecurityAttributes();
 
-		private bool TryConnect(int timeout)
-		{
-			var pipeFlags = this.RemoveCurrentUserSettingFromPipeOptions();
-			if (this.impersonationLevel != TokenImpersonationLevel.None)
-			{
-				pipeFlags |= SECURITY_SQOS_PRESENT;
-				pipeFlags |= ((int)this.impersonationLevel - 1) << 16;
-			}
-
-			int access = 0;
-			if ((PipeDirection.In & this.direction) != 0)
-			{
-				access |= GENERIC_READ;
-			}
-			if ((PipeDirection.Out & this.direction) != 0)
-			{
-				access |= GENERIC_WRITE;
-			}
-
-
-			var secAttrs = this.GetDefaultSecurityAttributes();
-
-			SafePipeHandle handle = CreateNamedPipeClient(this.normalizedPipePath, ref secAttrs, pipeFlags, access);
+			SafePipeHandle handle = CreateNamedPipeClient(this.pipePath, access, FileShare.None, ref secAttrs, FileMode.Open, pipeFlags, IntPtr.Zero);
 
 			if (handle.IsInvalid)
 			{
 				int errorCode = this.GetLastErrorCode();
-
 				handle.Dispose();
-
-				// CreateFileW: "If the CreateNamedPipe function was not successfully called on the server prior to this operation,
-				// a pipe will not exist and CreateFile will fail with ERROR_FILE_NOT_FOUND"
-				// WaitNamedPipeW: "If no instances of the specified named pipe exist,
-				// the WaitNamedPipe function returns immediately, regardless of the time-out value."
-				// We know that no instances exist, so we just quit without calling WaitNamedPipeW.
-				if (errorCode == ERROR_FILE_NOT_FOUND)
-				{
-					return false;
-				}
-
-				if (errorCode != ERROR_PIPE_BUSY)
-				{
-					throw new Win32Exception(errorCode);
-				}
-
-				if (WaitNamedPipe(this.normalizedPipePath ?? string.Empty, Convert.ToUInt32(timeout)))
-				{
-					errorCode = this.GetLastErrorCode();
-
-					if (errorCode == ERROR_FILE_NOT_FOUND || // server has been closed
-						errorCode == ERROR_SEM_TIMEOUT)
-					{
-						return false;
-					}
-
-					throw new Win32Exception(errorCode);
-				}
-
-				// Pipe server should be free. Let's try to connect to it.
-				handle = CreateNamedPipeClient(this.normalizedPipePath, ref secAttrs, pipeFlags, this.accessRights);
-
-				if (handle.IsInvalid)
-				{
-					errorCode = this.GetLastErrorCode();
-
-					handle.Dispose();
-
-					// WaitNamedPipe: "A subsequent CreateFile call to the pipe can fail,
-					// because the instance was closed by the server or opened by another client."
-					if (errorCode == ERROR_PIPE_BUSY || // opened by another client
-						errorCode == ERROR_FILE_NOT_FOUND) // server has been closed
-					{
-						return false;
-					}
-
-					throw new Win32Exception(errorCode);
-				}
+				var newErrorCount = errorCodeMap.ContainsKey(errorCode) ? errorCodeMap[errorCode] + 1 : 1;
+				errorCodeMap[errorCode] = newErrorCount;
+				return false;
 			}
 
 			// Success!
-#if !NETSTANDARD
 			var boundHandle = ThreadPoolBoundHandle.BindHandle(handle);
 			this.pipeHandle = handle;
 			this.threadPoolHandle = boundHandle;
-#endif
 
-			// State = PipeState.Connected;
-			this.CurrentPipeStatus = PipeStatus.Connectd;
+			this.CurrentPipeStatus = PipeStatus.Connected;
 			this.ValidateRemotePipeUser();
 			return true;
 		}
@@ -211,24 +144,46 @@ namespace Microsoft.ServiceHub.Framework
 				SecurityIdentifier? currentUserSid = currentIdentity.Owner;
 				if (remoteOwnerSid != currentUserSid)
 				{
-					this.CurrentPipeStatus = PipeStatus.Closed;
+					this.IsConnected = false;
 					throw new UnauthorizedAccessException();
 				}
 			}
 #endif
 		}
 
-#if !NETSTANDARD
-		private PipeSecurity GetAccessControl()
+		private int GetPipeFlags()
 		{
-			var ps = new PipeSecurity();
-			// var ps = new PipeSecurity(this.pipeHandle, AccessControlSections.Access | AccessControlSections.Owner | AccessControlSections.Group);
-			// TODO: access rules
-			return ps;
-		}
+#if NET5_0_OR_GREATER
+			int pipeFlags = (int)(this.pipeOptions & ~System.IO.Pipes.PipeOptions.CurrentUserOnly);
+#else
+			int pipeFlags = (int)(this.pipeOptions & ~PolyfillExtensions.PipeOptionsCurrentUserOnly);
 #endif
+			if (this.impersonationLevel != TokenImpersonationLevel.None)
+			{
+				pipeFlags |= SECURITY_SQOS_PRESENT;
+				pipeFlags |= ((int)this.impersonationLevel - 1) << 16;
+			}
 
-		private SECURITY_ATTRIBUTES GetDefaultSecurityAttributes()
+			return pipeFlags;
+		}
+
+		private int GetAccess()
+		{
+			int access = 0;
+			if ((PipeDirection.In & this.direction) != 0)
+			{
+				access |= GENERIC_READ;
+			}
+
+			if ((PipeDirection.Out & this.direction) != 0)
+			{
+				access |= GENERIC_WRITE;
+			}
+
+			return access;
+		}
+
+		private SECURITY_ATTRIBUTES GetSecurityAttributes()
 		{
 			return new SECURITY_ATTRIBUTES
 			{
@@ -264,14 +219,27 @@ namespace Microsoft.ServiceHub.Framework
 			return false;
 		}
 
-		private int RemoveCurrentUserSettingFromPipeOptions()
+		private static string GetPipePath(string serverName, string pipeName)
 		{
-#if NET5_0_OR_GREATER
-			int pipeFlags = (int)(this.pipeOptions & ~System.IO.Pipes.PipeOptions.CurrentUserOnly);
-#else
-			int pipeFlags = (int)(this.pipeOptions & ~PolyfillExtensions.PipeOptionsCurrentUserOnly);
-#endif
-			return pipeFlags;
+			return Path.GetFullPath(@"\\" + serverName + @"\pipe\" + pipeName);
+		}
+
+		public void Dispose()
+		{
+			if (this.pipeHandle is not null)
+			{
+				this.pipeHandle.Dispose();
+			}
+
+			if (this.threadPoolHandle is not null)
+			{
+				this.threadPoolHandle.Dispose();
+			}
+
+			this.pipeHandle = null;
+			this.threadPoolHandle = null;
+
+			GC.SuppressFinalize(this);
 		}
 
 		// Define the SECURITY_ATTRIBUTES structure
