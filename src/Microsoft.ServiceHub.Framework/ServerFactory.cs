@@ -111,14 +111,18 @@ public static class ServerFactory
 		}
 	}
 
+	/// <summary>
+	/// Creates a client to a named pipe.
+	/// </summary>
+	/// <param name="pipeName">The name of the pipe to connect to.</param>
+	/// <param name="options">Pipe connection options.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>A handle representing the client connection.</returns>
 	[SupportedOSPlatform("windows")]
 	public static async Task<Stream> ConnectWindowsAsync(string pipeName, ClientOptions options, CancellationToken cancellationToken)
 	{
 		Requires.NotNull(pipeName, nameof(pipeName));
-
-		PipeOptions fullPipeOptions = StandardPipeOptions;
 		PipeOptions pipeOptions = StandardPipeOptions;
-
 
 #if NETFRAMEWORK
 		// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.

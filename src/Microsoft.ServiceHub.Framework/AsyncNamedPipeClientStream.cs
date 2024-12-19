@@ -1,117 +1,104 @@
-﻿
-using System.ComponentModel;
-using System.IO.Pipelines;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Security.AccessControl;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
-using static Nerdbank.Streams.MultiplexingStream;
 
 namespace Microsoft.ServiceHub.Framework
 {
+	/// <summary>
+	/// Named pipe client that avoids TimeoutExceptions and burning CPU.
+	/// </summary>
 	[SupportedOSPlatform("windows")]
 	public class AsyncNamedPipeClientStream : PipeStream
 	{
-#if NETSTANDARD
-		private const int DefaultPipeAccessRights = 131483;
-#else
-		private const int DefaultPipeAccessRights = (int)PipeAccessRights.ReadWrite;
-#endif
-		private const int SECURITY_SQOS_PRESENT = 0x00100000;
-		private const int ERROR_FILE_NOT_FOUND = 0x2;
-		private const int ERROR_PIPE_BUSY = 0xE7;
-		private const int ERROR_SEM_TIMEOUT = 0x79;
-		private const int GENERIC_READ = unchecked(((int)0x80000000));
-		private const int GENERIC_WRITE = (0x40000000);
-		private readonly string? pipePath;
+		private const int SECURITYSQOSPRESENT = 0x00100000;
+		private const int GENERICREAD = unchecked((int)0x80000000);
+		private const int GENERICWRITE = 0x40000000;
+		private readonly string pipePath;
 		private readonly TokenImpersonationLevel impersonationLevel;
-		private readonly System.IO.Pipes.PipeOptions pipeOptions;
-		private readonly HandleInheritability inheritability;
+		private readonly PipeOptions pipeOptions;
 		private readonly PipeDirection direction;
-		private readonly int accessRights;
-		private SafePipeHandle? pipeHandle;
-		private ThreadPoolBoundHandle? threadPoolHandle;
+		private readonly int access;
 
-		public bool IsCurrentUserOnly { get; } = false;
-
-		public PipeStatus CurrentPipeStatus { get; private set; }
-
-		public enum PipeStatus
-		{
-			Error = 0,
-			Pending = 1,
-			Connected = 2,
-		}
-
+		/// <summary>
+		/// Initializes a new instance of the <see cref="AsyncNamedPipeClientStream"/> class.
+		/// </summary>
+		/// <param name="serverName">Pipe server name.</param>
+		/// <param name="pipeName">Pipe name.</param>
+		/// <param name="direction">Communication direction.</param>
+		/// <param name="options">Pipe options.</param>
+		/// <param name="impersonationLevel">Impersonation level.</param>
 		public AsyncNamedPipeClientStream(
 			string serverName,
 			string pipeName,
 			PipeDirection direction,
-			System.IO.Pipes.PipeOptions options,
-			TokenImpersonationLevel impersionationLevel = TokenImpersonationLevel.None,
-			HandleInheritability inheritability = HandleInheritability.None,
-			int accessRights = DefaultPipeAccessRights)
+			PipeOptions options,
+			TokenImpersonationLevel impersonationLevel = TokenImpersonationLevel.None)
 			: base(direction, 4096)
 		{
-			this.pipePath = GetPipePath(serverName, pipeName);
-			this.impersonationLevel = impersionationLevel;
-			this.pipeOptions = options;
-			this.inheritability = inheritability;
-			this.direction = direction;
-			this.accessRights = accessRights;
+			Requires.NotNullOrEmpty(serverName, nameof(serverName));
+			Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
 
-			this.IsCurrentUserOnly = this.GetIsCurrentUserOnly(options);
-			this.CurrentPipeStatus = PipeStatus.Pending;
+			this.pipePath = $@"\\{serverName}\pipe\{pipeName}";
+			this.direction = direction;
+			this.pipeOptions = options;
+			this.impersonationLevel = impersonationLevel;
+			this.access = this.GetAccess();
 		}
 
+		/// <summary>
+		/// Connects pipe client to server.
+		/// </summary>
+		/// <param name="cancellationToken">Cancellation token.</param>
+		/// <param name="asyncNamedPipeClientRetry">Optional parameters for controlling connection retry.</param>
+		/// <returns>A task representing the establishment of the client connection.</returns>
+		/// <exception cref="TimeoutException">Thrown if no connection can be established.</exception>
 		public async Task ConnectAsync(
 			CancellationToken cancellationToken,
-			int delayScaleMultiple = 100,
-			int delayMax = 5 * 60 * 1000,
-			int maxRetries = 5)
+			AsyncNamedPipeClientRetry? asyncNamedPipeClientRetry = null)
 		{
+			AsyncNamedPipeClientRetry retryLogic = asyncNamedPipeClientRetry ?? new AsyncNamedPipeClientRetry();
 			var errorCodeMap = new Dictionary<int, int>();
 			int retries = 0;
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				if (retries > maxRetries || this.TryConnect(ref errorCodeMap))
+				if (retries > retryLogic.MaxRetries || this.TryConnect(ref errorCodeMap))
 				{
 					break;
 				}
 
 				retries++;
-				await Task.Delay(Math.Min(delayMax, delayScaleMultiple * retries), cancellationToken).ConfigureAwait(false);
+				await Task.Delay(retryLogic.DelayBetweenRetriesInMs(retries), cancellationToken).ConfigureAwait(false);
 			}
 
-			if (retries > maxRetries || !this.IsConnected)
+			if (retries > retryLogic.MaxRetries || !this.IsConnected)
 			{
 				throw new TimeoutException($"Failed with errors: {string.Join(", ", errorCodeMap.Select(x => $"(code: {x.Key}, count: {x.Value})"))}");
 			}
 		}
 
-		[DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true)]
+		[DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
 		private static extern SafePipeHandle CreateNamedPipeClient(
-			string? lpFileName,
-			int dwDesiredAccess,
-			System.IO.FileShare dwShareMode,
-			ref SECURITY_ATTRIBUTES secAttrs,
-			FileMode dwCreationDisposition,
-			int dwFlagsAndAttributes,
+			string lpFileName,
+			uint dwDesiredAccess,
+			uint dwShareMode,
+			IntPtr secAttrs,
+			uint dwCreationDisposition,
+			uint dwFlagsAndAttributes,
 			IntPtr hTemplateFile);
 
 		private bool TryConnect(ref Dictionary<int, int> errorCodeMap)
 		{
 			var pipeFlags = this.GetPipeFlags();
-			var access = this.GetAccess();
-			SECURITY_ATTRIBUTES secAttrs = this.GetSecurityAttributes();
-
-			SafePipeHandle handle = CreateNamedPipeClient(this.pipePath, access, FileShare.None, ref secAttrs, FileMode.Open, pipeFlags, IntPtr.Zero);
+			SafePipeHandle handle = CreateNamedPipeClient(this.pipePath, (uint)this.access, (uint)FileShare.None, IntPtr.Zero, (uint)FileMode.Open, (uint)pipeFlags, IntPtr.Zero);
 
 			if (handle.IsInvalid)
 			{
-				int errorCode = this.GetLastErrorCode();
+				int errorCode = Marshal.GetLastWin32Error();
 				handle.Dispose();
 				var newErrorCount = errorCodeMap.ContainsKey(errorCode) ? errorCodeMap[errorCode] + 1 : 1;
 				errorCodeMap[errorCode] = newErrorCount;
@@ -119,11 +106,8 @@ namespace Microsoft.ServiceHub.Framework
 			}
 
 			// Success!
-			var boundHandle = ThreadPoolBoundHandle.BindHandle(handle);
-			this.pipeHandle = handle;
-			this.threadPoolHandle = boundHandle;
-
-			this.CurrentPipeStatus = PipeStatus.Connected;
+			this.InitializeHandle(handle, false, true);
+			this.IsConnected = true;
 			this.ValidateRemotePipeUser();
 			return true;
 		}
@@ -131,7 +115,13 @@ namespace Microsoft.ServiceHub.Framework
 		private void ValidateRemotePipeUser()
 		{
 #if !NETSTANDARD
-			if (!this.IsCurrentUserOnly)
+#if NETFRAMEWORK
+			var isCurrentUser = (this.pipeOptions & ~PolyfillExtensions.PipeOptionsCurrentUserOnly) != 0;
+#else
+			var isCurrentUser = (this.pipeOptions & ~PipeOptions.CurrentUserOnly) != 0;
+#endif
+
+			if (isCurrentUser)
 			{
 				return;
 			}
@@ -153,14 +143,11 @@ namespace Microsoft.ServiceHub.Framework
 
 		private int GetPipeFlags()
 		{
-#if NET5_0_OR_GREATER
-			int pipeFlags = (int)(this.pipeOptions & ~System.IO.Pipes.PipeOptions.CurrentUserOnly);
-#else
-			int pipeFlags = (int)(this.pipeOptions & ~PolyfillExtensions.PipeOptionsCurrentUserOnly);
-#endif
+			// This assumes that CurrentUser only has been removed
+			int pipeFlags = (int)this.pipeOptions;
 			if (this.impersonationLevel != TokenImpersonationLevel.None)
 			{
-				pipeFlags |= SECURITY_SQOS_PRESENT;
+				pipeFlags |= SECURITYSQOSPRESENT;
 				pipeFlags |= ((int)this.impersonationLevel - 1) << 16;
 			}
 
@@ -172,84 +159,15 @@ namespace Microsoft.ServiceHub.Framework
 			int access = 0;
 			if ((PipeDirection.In & this.direction) != 0)
 			{
-				access |= GENERIC_READ;
+				access |= GENERICREAD;
 			}
 
 			if ((PipeDirection.Out & this.direction) != 0)
 			{
-				access |= GENERIC_WRITE;
+				access |= GENERICWRITE;
 			}
 
 			return access;
-		}
-
-		private SECURITY_ATTRIBUTES GetSecurityAttributes()
-		{
-			return new SECURITY_ATTRIBUTES
-			{
-				nLength = (uint)Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES)),
-				lpSecurityDescriptor = IntPtr.Zero,
-				bInheritHandle = this.inheritability == HandleInheritability.Inheritable,
-			};
-		}
-
-		private int GetLastErrorCode()
-		{
-#if NET5_0_OR_GREATER
-			int errorCode = Marshal.GetLastPInvokeError();
-#else
-			int errorCode = Marshal.GetLastWin32Error();
-#endif
-			return errorCode;
-		}
-
-		private bool GetIsCurrentUserOnly(System.IO.Pipes.PipeOptions options)
-		{
-#if NET5_0_OR_GREATER
-			if ((options & System.IO.Pipes.PipeOptions.CurrentUserOnly) != 0)
-			{
-				return true;
-			}
-#else
-			if ((options & PolyfillExtensions.PipeOptionsCurrentUserOnly) != 0)
-			{
-				return true;
-			}
-#endif
-			return false;
-		}
-
-		private static string GetPipePath(string serverName, string pipeName)
-		{
-			return Path.GetFullPath(@"\\" + serverName + @"\pipe\" + pipeName);
-		}
-
-		public void Dispose()
-		{
-			if (this.pipeHandle is not null)
-			{
-				this.pipeHandle.Dispose();
-			}
-
-			if (this.threadPoolHandle is not null)
-			{
-				this.threadPoolHandle.Dispose();
-			}
-
-			this.pipeHandle = null;
-			this.threadPoolHandle = null;
-
-			GC.SuppressFinalize(this);
-		}
-
-		// Define the SECURITY_ATTRIBUTES structure
-		[StructLayout(LayoutKind.Sequential)]
-		[ComVisible(true)]
-		private struct SECURITY_ATTRIBUTES
-		{
-			public uint nLength;
-			public IntPtr lpSecurityDescriptor;
-			public bool bInheritHandle;
 		}
 	}
 }
