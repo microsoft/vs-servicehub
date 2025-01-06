@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework.Services;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
@@ -29,7 +30,11 @@ internal static class ServiceManagerReflectionHelpers
 
 		if (!string.IsNullOrEmpty(serverPipeName))
 		{
-			return await RemoteServiceBroker.ConnectToServerAsync(serverPipeName, cancellationToken).ConfigureAwait(false);
+			IServiceBroker? broker = await RemoteServiceBroker.ConnectToServerAsync(serverPipeName, cancellationToken).ConfigureAwait(false);
+			if (broker is not null)
+			{
+				return new DisposableServiceBroker(broker);
+			}
 		}
 
 		return null;
@@ -219,5 +224,38 @@ internal static class ServiceManagerReflectionHelpers
 		}
 
 		return options;
+	}
+
+	private class DisposableServiceBroker : IServiceBroker, IDisposableObservable
+	{
+		private readonly IServiceBroker wrapped;
+
+		public DisposableServiceBroker(IServiceBroker wrapped) => this.wrapped = Requires.NotNull(wrapped);
+
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+		{
+			add => this.wrapped.AvailabilityChanged += value;
+			remove => this.wrapped.AvailabilityChanged -= value;
+		}
+
+		public bool IsDisposed { get; private set; }
+
+		public void Dispose()
+		{
+			if (!this.IsDisposed)
+			{
+				using (this.wrapped as IDisposable)
+				{
+					this.IsDisposed = true;
+				}
+			}
+		}
+
+		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default) =>
+			this.wrapped.GetPipeAsync(serviceMoniker, options, cancellationToken);
+
+		public ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class =>
+				this.wrapped.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
 	}
 }
