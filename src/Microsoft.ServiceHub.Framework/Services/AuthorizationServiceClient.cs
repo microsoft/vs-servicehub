@@ -147,7 +147,7 @@ public class AuthorizationServiceClient : IDisposableObservable
 	/// <inheritdoc />
 	public void Dispose()
 	{
-		if (this.IsDisposed!)
+		if (!this.IsDisposed)
 		{
 			this.AuthorizationService.CredentialsChanged -= this.AuthorizationService_CredentialsChanged;
 			this.AuthorizationService.AuthorizationChanged -= this.AuthorizationService_AuthorizationChanged;
