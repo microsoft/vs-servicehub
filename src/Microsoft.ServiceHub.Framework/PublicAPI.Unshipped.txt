@@ -8,7 +8,10 @@ Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxRetries.get -> int
 Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxRetries.set -> void
 Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream
 Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream.AsyncNamedPipeClientStream(string! serverName, string! pipeName, System.IO.Pipes.PipeDirection direction, System.IO.Pipes.PipeOptions options, System.Security.Principal.TokenImpersonationLevel impersonationLevel = System.Security.Principal.TokenImpersonationLevel.None) -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream.ConnectAsync(System.Threading.CancellationToken cancellationToken, Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry? asyncNamedPipeClientRetry = null) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream.ConnectAsync(System.Threading.CancellationToken cancellationToken, int maxRetries, int retryDelayMs) -> System.Threading.Tasks.Task!
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ClientOptions(bool failFast = false, bool cpuSpinOverFirstChanceExceptions = false, bool tryNoSpinOrExceptionIfWindows = true) -> void
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.SpinOrThrowIfWindows.get -> bool
+Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.SpinOrThrowIfWindows.init -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.AdditionalServiceInterfaces.get -> System.Collections.Immutable.ImmutableArray<System.Type!>?
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpcConnection(StreamJsonRpc.JsonRpc! jsonRpc, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor? owner) -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithAdditionalServiceInterfaces(System.Collections.Immutable.ImmutableArray<System.Type!>? value) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor!

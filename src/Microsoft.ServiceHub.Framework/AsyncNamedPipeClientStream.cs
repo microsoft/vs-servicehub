@@ -54,28 +54,29 @@ namespace Microsoft.ServiceHub.Framework
 		/// Connects pipe client to server.
 		/// </summary>
 		/// <param name="cancellationToken">Cancellation token.</param>
-		/// <param name="asyncNamedPipeClientRetry">Optional parameters for controlling connection retry.</param>
+		/// <param name="maxRetries">Maximum number of retries.</param>
+		/// <param name="retryDelayMs">Milliseconds delay between retries.</param>
 		/// <returns>A task representing the establishment of the client connection.</returns>
 		/// <exception cref="TimeoutException">Thrown if no connection can be established.</exception>
 		public async Task ConnectAsync(
 			CancellationToken cancellationToken,
-			AsyncNamedPipeClientRetry? asyncNamedPipeClientRetry = null)
+			int maxRetries,
+			int retryDelayMs)
 		{
-			AsyncNamedPipeClientRetry retryLogic = asyncNamedPipeClientRetry ?? new AsyncNamedPipeClientRetry();
 			var errorCodeMap = new Dictionary<int, int>();
 			int retries = 0;
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				if (retries > retryLogic.MaxRetries || this.TryConnect(ref errorCodeMap))
+				if (retries > maxRetries || this.TryConnect(ref errorCodeMap))
 				{
 					break;
 				}
 
 				retries++;
-				await Task.Delay(retryLogic.DelayBetweenRetriesInMs(retries), cancellationToken).ConfigureAwait(false);
+				await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
 			}
 
-			if (retries > retryLogic.MaxRetries || !this.IsConnected)
+			if (retries > maxRetries || !this.IsConnected)
 			{
 				throw new TimeoutException($"Failed with errors: {string.Join(", ", errorCodeMap.Select(x => $"(code: {x.Key}, count: {x.Value})"))}");
 			}

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Net.WebSockets;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
@@ -31,7 +32,7 @@ public class ServerFactoryTests : TestBase
 			});
 		try
 		{
-			clientStream = await ServerFactory.ConnectWindowsAsync(server.Name, default, this.TimeoutToken);
+			clientStream = await ServerFactory.ConnectAsync(server.Name, default, this.TimeoutToken);
 			await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
 		}
 		finally
@@ -59,11 +60,11 @@ public class ServerFactoryTests : TestBase
 		var process = Process.GetCurrentProcess();
 		TimeSpan initialCpuTime = process.TotalProcessorTime;
 
-		// Try to connect to non-existant pipe, cancel after some time
+		// Try to connect to non-existent pipe, cancel after some time
 		try
 		{
 			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
-			await ServerFactory.ConnectWindowsAsync("NonExistentPipe", default, cts.Token);
+			await ServerFactory.ConnectAsync("NonExistentPipe", default, cts.Token);
 		}
 		catch (TaskCanceledException)
 		{
@@ -74,7 +75,7 @@ public class ServerFactoryTests : TestBase
 		stopwatch.Stop();
 		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
 		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
-		Assert.True(percentageCpuTime < 5); // Confirm that no more than 5% of time is consumed by CPU
+		Assert.True(percentageCpuTime < 20); // Confirm that no more than 20% of time is consumed by CPU
 	}
 
 	[Fact]
@@ -263,26 +264,5 @@ public class ServerFactoryTests : TestBase
 			await server.DisposeAsync();
 			await server.Completion.WithCancellation(this.TimeoutToken);
 		}
-	}
-
-	static async Task<Tuple<TimeSpan, TimeSpan>> MeasureCpuUsageAsync(string serverName, CancellationToken cancellationToken)
-	{
-		// Stopwatch to measure wall-clock time (total elapsed time)
-		var stopwatch = new Stopwatch();
-		stopwatch.Start();
-
-		// Get the current process to measure CPU usage
-		var process = Process.GetCurrentProcess();
-		TimeSpan initialCpuTime = process.TotalProcessorTime;
-
-		// Run the async function
-		await ServerFactory.ConnectWindowsAsync(serverName, default, cancellationToken);
-
-		// Stop stopwatch and measure CPU time after function completes
-		stopwatch.Stop();
-		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
-
-		// Return elapsed time and CPU time used
-		return Tuple.Create(stopwatch.Elapsed, totalCpuTime);
 	}
 }

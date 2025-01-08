@@ -98,47 +98,30 @@ public static class ServerFactory
 		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
 		var name = TrimWindowsPrefixForDotNet(pipeName);
-		NamedPipeClientStream pipeStream = new(".", TrimWindowsPrefixForDotNet(pipeName), PipeDirection.InOut, pipeOptions);
+		var maxRetries = options.FailFast ? 0 : int.MaxValue;
+		PipeStream? pipeStream = null;
 		try
 		{
-			await ConnectWithRetryAsync(pipeStream, fullPipeOptions, cancellationToken, maxRetries: options.FailFast ? 0 : int.MaxValue, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			if (!options.SpinOrThrowIfWindows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				pipeStream = new AsyncNamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
+				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(cancellationToken, maxRetries, ConnectRetryIntervalMs).ConfigureAwait(false);
+			}
+			else
+			{
+				pipeStream = new NamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
+				await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			}
+
 			return pipeStream;
 		}
 		catch
 		{
-			await pipeStream.DisposeAsync().ConfigureAwait(false);
-			throw;
-		}
-	}
+			if (pipeStream is not null)
+			{
+				await pipeStream.DisposeAsync().ConfigureAwait(false);
+			}
 
-	/// <summary>
-	/// Creates a client to a named pipe.
-	/// </summary>
-	/// <param name="pipeName">The name of the pipe to connect to.</param>
-	/// <param name="options">Pipe connection options.</param>
-	/// <param name="cancellationToken">A cancellation token.</param>
-	/// <returns>A handle representing the client connection.</returns>
-	[SupportedOSPlatform("windows")]
-	public static async Task<Stream> ConnectWindowsAsync(string pipeName, ClientOptions options, CancellationToken cancellationToken)
-	{
-		Requires.NotNull(pipeName, nameof(pipeName));
-		PipeOptions pipeOptions = StandardPipeOptions;
-
-#if NETFRAMEWORK
-		// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
-		// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
-		// that were not defined in the enumeration.
-		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
-#endif
-		AsyncNamedPipeClientStream pipeStream = new(".", pipeName, PipeDirection.InOut, pipeOptions);
-		try
-		{
-			await pipeStream.ConnectAsync(cancellationToken).ConfigureAwait(false);
-			return pipeStream;
-		}
-		catch
-		{
-			await pipeStream.DisposeAsync().ConfigureAwait(false);
 			throw;
 		}
 	}
@@ -320,5 +303,11 @@ public static class ServerFactory
 		/// This property is only meaningful when <see cref="FailFast"/> is <see langword="false"/>.
 		/// </remarks>
 		public bool CpuSpinOverFirstChanceExceptions { get; init; }
+
+		/// <summary>
+		/// Gets a value indicating whether to try to use a proper async call to connect to the server (no spin wait and no TimeoutException).
+		/// Only works on if running on Windows.
+		/// </summary>
+		public bool SpinOrThrowIfWindows { get; init; }
 	}
 }
