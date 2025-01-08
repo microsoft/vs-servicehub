@@ -1,15 +1,3 @@
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.AsyncNamedPipeClientRetry() -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.DelayBetweenRetriesInMs.get -> System.Func<int, int>!
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.DelayBetweenRetriesInMs.set -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxDuration.get -> System.TimeSpan
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxDuration.set -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxRetries.get -> int
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientRetry.MaxRetries.set -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream.AsyncNamedPipeClientStream(string! serverName, string! pipeName, System.IO.Pipes.PipeDirection direction, System.IO.Pipes.PipeOptions options, System.Security.Principal.TokenImpersonationLevel impersonationLevel = System.Security.Principal.TokenImpersonationLevel.None) -> void
-Microsoft.ServiceHub.Framework.AsyncNamedPipeClientStream.ConnectAsync(System.Threading.CancellationToken cancellationToken, int maxRetries, int retryDelayMs) -> System.Threading.Tasks.Task!
-Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.ClientOptions(bool failFast = false, bool cpuSpinOverFirstChanceExceptions = false, bool tryNoSpinOrExceptionIfWindows = true) -> void
 Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.SpinOrThrowIfWindows.get -> bool
 Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.SpinOrThrowIfWindows.init -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.AdditionalServiceInterfaces.get -> System.Collections.Immutable.ImmutableArray<System.Type!>?
@@ -20,4 +8,3 @@ Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.Option
 Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.AdditionalProxyInterfaceTypeLoadFailure = 5 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
 Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.get -> System.Collections.Immutable.ImmutableArray<string!>
 Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.init -> void
-static Microsoft.ServiceHub.Framework.ServerFactory.ConnectWindowsAsync(string! pipeName, Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!

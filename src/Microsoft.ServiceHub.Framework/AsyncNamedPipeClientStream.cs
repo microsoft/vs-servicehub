@@ -13,7 +13,7 @@ namespace Microsoft.ServiceHub.Framework
 	/// Named pipe client that avoids TimeoutExceptions and burning CPU.
 	/// </summary>
 	[SupportedOSPlatform("windows")]
-	public class AsyncNamedPipeClientStream : PipeStream
+	internal class AsyncNamedPipeClientStream : PipeStream
 	{
 		private const int SECURITYSQOSPRESENT = 0x00100000;
 		private const int GENERICREAD = unchecked((int)0x80000000);
@@ -32,7 +32,7 @@ namespace Microsoft.ServiceHub.Framework
 		/// <param name="direction">Communication direction.</param>
 		/// <param name="options">Pipe options.</param>
 		/// <param name="impersonationLevel">Impersonation level.</param>
-		public AsyncNamedPipeClientStream(
+		internal AsyncNamedPipeClientStream(
 			string serverName,
 			string pipeName,
 			PipeDirection direction,
