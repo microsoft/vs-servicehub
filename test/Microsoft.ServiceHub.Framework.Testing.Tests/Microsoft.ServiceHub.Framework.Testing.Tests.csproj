@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.IO.Redist" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.VisualStudio.RpcContracts" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.Utilities" ExcludeAssets="compile" />
