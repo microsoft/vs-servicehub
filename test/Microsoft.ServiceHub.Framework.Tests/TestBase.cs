@@ -57,7 +57,7 @@ public abstract class TestBase : IDisposable
 	/// </summary>
 	protected async Task WaitForDebuggerAsync()
 	{
-#if NET6_0_OR_GREATER
+#if NET
 		if (OperatingSystem.IsLinux())
 		{
 			Console.WriteLine($"Waiting for debugger to attach to PID {Process.GetCurrentProcess().Id}...");

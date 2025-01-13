@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
@@ -8,7 +8,9 @@
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
-    <ProjectReference Include="..\Microsoft.ServiceHub.Framework.Tests\Microsoft.ServiceHub.Framework.Tests.csproj" />
+    <ProjectReference
+      Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
+    <ProjectReference
+      Include="..\Microsoft.ServiceHub.Framework.Tests\Microsoft.ServiceHub.Framework.Tests.csproj" />
   </ItemGroup>
 </Project>

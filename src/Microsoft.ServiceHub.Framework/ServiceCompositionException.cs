@@ -40,6 +40,9 @@ public class ServiceCompositionException : Exception
 	/// </summary>
 	/// <param name="info">Serialization info.</param>
 	/// <param name="context">Serialization context.</param>
+#if NET
+	[Obsolete]
+#endif
 	protected ServiceCompositionException(
 	  System.Runtime.Serialization.SerializationInfo info,
 	  System.Runtime.Serialization.StreamingContext context)

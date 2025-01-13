@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Testing;
 
 internal static class ReferencesHelper
 {
-	public static readonly ReferenceAssemblies DefaultReferences = ReferenceAssemblies.Net.Net60
+	public static readonly ReferenceAssemblies DefaultReferences = ReferenceAssemblies.Net.Net80
 		.WithPackages(ImmutableArray.Create(
 			new PackageIdentity("System.ComponentModel.Composition", "8.0.0"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),

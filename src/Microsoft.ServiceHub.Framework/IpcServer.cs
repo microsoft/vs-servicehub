@@ -81,7 +81,11 @@ internal class IpcServer : IDisposable, IIpcServer
 		GC.SuppressFinalize(this);
 		try
 		{
+#if NET
+			await this.disposalTokenSource.CancelAsync().ConfigureAwait(false);
+#else
 			this.disposalTokenSource.Cancel();
+#endif
 		}
 		catch (AggregateException ex)
 		{

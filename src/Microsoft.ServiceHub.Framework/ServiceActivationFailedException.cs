@@ -26,6 +26,9 @@ public class ServiceActivationFailedException : ServiceCompositionException
 	/// </summary>
 	/// <param name="info">Seralization info.</param>
 	/// <param name="context">Serialization context.</param>
+#if NET
+	[Obsolete]
+#endif
 	protected ServiceActivationFailedException(
 	  System.Runtime.Serialization.SerializationInfo info,
 	  System.Runtime.Serialization.StreamingContext context)
