@@ -16,10 +16,6 @@
     <PackageReference Include="TraceSource.ActivityTracing" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
-    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Microsoft.ServiceHub.Analyzers.CodeFixes\Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" PrivateAssets="none" />
   </ItemGroup>
 
