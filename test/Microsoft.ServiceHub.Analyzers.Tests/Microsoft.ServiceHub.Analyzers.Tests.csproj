@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- Do not test on net472 because on the linux AzP agents this will run on mono, and the analyzer test library fails on mono. -->
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
   </PropertyGroup>
 
@@ -14,12 +14,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis" />
     <PackageReference Include="NuGet.Protocol" />
-
-    <!--
-      This is a transitive dependency of Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit and Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit.
-      Those packages reference verison 6.0.0 of this pacakge which has a vulnerability
-    -->
-    <PackageReference Include="System.Formats.Asn1" />
   </ItemGroup>
 
   <ItemGroup>
