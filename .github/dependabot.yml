@@ -7,15 +7,7 @@ updates:
   directory: /
   schedule:
     interval: weekly
-  groups:
-    nerdbank-gitversioning:
-      patterns:
-      - nbgv
-      - nerdbank.gitversioning
-    xunit:
-      patterns:
-      - 'xunit*'
-- package-ecosystem: dotnet-sdk
-  directory: /
+- package-ecosystem: npm
+  directory: /src/servicebroker-npm
   schedule:
-    interval: monthly
+    interval: weekly
