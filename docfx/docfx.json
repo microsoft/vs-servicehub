@@ -3,7 +3,13 @@
 		{
 			"src": [
 				{
-					"src": "../src",
+					"src": "../src/Microsoft.ServiceHub.Framework",
+					"files": [
+						"**/*.csproj"
+					]
+				},
+				{
+					"src": "../src/Microsoft.ServiceHub.Framework.Testing",
 					"files": [
 						"**/*.csproj"
 					]
