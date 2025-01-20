@@ -8,7 +8,7 @@
     <MicroBuildVersion>2.0.171</MicroBuildVersion>
     <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
     <CodeAnalysisVersion>4.10.0</CodeAnalysisVersion>
-    <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24527.2</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <VSThreadingVersion>17.10.48</VSThreadingVersion>
   </PropertyGroup>
@@ -54,7 +54,7 @@
     <PackageVersion Update="Microsoft.CodeAnalysis.Common" Version="$(CodeAnalysisVersionForAnalyzers)" />
     <PackageVersion Update="Microsoft.CodeAnalysis.CSharp" Version="$(CodeAnalysisVersionForAnalyzers)" />
     <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="System.Collections.Immutable" Version="6.0.0" />
+    <PackageVersion Update="System.Collections.Immutable" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
