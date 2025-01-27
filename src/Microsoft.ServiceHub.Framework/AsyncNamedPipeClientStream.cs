@@ -129,13 +129,13 @@ internal class AsyncNamedPipeClientStream : PipeStream
 
 	private void ValidateRemotePipeUser()
 	{
-#if NETFRAMEWORK || NET5_0_OR_GREATER
 #if NETFRAMEWORK
 		var isCurrentUserOnly = (this.pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) == PolyfillExtensions.PipeOptionsCurrentUserOnly;
-#else
+#elif NET5_0_OR_GREATER
 		var isCurrentUserOnly = (this.pipeOptions & PipeOptions.CurrentUserOnly) == PipeOptions.CurrentUserOnly;
 #endif
 
+#if NETFRAMEWORK || NET5_0_OR_GREATER
 		// No validation needed - pipe is not restricted to current user
 		if (!isCurrentUserOnly)
 		{
