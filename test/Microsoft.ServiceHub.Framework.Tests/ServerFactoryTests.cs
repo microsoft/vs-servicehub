@@ -53,14 +53,14 @@ public class ServerFactoryTests : TestBase
 	public async Task TestAsyncFactoryNoSpin()
 	{
 		// Stopwatch to measure wall-clock time (total elapsed time)
-		var stopwatch = new Stopwatch();
-		stopwatch.Start();
+		var stopwatch = Stopwatch.StartNew();
 
 		// Get the current process to measure CPU usage
 		var process = Process.GetCurrentProcess();
 		TimeSpan initialCpuTime = process.TotalProcessorTime;
 
 		// Try to connect to non-existent pipe, cancel after some time
+		var exceptionThrown = false;
 		try
 		{
 			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
@@ -68,7 +68,13 @@ public class ServerFactoryTests : TestBase
 		}
 		catch (TaskCanceledException)
 		{
-			// Ignore exception
+			// Catch the exception from the cancellation token expiring and ignore it
+			exceptionThrown = true;
+		}
+
+		if (!exceptionThrown)
+		{
+			Assert.Fail($"Expected {nameof(TaskCanceledException)} to be thrown.");
 		}
 
 		// Stop stopwatch and measure CPU time after function completes

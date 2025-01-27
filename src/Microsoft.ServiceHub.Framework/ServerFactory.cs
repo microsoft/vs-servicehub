@@ -102,10 +102,10 @@ public static class ServerFactory
 		PipeStream? pipeStream = null;
 		try
 		{
-			if (!options.SpinOrThrowIfWindows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
 				pipeStream = new AsyncNamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
-				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(cancellationToken, maxRetries, ConnectRetryIntervalMs).ConfigureAwait(false);
+				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(maxRetries, ConnectRetryIntervalMs, cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
@@ -303,11 +303,5 @@ public static class ServerFactory
 		/// This property is only meaningful when <see cref="FailFast"/> is <see langword="false"/>.
 		/// </remarks>
 		public bool CpuSpinOverFirstChanceExceptions { get; init; }
-
-		/// <summary>
-		/// Gets a value indicating whether to try to use a proper async call to connect to the server (no spin wait and no TimeoutException).
-		/// Only works on if running on Windows.
-		/// </summary>
-		public bool SpinOrThrowIfWindows { get; init; }
 	}
 }

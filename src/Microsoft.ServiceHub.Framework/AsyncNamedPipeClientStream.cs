@@ -6,169 +6,151 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
+using Windows.Win32.Foundation;
+using static Windows.Win32.PInvoke;
 
-namespace Microsoft.ServiceHub.Framework
+namespace Microsoft.ServiceHub.Framework;
+
+/// <summary>
+/// Named pipe client that avoids TimeoutExceptions and burning CPU.
+/// </summary>
+[SupportedOSPlatform("windows")]
+internal class AsyncNamedPipeClientStream : PipeStream
 {
+	private readonly string pipePath;
+	private readonly TokenImpersonationLevel impersonationLevel;
+	private readonly PipeOptions pipeOptions;
+	private readonly PipeDirection direction;
+	private readonly uint access;
+
 	/// <summary>
-	/// Named pipe client that avoids TimeoutExceptions and burning CPU.
+	/// Initializes a new instance of the <see cref="AsyncNamedPipeClientStream"/> class.
 	/// </summary>
-	[SupportedOSPlatform("windows")]
-	internal class AsyncNamedPipeClientStream : PipeStream
+	/// <param name="serverName">Pipe server name.</param>
+	/// <param name="pipeName">Pipe name.</param>
+	/// <param name="direction">Communication direction.</param>
+	/// <param name="options">Pipe options.</param>
+	/// <param name="impersonationLevel">Impersonation level.</param>
+	internal AsyncNamedPipeClientStream(
+		string serverName,
+		string pipeName,
+		PipeDirection direction,
+		PipeOptions options,
+		TokenImpersonationLevel impersonationLevel = TokenImpersonationLevel.None)
+		: base(direction, 4096)
 	{
-		private const int SECURITYSQOSPRESENT = 0x00100000;
-		private const int GENERICREAD = unchecked((int)0x80000000);
-		private const int GENERICWRITE = 0x40000000;
-		private readonly string pipePath;
-		private readonly TokenImpersonationLevel impersonationLevel;
-		private readonly PipeOptions pipeOptions;
-		private readonly PipeDirection direction;
-		private readonly int access;
+		Requires.NotNullOrEmpty(serverName);
+		Requires.NotNullOrEmpty(pipeName);
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="AsyncNamedPipeClientStream"/> class.
-		/// </summary>
-		/// <param name="serverName">Pipe server name.</param>
-		/// <param name="pipeName">Pipe name.</param>
-		/// <param name="direction">Communication direction.</param>
-		/// <param name="options">Pipe options.</param>
-		/// <param name="impersonationLevel">Impersonation level.</param>
-		internal AsyncNamedPipeClientStream(
-			string serverName,
-			string pipeName,
-			PipeDirection direction,
-			PipeOptions options,
-			TokenImpersonationLevel impersonationLevel = TokenImpersonationLevel.None)
-			: base(direction, 4096)
+		this.pipePath = $@"\\{serverName}\pipe\{pipeName}";
+		this.direction = direction;
+		this.pipeOptions = options;
+		this.impersonationLevel = impersonationLevel;
+		this.access = GetAccess(direction);
+	}
+
+	/// <summary>
+	/// Connects pipe client to server.
+	/// </summary>
+	/// <param name="maxRetries">Maximum number of retries.</param>
+	/// <param name="retryDelayMs">Milliseconds delay between retries.</param>
+	/// <param name="cancellationToken">Cancellation token.</param>
+	/// <returns>A task representing the establishment of the client connection.</returns>
+	/// <exception cref="TimeoutException">Thrown if no connection can be established.</exception>
+	internal async Task ConnectAsync(
+		int maxRetries,
+		int retryDelayMs,
+		CancellationToken cancellationToken)
+	{
+		var errorCodeMap = new Dictionary<int, int>();
+		int retries = 0;
+		while (!cancellationToken.IsCancellationRequested)
 		{
-			Requires.NotNullOrEmpty(serverName, nameof(serverName));
-			Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
-
-			this.pipePath = $@"\\{serverName}\pipe\{pipeName}";
-			this.direction = direction;
-			this.pipeOptions = options;
-			this.impersonationLevel = impersonationLevel;
-			this.access = this.GetAccess();
-		}
-
-		/// <summary>
-		/// Connects pipe client to server.
-		/// </summary>
-		/// <param name="cancellationToken">Cancellation token.</param>
-		/// <param name="maxRetries">Maximum number of retries.</param>
-		/// <param name="retryDelayMs">Milliseconds delay between retries.</param>
-		/// <returns>A task representing the establishment of the client connection.</returns>
-		/// <exception cref="TimeoutException">Thrown if no connection can be established.</exception>
-		public async Task ConnectAsync(
-			CancellationToken cancellationToken,
-			int maxRetries,
-			int retryDelayMs)
-		{
-			var errorCodeMap = new Dictionary<int, int>();
-			int retries = 0;
-			while (!cancellationToken.IsCancellationRequested)
+			if (retries > maxRetries || this.TryConnect(errorCodeMap))
 			{
-				if (retries > maxRetries || this.TryConnect(ref errorCodeMap))
-				{
-					break;
-				}
-
-				retries++;
-				await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
+				break;
 			}
 
-			if (retries > maxRetries || !this.IsConnected)
-			{
-				throw new TimeoutException($"Failed with errors: {string.Join(", ", errorCodeMap.Select(x => $"(code: {x.Key}, count: {x.Value})"))}");
-			}
+			retries++;
+			await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
 		}
 
-		[DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-		private static extern SafePipeHandle CreateNamedPipeClient(
-			string lpFileName,
-			uint dwDesiredAccess,
-			uint dwShareMode,
-			IntPtr secAttrs,
-			uint dwCreationDisposition,
-			uint dwFlagsAndAttributes,
-			IntPtr hTemplateFile);
-
-		private bool TryConnect(ref Dictionary<int, int> errorCodeMap)
+		if (retries > maxRetries || !this.IsConnected)
 		{
-			var pipeFlags = this.GetPipeFlags();
-			SafePipeHandle handle = CreateNamedPipeClient(this.pipePath, (uint)this.access, (uint)FileShare.None, IntPtr.Zero, (uint)FileMode.Open, (uint)pipeFlags, IntPtr.Zero);
+			throw new TimeoutException($"Failed with errors: {string.Join(", ", errorCodeMap.Select(x => $"(code: {x.Key}, count: {x.Value})"))}");
+		}
+	}
 
-			if (handle.IsInvalid)
-			{
-				int errorCode = Marshal.GetLastWin32Error();
-				handle.Dispose();
-				var newErrorCount = errorCodeMap.ContainsKey(errorCode) ? errorCodeMap[errorCode] + 1 : 1;
-				errorCodeMap[errorCode] = newErrorCount;
-				return false;
-			}
-
-			// Success!
-			this.InitializeHandle(handle, false, true);
-			this.IsConnected = true;
-			this.ValidateRemotePipeUser();
-			return true;
+	private static uint GetAccess(PipeDirection direction)
+	{
+		uint access = 0;
+		if ((PipeDirection.In & direction) == PipeDirection.In)
+		{
+			access |= (uint)GENERIC_ACCESS_RIGHTS.GENERIC_READ;
 		}
 
-		private void ValidateRemotePipeUser()
+		if ((PipeDirection.Out & direction) == PipeDirection.Out)
 		{
-#if !NETSTANDARD
+			access |= (uint)GENERIC_ACCESS_RIGHTS.GENERIC_WRITE;
+		}
+
+		return access;
+	}
+
+	private bool TryConnect(Dictionary<int, int> errorCodeMap)
+	{
+		var pipeFlags = (int)this.pipeOptions;
+
+#pragma warning disable CA1416 // Validate platform compatibility - no way to validate this OS version is greater than 5
+		SafeFileHandle handle = CreateFile(
+			this.pipePath,
+			(uint)this.access,
+			Windows.Win32.Storage.FileSystem.FILE_SHARE_MODE.FILE_SHARE_NONE,
+			null,
+			Windows.Win32.Storage.FileSystem.FILE_CREATION_DISPOSITION.OPEN_EXISTING,
+			(Windows.Win32.Storage.FileSystem.FILE_FLAGS_AND_ATTRIBUTES)pipeFlags,
+			null);
+#pragma warning restore CA1416 // Validate platform compatibility
+
+		if (handle.IsInvalid)
+		{
+			int errorCode = Marshal.GetLastWin32Error();
+			int newErrorCount = errorCodeMap.TryGetValue(errorCode, out var currentCount) ? currentCount + 1 : 1;
+			errorCodeMap[errorCode] = newErrorCount;
+			return false;
+		}
+
+		// Success!
+		this.InitializeHandle(new SafePipeHandle(handle.DangerousGetHandle(), true), false, true);
+		this.IsConnected = true;
+		this.ValidateRemotePipeUser();
+		return true;
+	}
+
+	private void ValidateRemotePipeUser()
+	{
+#if NETFRAMEWORK || NET5_0_OR_GREATER
 #if NETFRAMEWORK
-			var isCurrentUser = (this.pipeOptions & ~PolyfillExtensions.PipeOptionsCurrentUserOnly) != 0;
+		var isCurrentUserOnly = (this.pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) == PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #else
-			var isCurrentUser = (this.pipeOptions & ~PipeOptions.CurrentUserOnly) != 0;
+		var isCurrentUserOnly = (this.pipeOptions & PipeOptions.CurrentUserOnly) == PipeOptions.CurrentUserOnly;
 #endif
 
-			if (isCurrentUser)
-			{
-				return;
-			}
+		// No validation needed - pipe is not restricted to current user
+		if (!isCurrentUserOnly)
+		{
+			return;
+		}
 
-			// TBD if we need to validate remote pipe user
-			PipeSecurity accessControl = this.GetAccessControl();
-			IdentityReference? remoteOwnerSid = accessControl.GetOwner(typeof(SecurityIdentifier));
-			using (WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent())
-			{
-				SecurityIdentifier? currentUserSid = currentIdentity.Owner;
-				if (remoteOwnerSid != currentUserSid)
-				{
-					this.IsConnected = false;
-					throw new UnauthorizedAccessException();
-				}
-			}
+		System.IO.Pipes.PipeSecurity accessControl = this.GetAccessControl();
+		IdentityReference? remoteOwnerSid = accessControl.GetOwner(typeof(SecurityIdentifier));
+		using WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent();
+		SecurityIdentifier? currentUserSid = currentIdentity.Owner;
+		if (remoteOwnerSid != currentUserSid)
+		{
+			this.IsConnected = false;
+			throw new UnauthorizedAccessException();
+		}
 #endif
-		}
-
-		private int GetPipeFlags()
-		{
-			// This assumes that CurrentUser only has been removed
-			int pipeFlags = (int)this.pipeOptions;
-			if (this.impersonationLevel != TokenImpersonationLevel.None)
-			{
-				pipeFlags |= SECURITYSQOSPRESENT;
-				pipeFlags |= ((int)this.impersonationLevel - 1) << 16;
-			}
-
-			return pipeFlags;
-		}
-
-		private int GetAccess()
-		{
-			int access = 0;
-			if ((PipeDirection.In & this.direction) != 0)
-			{
-				access |= GENERICREAD;
-			}
-
-			if ((PipeDirection.Out & this.direction) != 0)
-			{
-				access |= GENERICWRITE;
-			}
-
-			return access;
-		}
 	}
 }
