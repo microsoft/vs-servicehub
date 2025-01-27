@@ -150,4 +150,4 @@ Note that in a real world application, the preceding code would typically be div
 
 ## Contributing
 
-Check out our [CONTRIBUTING.md](CONTRIBUTING.md) file.
+Check out our [CONTRIBUTING.md](../../CONTRIBUTING.md) file.
