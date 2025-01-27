@@ -1,5 +1,3 @@
-Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.MakeAsyncIfWindows.get -> bool
-Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.MakeAsyncIfWindows.init -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.AdditionalServiceInterfaces.get -> System.Collections.Immutable.ImmutableArray<System.Type!>?
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpcConnection(StreamJsonRpc.JsonRpc! jsonRpc, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor? owner) -> void
 Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithAdditionalServiceInterfaces(System.Collections.Immutable.ImmutableArray<System.Type!>? value) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor!
