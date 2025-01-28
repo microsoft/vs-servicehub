@@ -1,0 +1,54 @@
+{
+	"metadata": [
+		{
+			"src": [
+				{
+					"src": "../src/Microsoft.ServiceHub.Framework",
+					"files": [
+						"**/*.csproj"
+					]
+				},
+				{
+					"src": "../src/Microsoft.ServiceHub.Framework.Testing",
+					"files": [
+						"**/*.csproj"
+					]
+				}
+			],
+			"dest": "api"
+		}
+	],
+	"build": {
+		"content": [
+			{
+				"files": [
+					"**/*.{md,yml}"
+				],
+				"exclude": [
+					"_site/**"
+				]
+			}
+		],
+		"resource": [
+			{
+				"files": [
+					"images/**"
+				]
+			}
+		],
+		"xref": [
+			"https://learn.microsoft.com/en-us/dotnet/.xrefmap.json"
+		],
+		"output": "_site",
+		"template": [
+			"default",
+			"modern"
+		],
+		"globalMetadata": {
+			"_appName": "Microsoft.ServiceHub.Framework",
+			"_appTitle": "Microsoft.ServiceHub.Framework",
+			"_enableSearch": true,
+			"pdf": false
+		}
+	}
+}

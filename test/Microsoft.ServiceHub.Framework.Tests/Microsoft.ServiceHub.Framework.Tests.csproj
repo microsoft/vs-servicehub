@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
     <RootNamespace />
     <NoWarn>$(NoWarn);ISB001</NoWarn>
@@ -13,6 +13,10 @@
     <ProjectReference Include="..\ExternalTestAssembly\ExternalTestAssembly.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
+    <PackageReference Include="Microsoft.IO.Redist" ExcludeAssets="compile" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.VisualStudio.RpcContracts" ExcludeAssets="compile" />
@@ -22,7 +26,6 @@
     <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
 
 </Project>

@@ -23,7 +23,7 @@ parameters:
   type: boolean
   default: true
 # This lists the names of the artifacts that will be published *from every OS build agent*.
-# Any new azure-pipelines/artifacts/*.ps1 script needs to be added to this list.
+# Any new tools/artifacts/*.ps1 script needs to be added to this list.
 # If an artifact is only generated or collected on one OS, it should NOT be listed here,
 # but should be manually added to the `outputs:` field in the appropriate OS job.
 - name: artifact_names
@@ -134,7 +134,7 @@ jobs:
           fetchDepth: 0 # avoid shallow clone so nbgv can do its work.
           clean: true
         - ${{ if parameters.EnableOptProf }}:
-          - powershell: Write-Host "##vso[task.setvariable variable=PROFILINGINPUTSDROPNAME]$(azure-pipelines/variables/ProfilingInputsDropName.ps1)"
+          - powershell: Write-Host "##vso[task.setvariable variable=PROFILINGINPUTSDROPNAME]$(tools/variables/ProfilingInputsDropName.ps1)"
             displayName: ⚙ Set ProfilingInputsDropName for optprof
 
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
@@ -166,7 +166,7 @@ jobs:
       fetchDepth: 0 # avoid shallow clone so nbgv can do its work.
       clean: true
     - ${{ if parameters.EnableOptProf }}:
-      - powershell: Write-Host "##vso[task.setvariable variable=PROFILINGINPUTSDROPNAME]$(azure-pipelines/variables/ProfilingInputsDropName.ps1)"
+      - powershell: Write-Host "##vso[task.setvariable variable=PROFILINGINPUTSDROPNAME]$(tools/variables/ProfilingInputsDropName.ps1)"
         displayName: ⚙ Set ProfilingInputsDropName for optprof
 
   - ${{ if eq(variables['Build.Reason'], 'Schedule') }}:
@@ -194,8 +194,10 @@ jobs:
       IsOptProf: ${{ parameters.IsOptProf }}
 
   - ${{ if and(parameters.EnableDotNetFormatCheck, not(parameters.EnableLinuxBuild)) }}:
-    - script: dotnet format --verify-no-changes --no-restore
+    - script: dotnet format --verify-no-changes
       displayName: 💅 Verify formatted code
+      env:
+        dotnetformat: true # part of a workaround for https://github.com/dotnet/sdk/issues/44951
 
   - ${{ if not(parameters.IsOptProf) }}:
     - template: node.yml
@@ -250,8 +252,10 @@ jobs:
           RunTests: ${{ parameters.RunTests }}
           IsOptProf: ${{ parameters.IsOptProf }}
       - ${{ if parameters.EnableDotNetFormatCheck }}:
-        - script: dotnet format --verify-no-changes --no-restore
+        - script: dotnet format --verify-no-changes
           displayName: 💅 Verify formatted code
+          env:
+            dotnetformat: true # part of a workaround for https://github.com/dotnet/sdk/issues/44951
 
   - ${{ if parameters.EnableMacOSBuild }}:
     - job: macOS
@@ -326,3 +330,4 @@ jobs:
     - template: apiscan.yml
       parameters:
         windowsPool: ${{ parameters.windowsPool }}
+        RealSign: ${{ parameters.RealSign }}

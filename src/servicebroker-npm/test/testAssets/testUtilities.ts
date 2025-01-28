@@ -41,7 +41,7 @@ export async function startCP(cancellationToken: CancellationToken, args?: strin
 		const fileName = process.platform === 'win32' ? 'ServiceBrokerTest.exe' : 'ServiceBrokerTest'
 		let testBrokerPathsAttempted: string[] = []
 		for (const config of configurations) {
-			const testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net7.0/${fileName}`)
+			const testBrokerPath = path.join(__dirname, `../../../../bin/ServiceBrokerTest/${config}/net8.0/${fileName}`)
 			if (fs.existsSync(testBrokerPath)) {
 				return testBrokerPath
 			}

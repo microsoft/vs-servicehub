@@ -156,7 +156,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <summary>
 	/// Proffers services offered by a remote <see cref="IRemoteServiceBroker"/> for access by this container.
 	/// </summary>
-	/// <inheritdoc cref="ProfferRemoteBroker(IServiceBroker, ServiceSource, ImmutableHashSet{ServiceMoniker}?)"/>
+	/// <inheritdoc cref="ProfferRemoteBroker(IServiceBroker, ServiceSource, ImmutableHashSet{ServiceMoniker}?)" path="/returns"/>
+	/// <inheritdoc cref="ProfferRemoteBroker(IServiceBroker, ServiceSource, ImmutableHashSet{ServiceMoniker}?)" path="/remarks"/>
 	/// <param name="serviceBroker"><inheritdoc cref="ProfferRemoteBroker(IServiceBroker, ServiceSource, ImmutableHashSet{ServiceMoniker}?)" path="/param[@name='serviceBroker]"/></param>
 	/// <param name="multiplexingStream">An optional <see cref="MultiplexingStream"/> that may be used to provision pipes for each brokered service.</param>
 	/// <param name="source"><inheritdoc cref="ProfferRemoteBroker(IServiceBroker, ServiceSource, ImmutableHashSet{ServiceMoniker}?)" path="/param[@name='source]"/></param>

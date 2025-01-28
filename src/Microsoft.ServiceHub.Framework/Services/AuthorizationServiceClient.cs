@@ -147,14 +147,17 @@ public class AuthorizationServiceClient : IDisposableObservable
 	/// <inheritdoc />
 	public void Dispose()
 	{
-		this.AuthorizationService.CredentialsChanged -= this.AuthorizationService_CredentialsChanged;
-		this.AuthorizationService.AuthorizationChanged -= this.AuthorizationService_AuthorizationChanged;
-		if (this.ownsAuthorizationService)
+		if (!this.IsDisposed)
 		{
-			(this.AuthorizationService as IDisposable)?.Dispose();
-		}
+			this.AuthorizationService.CredentialsChanged -= this.AuthorizationService_CredentialsChanged;
+			this.AuthorizationService.AuthorizationChanged -= this.AuthorizationService_AuthorizationChanged;
+			if (this.ownsAuthorizationService)
+			{
+				(this.AuthorizationService as IDisposable)?.Dispose();
+			}
 
-		this.IsDisposed = true;
+			this.IsDisposed = true;
+		}
 	}
 
 	private void AuthorizationService_CredentialsChanged(object? sender, EventArgs e) => this.clientCredentials = this.NewClientCredentials();
