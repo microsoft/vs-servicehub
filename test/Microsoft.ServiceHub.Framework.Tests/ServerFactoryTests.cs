@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
@@ -15,7 +16,7 @@ public class ServerFactoryTests : TestBase
 	}
 
 	[Fact]
-	public async Task TestAsyncFactoryCanConnect()
+	public async Task TestConnection()
 	{
 		TaskCompletionSource<Stream> serverStreamSource = new();
 		Stream? clientStream = null;
@@ -27,7 +28,7 @@ public class ServerFactoryTests : TestBase
 			},
 			new ServerFactory.ServerOptions
 			{
-				TraceSource = this.CreateTestTraceSource(nameof(this.TestAsyncFactoryCanConnect)),
+				TraceSource = this.CreateTestTraceSource(nameof(this.TestConnection)),
 			});
 		try
 		{
@@ -49,8 +50,13 @@ public class ServerFactoryTests : TestBase
 	}
 
 	[Fact]
-	public async Task TestAsyncFactoryNoSpin()
+	public async Task TestWindowsUnableToConnect()
 	{
+		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		{
+			return;
+		}
+
 		// Stopwatch to measure wall-clock time (total elapsed time)
 		var stopwatch = Stopwatch.StartNew();
 
@@ -63,7 +69,7 @@ public class ServerFactoryTests : TestBase
 		try
 		{
 			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
-			await ServerFactory.ConnectAsync("NonExistentPipe", default, cts.Token);
+			await ServerFactory.ConnectAsync("NonExistentPipe", new() { CpuSpinOverFirstChanceExceptions = true }, cts.Token);
 		}
 		catch (TaskCanceledException)
 		{
@@ -81,6 +87,46 @@ public class ServerFactoryTests : TestBase
 		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
 		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
 		Assert.True(percentageCpuTime < 20); // Confirm that no more than 20% of time is consumed by CPU
+	}
+
+	[Fact]
+	public async Task TestNonWindowsUnableToConnect()
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		{
+			return;
+		}
+
+		// Stopwatch to measure wall-clock time (total elapsed time)
+		var stopwatch = Stopwatch.StartNew();
+
+		// Get the current process to measure CPU usage
+		var process = Process.GetCurrentProcess();
+		TimeSpan initialCpuTime = process.TotalProcessorTime;
+
+		// Try to connect to non-existent pipe, cancel after some time
+		var exceptionThrown = false;
+		try
+		{
+			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
+			await ServerFactory.ConnectAsync("NonExistentPipe", new() { CpuSpinOverFirstChanceExceptions = true }, cts.Token);
+		}
+		catch (OperationCanceledException)
+		{
+			// Catch the exception from the cancellation token expiring and ignore it
+			exceptionThrown = true;
+		}
+
+		if (!exceptionThrown)
+		{
+			Assert.Fail($"Expected {nameof(OperationCanceledException)} to be thrown.");
+		}
+
+		// Stop stopwatch and measure CPU time after function completes
+		stopwatch.Stop();
+		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
+		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
+		Debug.WriteLine($"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%");
 	}
 
 	[Fact]
