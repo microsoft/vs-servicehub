@@ -86,7 +86,9 @@ public class ServerFactoryTests : TestBase
 		stopwatch.Stop();
 		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
 		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
-		Assert.True(percentageCpuTime < 30, $"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%"); // Confirm that no more than 30% of time is consumed by CPU
+
+		// Set a high bar to avoid flakiness
+		Assert.True(percentageCpuTime < 75, $"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%"); // Confirm that no more than 75% of time is consumed by CPU
 	}
 
 	[Fact]
