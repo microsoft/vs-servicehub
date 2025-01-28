@@ -26,7 +26,7 @@ public static class ServerFactory
 	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
 
-	private const int ConnectRetryIntervalMs = 20;
+	private const int ConnectRetryIntervalMs = 50;
 	private const int MaxRetryAttemptsForFileNotFoundException = 3;
 	private static readonly string PipePrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\\.\pipe" : Path.GetTempPath();
 
