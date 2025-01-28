@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
 
