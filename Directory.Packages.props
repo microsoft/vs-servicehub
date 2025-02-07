@@ -10,7 +10,7 @@
     <CodeAnalysisVersion>4.10.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
-    <VSThreadingVersion>17.10.48</VSThreadingVersion>
+    <VSThreadingVersion>17.13.37</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
