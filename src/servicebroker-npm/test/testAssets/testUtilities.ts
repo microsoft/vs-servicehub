@@ -1,5 +1,5 @@
 import CancellationToken from 'cancellationtoken'
-import * as child_process from 'child_process'
+import * as childProcess from 'child_process'
 import * as fs from 'fs'
 import { FullDuplexStream, MultiplexingStream } from 'nerdbank-streams'
 import * as path from 'path'
@@ -24,7 +24,7 @@ export async function hostMultiplexingServer(
 }
 
 export async function startCP(cancellationToken: CancellationToken, args?: string[]): Promise<MultiplexingStream> {
-	const cp = child_process.spawn(findTestExe(), args)
+	const cp = childProcess.spawn(findTestExe(), args)
 	cp.stderr.on('data', (chunk: Buffer) => {
 		console.error('server STDERR: ' + chunk.toString('utf8'))
 	})

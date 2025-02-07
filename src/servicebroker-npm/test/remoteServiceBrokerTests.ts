@@ -397,7 +397,11 @@ describe('Service Broker tests', function () {
 			const clientMultiplexingStream = await MultiplexingStream.CreateAsync(pipe.second, undefined, defaultToken)
 			const clientChannel = await clientMultiplexingStream.acceptChannelAsync('', undefined, defaultToken)
 			const remoteServiceBroker = FrameworkServices.remoteServiceBroker.constructRpc<IRemoteServiceBroker>(clientChannel.stream)
-			const serviceBroker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(remoteServiceBroker, clientMultiplexingStream, defaultToken)
+			const serviceBroker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(
+				remoteServiceBroker,
+				clientMultiplexingStream,
+				defaultToken
+			)
 
 			// This is a somewhat contrived means to verify that the RemoteServiceBroker will clear out the multiplexing stream.
 			// In a real-world scenario, the way this would happen is:
@@ -405,12 +409,20 @@ describe('Service Broker tests', function () {
 			// 2. The MultiplexingRelayServiceBroker would add the mxstream object on its end to the ServiceActivationOptions and forward the request to some IServiceBroker.
 			// 3. The IServiceBroker happens to be a client of remote services, so the ServiceActivationOptions get re-serialized.
 			// When this works, the RemoteServiceBroker should have deleted the mxstream object from the ServiceActivationOptions since it isn't serializable.
-			const clientServicePipe = await serviceBroker.getPipe(Descriptors.calculator.moniker, { multiplexingStream: clientMultiplexingStream }, defaultToken)
+			const clientServicePipe = await serviceBroker.getPipe(
+				Descriptors.calculator.moniker,
+				{ multiplexingStream: clientMultiplexingStream },
+				defaultToken
+			)
 			expect(clientServicePipe).toBeTruthy()
 			clientServicePipe?.end()
 
 			// Do it again with getProxy this time.
-			const calc = await serviceBroker.getProxy<ICalculatorService>(Descriptors.calculator, { multiplexingStream: clientMultiplexingStream }, defaultToken)
+			const calc = await serviceBroker.getProxy<ICalculatorService>(
+				Descriptors.calculator,
+				{ multiplexingStream: clientMultiplexingStream },
+				defaultToken
+			)
 			expect(calc).toBeTruthy()
 			calc?.dispose()
 
