@@ -10,7 +10,7 @@
     <CodeAnalysisVersion>4.10.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
-    <VSThreadingVersion>17.10.48</VSThreadingVersion>
+    <VSThreadingVersion>17.13.37</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
@@ -22,11 +22,11 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
-    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.12.18" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.10.21" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.10.40170" />
+    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.13.20" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.13.12" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.13.40008" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33627.172" />
-    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.6.32" />
+    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.11.8" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.8.8" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(VSThreadingVersion)" />
