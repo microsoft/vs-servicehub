@@ -5,12 +5,11 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 
-    <MicroBuildVersion>2.0.181</MicroBuildVersion>
-    <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
+    <MicroBuildVersion>2.0.187</MicroBuildVersion>
     <CodeAnalysisVersion>4.12.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
-    <VSThreadingVersion>17.10.48</VSThreadingVersion>
+    <VSThreadingVersion>17.12.19</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
@@ -23,10 +22,12 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.12.18" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.10.21" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.10.40170" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33627.172" />
-    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.6.32" />
+    <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="17.12.40391" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.12.12" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.12.40391" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33428.366" />
+    <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit" Version="17.11.8" />
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="17.12.40392" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="17.8.8" />
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(VSThreadingVersion)" />
@@ -34,23 +35,15 @@
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.162" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.11.79" />
     <PackageVersion Include="NuGet.Protocol" Version="6.12.1" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.20.11" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.20.20" />
     <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
   </ItemGroup>
-  <ItemGroup Condition="'$(IsAnalyzerProject)'=='true'">
-    <!-- Analyzers need to use older references to work in existing C# compilers. -->
-    <PackageVersion Update="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.Common" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="System.Collections.Immutable" Version="8.0.0" />
-  </ItemGroup>
   <ItemGroup Label="Library.Template">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
     <PackageVersion Include="xunit" Version="2.9.3" />
