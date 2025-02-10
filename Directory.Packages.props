@@ -6,7 +6,6 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 
     <MicroBuildVersion>2.0.187</MicroBuildVersion>
-    <CodeAnalysisVersionForAnalyzers>3.11.0</CodeAnalysisVersionForAnalyzers>
     <CodeAnalysisVersion>4.12.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
@@ -42,14 +41,6 @@
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="1.6.24" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(IsAnalyzerProject)'=='true'">
-    <!-- Analyzers need to use older references to work in existing C# compilers. -->
-    <PackageVersion Update="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.Common" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersionForAnalyzers)" />
-    <PackageVersion Update="System.Collections.Immutable" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
