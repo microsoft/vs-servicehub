@@ -33,7 +33,7 @@
 		"nerdbank-streams": "^2.11.79",
 		"strict-event-emitter-types": "^2.0.0",
 		"string-hash": "^1.1.3",
-		"uuid": "^9.0.1",
+		"uuid": "^11.0.0",
 		"vscode-jsonrpc": "^8.1.0"
 	},
 	"devDependencies": {
