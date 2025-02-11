@@ -14,6 +14,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// </summary>
 internal static class ServiceManagerReflectionHelpers
 {
+	private const string ServiceHubRemoteServiceBrokerPipeNameActivationArgument = "__servicehub__ServiceHubRemoteServiceBrokerPipeName";
+
 	/// <summary>
 	/// <see cref="ServiceActivationOptions"/> extension method for getting an <see cref="IServiceBroker"/>.
 	/// </summary>
@@ -55,7 +57,7 @@ internal static class ServiceManagerReflectionHelpers
 	{
 		IAuthorizationService? authService = null;
 
-		if (broker != null)
+		if (broker is not null)
 		{
 			try
 			{
@@ -66,13 +68,20 @@ internal static class ServiceManagerReflectionHelpers
 			}
 		}
 
-		if (authService is null)
-		{
-			authService = new DefaultAuthorizationService();
-		}
-
-		return new AuthorizationServiceClient(authService);
+		return new AuthorizationServiceClient(authService ?? new DefaultAuthorizationService());
 	}
+
+	/// <summary>
+	/// Helper method for getting a <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".
+	/// </summary>
+	/// <returns>A <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".</returns>
+	/// <devremarks>
+	/// This called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
+	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service without making an
+	/// RPC to search for the service. This is an optimization used when the Host knows that the call to request an authorization will
+	/// always fail.
+	/// </devremarks>
+	internal static AuthorizationServiceClient GetInternalAuthorizationServiceClient() => new(new DefaultAuthorizationService());
 
 	/// <summary>
 	/// Helper method for setting up RpcConnection for hosted services.
@@ -175,8 +184,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// <returns>The pipe name or an empty string if there isn't one.</returns>
 	internal static string GetServiceBrokerServerPipeName(this ServiceActivationOptions options)
 	{
-		if (options.ActivationArguments != null &&
-			options.ActivationArguments.TryGetValue("__servicehub__ServiceHubRemoteServiceBrokerPipeName", out string? pipeName))
+		if (options.ActivationArguments is not null &&
+			options.ActivationArguments.TryGetValue(ServiceHubRemoteServiceBrokerPipeNameActivationArgument, out string? pipeName))
 		{
 			return pipeName;
 		}
@@ -206,8 +215,6 @@ internal static class ServiceManagerReflectionHelpers
 	/// <returns>The updated <see cref="ServiceActivationOptions"/>.</returns>
 	internal static ServiceActivationOptions RemoveServiceBrokerPipeNameFromServiceActivationOptions(ServiceActivationOptions options)
 	{
-		const string ServiceHubRemoteServiceBrokerPipeNameActivationArgument = "__servicehub__ServiceHubRemoteServiceBrokerPipeName";
-
 		if (options.ActivationArguments is not null && options.ActivationArguments.ContainsKey(ServiceHubRemoteServiceBrokerPipeNameActivationArgument))
 		{
 			var activationOptions = new Dictionary<string, string>();
