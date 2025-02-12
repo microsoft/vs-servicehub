@@ -75,6 +75,18 @@ internal static class ServiceManagerReflectionHelpers
 	}
 
 	/// <summary>
+	/// Helper method for getting a <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".
+	/// </summary>
+	/// <returns>A <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".</returns>
+	/// <devremarks>
+	/// This is called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
+	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service without making an
+	/// RPC to search for the service. This is an optimization used when the Host knows that the call to request an authorization will
+	/// always fail.
+	/// </devremarks>
+	internal static AuthorizationServiceClient GetInternalAuthorizationServiceClient() => new(new DefaultAuthorizationService());
+
+	/// <summary>
 	/// Helper method for setting up RpcConnection for hosted services.
 	/// </summary>
 	/// <param name="getRpcObject">The method reference to get the ServiceFactoryResult from ServiceFactory that accepts input <see cref="ServiceActivationOptions"/>.</param>
