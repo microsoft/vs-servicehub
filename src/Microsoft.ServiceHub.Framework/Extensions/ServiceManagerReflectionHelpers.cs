@@ -79,7 +79,7 @@ internal static class ServiceManagerReflectionHelpers
 	/// </summary>
 	/// <returns>A <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".</returns>
 	/// <devremarks>
-	/// This called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
+	/// This is called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
 	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service without making an
 	/// RPC to search for the service. This is an optimization used when the Host knows that the call to request an authorization will
 	/// always fail.
