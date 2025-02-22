@@ -1,6 +1,6 @@
 # Microsoft.ServiceHub.Analyzers
 
-This package contains the static analyzers to guide code that consumes [the Microsoft.ServiceHub.Framework package](https://nuget.org/packages/Microsoft.ServiceHub.Framework).
+This package contains the static analyzers to guide code that consumes [the Microsoft.ServiceHub.Framework package](https://www.nuget.org/packages/Microsoft.ServiceHub.Framework).
 
 Analyzer ID | Description
 --|--
