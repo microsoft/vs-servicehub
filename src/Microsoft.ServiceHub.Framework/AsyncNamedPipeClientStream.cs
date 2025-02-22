@@ -4,9 +4,11 @@
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Security;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
 using Windows.Win32.Foundation;
+using Windows.Win32.Storage.FileSystem;
 using static Windows.Win32.PInvoke;
 
 namespace Microsoft.ServiceHub.Framework;
@@ -17,6 +19,8 @@ namespace Microsoft.ServiceHub.Framework;
 [SupportedOSPlatform("windows")]
 internal class AsyncNamedPipeClientStream : PipeStream
 {
+	private const FILE_SHARE_MODE SharingFlags = FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE | FILE_SHARE_MODE.FILE_SHARE_DELETE;
+
 	private readonly string pipePath;
 	private readonly TokenImpersonationLevel impersonationLevel;
 	private readonly PipeOptions pipeOptions;
@@ -50,6 +54,29 @@ internal class AsyncNamedPipeClientStream : PipeStream
 	}
 
 	/// <summary>
+	/// Wrapper for CreateFile to create a named pipe client.
+	/// Previous attempts used CreateFile directly, but for unknown reasons there were issues with the pipe handle.
+	/// </summary>
+	/// <returns>A handle to the named pipe.</returns>
+	/// <param name="lpFileName">The name of the pipe.</param>
+	/// <param name="dwDesiredAccess">The requested access to the file or device.</param>
+	/// <param name="dwShareMode">The requested sharing mode of the file or device.</param>
+	/// <param name="securityAttributes">A SECURITY_ATTRIBUTES structure.</param>
+	/// <param name="dwCreationDisposition">The action to take on files that exist, and on files that do not exist.</param>
+	/// <param name="dwFlagsAndAttributes">The file attributes and flags.</param>
+	/// <param name="hTemplateFile">A handle to a template file with the GENERIC_READ access right.</param>
+	[DllImport("kernel32.dll", EntryPoint = "CreateFile", CharSet = CharSet.Auto, SetLastError = true, BestFitMapping = false)]
+	[SecurityCritical]
+	internal static extern SafePipeHandle CreateNamedPipeClient(
+		string lpFileName,
+		int dwDesiredAccess,
+		System.IO.FileShare dwShareMode,
+		Windows.Win32.Security.SECURITY_ATTRIBUTES securityAttributes,
+		System.IO.FileMode dwCreationDisposition,
+		int dwFlagsAndAttributes,
+		IntPtr hTemplateFile);
+
+	/// <summary>
 	/// Connects pipe client to server.
 	/// </summary>
 	/// <param name="maxRetries">Maximum number of retries.</param>
@@ -66,14 +93,20 @@ internal class AsyncNamedPipeClientStream : PipeStream
 		int retries = 0;
 		while (!cancellationToken.IsCancellationRequested)
 		{
-			if (retries > maxRetries || this.TryConnect(errorCodeMap))
+			if (retries > maxRetries || this.TryConnect())
 			{
 				break;
 			}
 
 			retries++;
+			var errorCode = Marshal.GetLastWin32Error();
+			errorCodeMap[errorCode] = errorCodeMap.ContainsKey(errorCode) ? errorCodeMap[errorCode] + 1 : 1;
+
 			await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
 		}
+
+		// Throw if cancellation requested, otherwise throw a TimeoutException
+		cancellationToken.ThrowIfCancellationRequested();
 
 		if (retries > maxRetries || !this.IsConnected)
 		{
@@ -97,31 +130,31 @@ internal class AsyncNamedPipeClientStream : PipeStream
 		return access;
 	}
 
-	private bool TryConnect(Dictionary<int, int> errorCodeMap)
+	private bool TryConnect()
 	{
-		var pipeFlags = (int)this.pipeOptions;
+		// Immediately return if the pipe is not available
+		if (!WaitNamedPipe(this.pipePath, 1))
+		{
+			return false;
+		}
 
-#pragma warning disable CA1416 // Validate platform compatibility - no way to validate this OS version is greater than 5
-		SafeFileHandle handle = CreateFile(
+		SafePipeHandle handle = CreateNamedPipeClient(
 			this.pipePath,
-			(uint)this.access,
-			Windows.Win32.Storage.FileSystem.FILE_SHARE_MODE.FILE_SHARE_NONE,
-			null,
-			Windows.Win32.Storage.FileSystem.FILE_CREATION_DISPOSITION.OPEN_EXISTING,
-			(Windows.Win32.Storage.FileSystem.FILE_FLAGS_AND_ATTRIBUTES)pipeFlags,
-			null);
-#pragma warning restore CA1416 // Validate platform compatibility
+			(int)this.access,
+			FileShare.ReadWrite | FileShare.Delete,
+			this.GetSecurityAttributes(true),
+			System.IO.FileMode.Open,
+			(int)this.pipeOptions,
+			IntPtr.Zero);
 
 		if (handle.IsInvalid)
 		{
-			int errorCode = Marshal.GetLastWin32Error();
-			int newErrorCount = errorCodeMap.TryGetValue(errorCode, out var currentCount) ? currentCount + 1 : 1;
-			errorCodeMap[errorCode] = newErrorCount;
+			handle.Dispose();
 			return false;
 		}
 
 		// Success!
-		this.InitializeHandle(new SafePipeHandle(handle.DangerousGetHandle(), true), false, true);
+		this.InitializeHandle(handle, false, true);
 		this.IsConnected = true;
 		this.ValidateRemotePipeUser();
 		return true;
@@ -152,5 +185,16 @@ internal class AsyncNamedPipeClientStream : PipeStream
 			throw new UnauthorizedAccessException();
 		}
 #endif
+	}
+
+	private Windows.Win32.Security.SECURITY_ATTRIBUTES GetSecurityAttributes(bool inheritable)
+	{
+		var secAttr = new Windows.Win32.Security.SECURITY_ATTRIBUTES
+			{
+				bInheritHandle = inheritable,
+				nLength = (uint)Marshal.SizeOf(typeof(Windows.Win32.Security.SECURITY_ATTRIBUTES)),
+			};
+
+		return secAttr;
 	}
 }

@@ -6,3 +6,6 @@ OSVERSIONINFOEXW
 OSVERSIONINFOW
 GetVersionEx
 CreateFile
+CreateNamedPipeA
+WaitNamedPipe
+SECURITY_ATTRIBUTES

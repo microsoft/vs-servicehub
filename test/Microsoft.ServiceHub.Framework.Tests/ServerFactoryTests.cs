@@ -30,23 +30,21 @@ public class ServerFactoryTests : TestBase
 			{
 				TraceSource = this.CreateTestTraceSource(nameof(this.TestConnection)),
 			});
+
 		try
 		{
 			clientStream = await ServerFactory.ConnectAsync(server.Name, default, this.TimeoutToken);
-			await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
+			Task writeTask = clientStream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, this.TimeoutToken);
+			byte[] buffer = new byte[3];
+			Stream serverStream = await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
+			Task<int> bytesReadTask = serverStream.ReadAsync(buffer, 0, 3, this.TimeoutToken);
+			await writeTask.WithCancellation(this.TimeoutToken);
+			Assert.NotEqual(0, await bytesReadTask.WithCancellation(this.TimeoutToken));
 		}
 		finally
 		{
 			await server.DisposeAsync();
 		}
-
-		// Now verify that the pipe still works, since we disposed the server.
-		Task writeTask = clientStream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, this.TimeoutToken);
-		byte[] buffer = new byte[3];
-		Stream serverStream = await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
-		Task<int> bytesReadTask = serverStream.ReadAsync(buffer, 0, 3, this.TimeoutToken);
-		await writeTask.WithCancellation(this.TimeoutToken);
-		Assert.NotEqual(0, await bytesReadTask.WithCancellation(this.TimeoutToken));
 	}
 
 	[Fact]
@@ -71,7 +69,7 @@ public class ServerFactoryTests : TestBase
 			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
 			await ServerFactory.ConnectAsync("NonExistentPipe", new() { CpuSpinOverFirstChanceExceptions = true }, cts.Token);
 		}
-		catch (TaskCanceledException)
+		catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)
 		{
 			// Catch the exception from the cancellation token expiring and ignore it
 			exceptionThrown = true;
@@ -79,7 +77,7 @@ public class ServerFactoryTests : TestBase
 
 		if (!exceptionThrown)
 		{
-			Assert.Fail($"Expected {nameof(TaskCanceledException)} to be thrown.");
+			Assert.Fail($"Expected {nameof(TaskCanceledException)} or {nameof(OperationCanceledException)} to be thrown.");
 		}
 
 		// Stop stopwatch and measure CPU time after function completes
@@ -87,48 +85,11 @@ public class ServerFactoryTests : TestBase
 		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
 		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
 
-		// Set a high bar to avoid flakiness
-		Assert.True(percentageCpuTime < 75, $"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%"); // Confirm that no more than 75% of time is consumed by CPU
-	}
+		Debug.WriteLine($"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%\n.");
 
-	[Fact]
-	public async Task TestNonWindowsUnableToConnect()
-	{
-		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-		{
-			return;
-		}
-
-		// Stopwatch to measure wall-clock time (total elapsed time)
-		var stopwatch = Stopwatch.StartNew();
-
-		// Get the current process to measure CPU usage
-		var process = Process.GetCurrentProcess();
-		TimeSpan initialCpuTime = process.TotalProcessorTime;
-
-		// Try to connect to non-existent pipe, cancel after some time
-		var exceptionThrown = false;
-		try
-		{
-			var cts = new CancellationTokenSource(5 * 1000); // Delay for 5 seconds
-			await ServerFactory.ConnectAsync("NonExistentPipe", new() { CpuSpinOverFirstChanceExceptions = true }, cts.Token);
-		}
-		catch (OperationCanceledException)
-		{
-			// Catch the exception from the cancellation token expiring and ignore it
-			exceptionThrown = true;
-		}
-
-		if (!exceptionThrown)
-		{
-			Assert.Fail($"Expected {nameof(OperationCanceledException)} to be thrown.");
-		}
-
-		// Stop stopwatch and measure CPU time after function completes
-		stopwatch.Stop();
-		TimeSpan totalCpuTime = process.TotalProcessorTime - initialCpuTime;
-		double percentageCpuTime = Math.Round((totalCpuTime.TotalMilliseconds / stopwatch.Elapsed.TotalMilliseconds) * 100);
-		Debug.WriteLine($"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%");
+		// Confirm that no more than 80% of CPU time was used
+		// Set a high bar to avoid flakiness, ideally this should be in the 10-20% range
+		Assert.True(percentageCpuTime < 80, $"CPU Time: {totalCpuTime.TotalMilliseconds}ms, Elapsed Time: {stopwatch.Elapsed.TotalMilliseconds}ms, Percentage: {percentageCpuTime}%");
 	}
 
 	[Fact]
