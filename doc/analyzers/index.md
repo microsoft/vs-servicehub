@@ -10,4 +10,4 @@ ID | Title
 [ISB003](ISB003.md) | Exported brokered services are valid
 [ISB004](ISB004.md) | Optional interfaces on exported brokered services are implemented
 
-[1]: https://nuget.org/packages/microsoft.servicehub.analyzers
+[1]: https://www.nuget.org/packages/microsoft.servicehub.analyzers

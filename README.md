@@ -6,7 +6,7 @@ These are the libraries that Visual Studio uses for much of its intra- and inter
 
 ## Microsoft.ServiceHub.Framework
 
-[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Framework.svg)](https://nuget.org/packages/Microsoft.ServiceHub.Framework)
+[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Framework.svg)](https://www.nuget.org/packages/Microsoft.ServiceHub.Framework)
 
 [Learn more about this package](src/Microsoft.ServiceHub.Framework/README.md).
 
@@ -18,13 +18,13 @@ These are the libraries that Visual Studio uses for much of its intra- and inter
 
 ## Microsoft.ServiceHub.Framework.Testing
 
-[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Framework.Testing.svg)](https://nuget.org/packages/Microsoft.ServiceHub.Framework.Testing)
+[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Framework.Testing.svg)](https://www.nuget.org/packages/Microsoft.ServiceHub.Framework.Testing)
 
 [Learn more about this package](src/Microsoft.ServiceHub.Framework.Testing/README.md).
 
 ## Microsoft.ServiceHub.Analyzers
 
-[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Analyzers.svg)](https://nuget.org/packages/Microsoft.ServiceHub.Analyzers)
+[![NuGet package](https://img.shields.io/nuget/v/Microsoft.ServiceHub.Analyzers.svg)](https://www.nuget.org/packages/Microsoft.ServiceHub.Analyzers)
 
 [Learn more about this package](src/Microsoft.ServiceHub.Analyzers/README.md).
 
