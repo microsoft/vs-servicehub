@@ -190,10 +190,10 @@ internal class AsyncNamedPipeClientStream : PipeStream
 	private Windows.Win32.Security.SECURITY_ATTRIBUTES GetSecurityAttributes(bool inheritable)
 	{
 		var secAttr = new Windows.Win32.Security.SECURITY_ATTRIBUTES
-			{
-				bInheritHandle = inheritable,
-				nLength = (uint)Marshal.SizeOf(typeof(Windows.Win32.Security.SECURITY_ATTRIBUTES)),
-			};
+		{
+			bInheritHandle = inheritable,
+			nLength = (uint)Marshal.SizeOf(typeof(Windows.Win32.Security.SECURITY_ATTRIBUTES)),
+		};
 
 		return secAttr;
 	}
