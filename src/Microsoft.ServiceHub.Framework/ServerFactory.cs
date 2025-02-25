@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
@@ -25,7 +26,7 @@ public static class ServerFactory
 	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
 
-	private const int ConnectRetryIntervalMs = 20;
+	private const int ConnectRetryIntervalMs = 50;
 	private const int MaxRetryAttemptsForFileNotFoundException = 3;
 	private static readonly string PipePrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\\.\pipe" : Path.GetTempPath();
 
@@ -96,16 +97,31 @@ public static class ServerFactory
 		// that were not defined in the enumeration.
 		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
 #endif
-
-		NamedPipeClientStream pipeStream = new(".", TrimWindowsPrefixForDotNet(pipeName), PipeDirection.InOut, pipeOptions);
+		var name = TrimWindowsPrefixForDotNet(pipeName);
+		var maxRetries = options.FailFast ? 0 : int.MaxValue;
+		PipeStream? pipeStream = null;
 		try
 		{
-			await ConnectWithRetryAsync(pipeStream, fullPipeOptions, cancellationToken, maxRetries: options.FailFast ? 0 : int.MaxValue, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				pipeStream = new AsyncNamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
+				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(maxRetries, ConnectRetryIntervalMs, cancellationToken).ConfigureAwait(false);
+			}
+			else
+			{
+				pipeStream = new NamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
+				await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+			}
+
 			return pipeStream;
 		}
 		catch
 		{
-			await pipeStream.DisposeAsync().ConfigureAwait(false);
+			if (pipeStream is not null)
+			{
+				await pipeStream.DisposeAsync().ConfigureAwait(false);
+			}
+
 			throw;
 		}
 	}

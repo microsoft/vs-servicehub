@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
@@ -11,6 +13,38 @@ public class ServerFactoryTests : TestBase
 	public ServerFactoryTests(ITestOutputHelper logger)
 		: base(logger)
 	{
+	}
+
+	[Fact]
+	public async Task TestConnection()
+	{
+		TaskCompletionSource<Stream> serverStreamSource = new();
+		Stream? clientStream = null;
+		IIpcServer server = ServerFactory.Create(
+			stream =>
+			{
+				serverStreamSource.TrySetResult(stream);
+				return Task.CompletedTask;
+			},
+			new ServerFactory.ServerOptions
+			{
+				TraceSource = this.CreateTestTraceSource(nameof(this.TestConnection)),
+			});
+
+		try
+		{
+			clientStream = await ServerFactory.ConnectAsync(server.Name, default, this.TimeoutToken);
+			Task writeTask = clientStream.WriteAsync(new byte[] { 1, 2, 3 }, 0, 3, this.TimeoutToken);
+			byte[] buffer = new byte[3];
+			Stream serverStream = await serverStreamSource.Task.WithCancellation(this.TimeoutToken);
+			Task<int> bytesReadTask = serverStream.ReadAsync(buffer, 0, 3, this.TimeoutToken);
+			await writeTask.WithCancellation(this.TimeoutToken);
+			Assert.NotEqual(0, await bytesReadTask.WithCancellation(this.TimeoutToken));
+		}
+		finally
+		{
+			await server.DisposeAsync();
+		}
 	}
 
 	[Fact]
