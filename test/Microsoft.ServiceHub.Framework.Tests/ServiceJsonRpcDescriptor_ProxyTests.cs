@@ -4,8 +4,6 @@
 using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_ProxyTestBase
 {

@@ -14,8 +14,6 @@ using MessagePack;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServiceJsonRpcDescriptorAssemblyLoadTests : TestBase
 {

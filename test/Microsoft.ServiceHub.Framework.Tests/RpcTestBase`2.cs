@@ -4,8 +4,6 @@
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
-using Xunit;
-using Xunit.Abstractions;
 
 public abstract class RpcTestBase<TInterface, TServiceMock> : TestBase, IAsyncLifetime
 	where TInterface : class
@@ -26,7 +24,7 @@ public abstract class RpcTestBase<TInterface, TServiceMock> : TestBase, IAsyncLi
 
 	public TInterface ClientProxy { get; protected set; }
 
-	public virtual async Task InitializeAsync()
+	public virtual async ValueTask InitializeAsync()
 	{
 		Func<string, TraceSource> traceSourceFactory = name =>
 			new TraceSource(name)
@@ -73,8 +71,8 @@ public abstract class RpcTestBase<TInterface, TServiceMock> : TestBase, IAsyncLi
 #pragma warning restore CS0618 // Type or member is obsolete
 	}
 
-	public virtual Task DisposeAsync()
+	public virtual ValueTask DisposeAsync()
 	{
-		return Task.CompletedTask;
+		return default;
 	}
 }

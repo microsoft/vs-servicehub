@@ -5,8 +5,6 @@ using System.Collections.Immutable;
 using System.IO.Pipes;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
-using Xunit;
-using Xunit.Abstractions;
 
 public partial class IpcPipeRelayServiceBrokerTests : TestBase, IAsyncLifetime
 {
@@ -20,12 +18,12 @@ public partial class IpcPipeRelayServiceBrokerTests : TestBase, IAsyncLifetime
 		this.relayBroker = new IpcRelayServiceBroker(this.innerServer);
 	}
 
-	public async Task InitializeAsync()
+	public async ValueTask InitializeAsync()
 	{
 		this.relayClientBroker = await RemoteServiceBroker.ConnectToServerAsync(this.relayBroker);
 	}
 
-	public async Task DisposeAsync()
+	public async ValueTask DisposeAsync()
 	{
 		if (this.relayClientBroker != null)
 		{
@@ -90,7 +88,7 @@ public partial class IpcPipeRelayServiceBrokerTests : TestBase, IAsyncLifetime
 
 		// Assert that the service is no longer offered.
 		var pipe = new NamedPipeClientStream(connectionInfo.PipeName!);
-		await Assert.ThrowsAsync<TimeoutException>(() => pipe.ConnectAsync((int)AsyncDelay.TotalMilliseconds));
+		await Assert.ThrowsAsync<TimeoutException>(() => pipe.ConnectAsync((int)AsyncDelay.TotalMilliseconds, this.TimeoutToken));
 	}
 
 	[Fact]

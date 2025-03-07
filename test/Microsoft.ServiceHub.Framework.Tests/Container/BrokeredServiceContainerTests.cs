@@ -8,7 +8,6 @@ using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Microsoft.VisualStudio.Utilities.ServiceBroker;
 using Xunit;
-using Xunit.Abstractions;
 
 public class BrokeredServiceContainerTests : TestBase
 {
@@ -45,7 +44,7 @@ public class BrokeredServiceContainerTests : TestBase
 	public async Task UnversionedRequestMatchesUnversionedService()
 	{
 		this.ProfferUnversionedService();
-		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor))
+		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken))
 		{
 			Assert.NotNull(proxy);
 			Assert.Equal(Descriptor.Moniker, this.lastRequestedMoniker);
@@ -56,7 +55,7 @@ public class BrokeredServiceContainerTests : TestBase
 	public async Task VersionedRequestMatchesUnversionedService()
 	{
 		this.ProfferUnversionedService();
-		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_0))
+		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_0, this.TimeoutToken))
 		{
 			Assert.NotNull(proxy);
 			Assert.Equal(Descriptor1_0.Moniker, this.lastRequestedMoniker);
@@ -67,7 +66,7 @@ public class BrokeredServiceContainerTests : TestBase
 	public async Task VersionedRequestMatchesVersionedService()
 	{
 		this.ProfferVersionedService();
-		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_0))
+		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_0, this.TimeoutToken))
 		{
 			Assert.NotNull(proxy);
 			Assert.Equal(Descriptor1_0.Moniker, this.lastRequestedMoniker);
@@ -78,7 +77,7 @@ public class BrokeredServiceContainerTests : TestBase
 	public async Task VersionedRequestDoesNotMatchMisversionedService()
 	{
 		this.ProfferVersionedService();
-		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_1))
+		using (IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor1_1, this.TimeoutToken))
 		{
 			Assert.Null(proxy);
 			Assert.Null(this.lastRequestedMoniker);
@@ -122,7 +121,7 @@ public class BrokeredServiceContainerTests : TestBase
 			return callbackDescriptor = descriptor;
 		};
 
-		using (IMockService? proxy = await internalContainer.GetFullAccessServiceBroker().GetProxyAsync<IMockService>(Descriptor1_0))
+		using (IMockService? proxy = await internalContainer.GetFullAccessServiceBroker().GetProxyAsync<IMockService>(Descriptor1_0, this.TimeoutToken))
 		{
 			Assert.NotNull(proxy);
 		}
@@ -147,7 +146,7 @@ public class BrokeredServiceContainerTests : TestBase
 		});
 
 		this.ProfferUnversionedService();
-		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor);
+		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken);
 		Assert.NotNull(proxy);
 		Assert.IsAssignableFrom<IMockService2>(proxy);
 	}
@@ -168,7 +167,7 @@ public class BrokeredServiceContainerTests : TestBase
 
 		this.ProfferUnversionedService();
 		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(
-			((ServiceJsonRpcDescriptor)Descriptor).WithAdditionalServiceInterfaces([typeof(IMockService3)]));
+			((ServiceJsonRpcDescriptor)Descriptor).WithAdditionalServiceInterfaces([typeof(IMockService3)]), this.TimeoutToken);
 		Assert.NotNull(proxy);
 		Assert.IsNotAssignableFrom<IMockService2>(proxy);
 		Assert.IsAssignableFrom<IMockService3>(proxy);
@@ -190,7 +189,7 @@ public class BrokeredServiceContainerTests : TestBase
 
 		this.ProfferUnversionedService();
 		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(
-			((ServiceJsonRpcDescriptor)Descriptor).WithAdditionalServiceInterfaces([]));
+			((ServiceJsonRpcDescriptor)Descriptor).WithAdditionalServiceInterfaces([]), this.TimeoutToken);
 		Assert.NotNull(proxy);
 		Assert.IsNotAssignableFrom<IMockService2>(proxy);
 		Assert.IsNotAssignableFrom<IMockService3>(proxy);
@@ -211,7 +210,7 @@ public class BrokeredServiceContainerTests : TestBase
 		});
 
 		this.ProfferUnversionedService();
-		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor);
+		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken);
 		Assert.NotNull(proxy);
 	}
 
