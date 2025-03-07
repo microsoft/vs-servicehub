@@ -3,7 +3,6 @@
 
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
-using Xunit.Abstractions;
 
 public class ServiceJsonRpcDescriptor_RpcProxyTests : ServiceJsonRpcDescriptor_ProxyTestBase
 {

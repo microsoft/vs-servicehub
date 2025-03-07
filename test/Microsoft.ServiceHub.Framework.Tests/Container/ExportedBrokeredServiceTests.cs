@@ -9,8 +9,6 @@ using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Composition;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 {
@@ -45,7 +43,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 
 	private IServiceBroker ServiceBroker => this.container.GetFullAccessServiceBroker();
 
-	public async Task InitializeAsync()
+	public async ValueTask InitializeAsync()
 	{
 		MefHost mefHost = new MefHost
 		{
@@ -56,15 +54,15 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 		await mefHost.CreateExportProviderAsync();
 	}
 
-	public Task DisposeAsync()
+	public ValueTask DisposeAsync()
 	{
-		return Task.CompletedTask;
+		return default;
 	}
 
 	[Fact]
 	public async Task InvokeBrokeredService()
 	{
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
@@ -75,7 +73,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	[Fact]
 	public async Task InvokeBrokeredService_WithoutOptionalInterface()
 	{
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
@@ -96,10 +94,10 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 			};
 
 			// This has a side effect of registering MEF exported brokered services into the mock container.
-			await mefHost.CreateExportProviderAsync();
+			await mefHost.CreateExportProviderAsync(this.TimeoutToken);
 		}
 
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptorVNext, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
@@ -118,7 +116,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 					{ "a", "b" },
 				},
 		};
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor, options);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor, options, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
@@ -133,7 +131,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	[Fact]
 	public async Task BrokeredServiceIsInitialized()
 	{
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor, this.TimeoutToken);
 		MockService realObject;
 		using (calc as IDisposable)
 		{
@@ -148,7 +146,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	[Fact]
 	public async Task BrokeredServiceIsDisposed()
 	{
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor, this.TimeoutToken);
 		MockService realObject;
 		using (calc as IDisposable)
 		{
@@ -165,7 +163,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	[Fact]
 	public async Task BrokeredServiceWithImportsIsDisposed()
 	{
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockServiceWithImports.SharedDescriptor, this.TimeoutToken);
 		MockService realObject;
 		using (calc as IDisposable)
 		{
@@ -187,14 +185,14 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task BrokeredServiceWithoutImportsIsNonShared()
 	{
 		MockService realObject1, realObject2;
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
 			realObject1 = (MockService)await calc.GetThisAsync();
 		}
 
-		calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor);
+		calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(MockService.SharedDescriptor, this.TimeoutToken);
 		using (calc as IDisposable)
 		{
 			Assumes.Present(calc);
@@ -208,7 +206,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NullDescriptor_GetPipe()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(9, 0)));
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(9, 0)), this.TimeoutToken);
 		Assert.Null(calc);
 		Assert.True(Assert.Single(NullVersionedCalculator.CreatedInstances).IsDisposed);
 	}
@@ -217,7 +215,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NonNullDescriptor_GetPipe()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(8, 0)));
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", new Version(8, 0)), this.TimeoutToken);
 		Assert.NotNull(calc);
 		Assert.Single(NullVersionedCalculator.CreatedInstances);
 	}
@@ -226,7 +224,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NonNullDescriptor_GetPipe_NullVersion()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", null));
+		IDuplexPipe? calc = await this.ServiceBroker.GetPipeAsync(new ServiceMoniker("Calculator", null), this.TimeoutToken);
 		Assert.NotNull(calc);
 		Assert.Single(NullVersionedCalculator.CreatedInstances);
 	}
@@ -235,7 +233,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NullDescriptor_GetProxy()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(9, 0)));
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(9, 0)), this.TimeoutToken);
 		Assert.Null(calc);
 		Assert.True(Assert.Single(NullVersionedCalculator.CreatedInstances).IsDisposed);
 	}
@@ -244,7 +242,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NonNullDescriptor_GetProxy()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(8, 0)));
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(new Version(8, 0)), this.TimeoutToken);
 		Assert.NotNull(calc);
 		Assert.Single(NullVersionedCalculator.CreatedInstances);
 	}
@@ -253,7 +251,7 @@ public class ExportedBrokeredServiceTests : TestBase, IAsyncLifetime
 	public async Task NullVersion_NonNullDescriptor_GetProxy_NullVersion()
 	{
 		NullVersionedCalculator.CreatedInstances.Clear();
-		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(null));
+		ICalculator? calc = await this.ServiceBroker.GetProxyAsync<ICalculator>(NullVersionedCalculator.CreateDescriptor(null), this.TimeoutToken);
 		Assert.NotNull(calc);
 		Assert.Single(NullVersionedCalculator.CreatedInstances);
 	}

@@ -9,8 +9,6 @@ using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
-using Xunit;
-using Xunit.Abstractions;
 
 public partial class ServiceJsonRpcDescriptorTests : TestBase
 {
@@ -110,7 +108,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	{
 		ServiceJsonRpcDescriptor descriptor = CreateDefault();
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
-		descriptor.ConstructRpc(new Calculator(), pair.Item1.UsePipe());
+		descriptor.ConstructRpc(new Calculator(), pair.Item1.UsePipe(cancellationToken: this.TimeoutToken));
 
 		ICalculator calc = JsonRpc.Attach<ICalculator>(pair.Item2);
 		Assert.Equal(8, await calc.AddAsync(3, 5));
@@ -122,7 +120,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		ServiceJsonRpcDescriptor descriptor = CreateDefault();
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
 		var calcService = new Calculator();
-		descriptor.ConstructRpc(calcService, pair.Item1.UsePipe());
+		descriptor.ConstructRpc(calcService, pair.Item1.UsePipe(cancellationToken: this.TimeoutToken));
 		pair.Item2.Close();
 
 		await calcService.WaitForDisposalAsync(this.TimeoutToken);
@@ -138,7 +136,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		var rpc = JsonRpc.Attach(pair.Item1, new Calculator());
 
 		// client
-		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe());
+		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken));
 		Assert.Equal(8, await calc.AddAsync(3, 5));
 	}
 
@@ -150,7 +148,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 
 		var rpcServer = JsonRpc.Attach(pair.Item1, new Calculator());
 		var clientRpcTarget = new LocalTargetObject();
-		ICalculator calc = descriptor.ConstructRpc<ICalculator>(clientRpcTarget, pair.Item2.UsePipe());
+		ICalculator calc = descriptor.ConstructRpc<ICalculator>(clientRpcTarget, pair.Item2.UsePipe(cancellationToken: this.TimeoutToken));
 		await rpcServer.InvokeWithCancellationAsync(nameof(LocalTargetObject.Callback), cancellationToken: this.TimeoutToken);
 
 		Assert.Equal(1, clientRpcTarget.CallbackInvocations);
@@ -162,7 +160,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		ServiceJsonRpcDescriptor descriptor = CreateDefault();
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
 
-		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe());
+		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken));
 		((IDisposable)calc).Dispose();
 		int bytesRead = await pair.Item1.ReadAsync(new byte[1], 0, 1, this.TimeoutToken);
 		Assert.Equal(0, bytesRead);
@@ -177,8 +175,8 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	{
 		var descriptor = new ServiceJsonRpcDescriptor(SomeMoniker, clientInterface: null, formatter, delimiter, multiplexingStreamOptions: null);
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
-		descriptor.ConstructRpc(new Calculator(), pair.Item1.UsePipe());
-		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe());
+		descriptor.ConstructRpc(new Calculator(), pair.Item1.UsePipe(cancellationToken: this.TimeoutToken));
+		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken));
 		Assert.Equal(8, await calc.AddAsync(3, 5));
 	}
 
@@ -250,7 +248,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		await server.Entered.WaitAsync(this.TimeoutToken);
 
 		// Offer a reasonable amount of time for the second invocation to execute if it could.
-		await Task.Delay(AsyncDelay);
+		await Task.Delay(AsyncDelay, this.TimeoutToken);
 
 		// Verify that the method only executed once, and it was the first one.
 		Assert.Equal(1, server.Entrances);

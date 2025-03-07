@@ -6,8 +6,6 @@ using System.Reflection;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Newtonsoft.Json.Linq;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServiceMonikerTests
 {
@@ -188,8 +186,8 @@ public class ServiceMonikerTests
 	public void MessagePackSerialization()
 	{
 		var moniker = new ServiceMoniker("Abc", new Version(1, 0));
-		byte[] bytes = MessagePack.MessagePackSerializer.Serialize(moniker);
-		ServiceMoniker moniker2 = MessagePack.MessagePackSerializer.Deserialize<ServiceMoniker>(bytes);
+		byte[] bytes = MessagePack.MessagePackSerializer.Serialize(moniker, cancellationToken: TestContext.Current.CancellationToken);
+		ServiceMoniker moniker2 = MessagePack.MessagePackSerializer.Deserialize<ServiceMoniker>(bytes, cancellationToken: TestContext.Current.CancellationToken);
 		Assert.Equal(moniker, moniker2);
 	}
 
@@ -201,8 +199,8 @@ public class ServiceMonikerTests
 		{
 			{ moniker, true },
 		};
-		byte[] bytes = MessagePack.MessagePackSerializer.Serialize(dict);
-		Dictionary<ServiceMoniker, bool> dict2 = MessagePack.MessagePackSerializer.Deserialize<Dictionary<ServiceMoniker, bool>>(bytes);
+		byte[] bytes = MessagePack.MessagePackSerializer.Serialize(dict, cancellationToken: TestContext.Current.CancellationToken);
+		Dictionary<ServiceMoniker, bool> dict2 = MessagePack.MessagePackSerializer.Deserialize<Dictionary<ServiceMoniker, bool>>(bytes, cancellationToken: TestContext.Current.CancellationToken);
 		Assert.True(dict2.ContainsKey(moniker));
 		Assert.True(dict2.TryGetValue(moniker, out bool value));
 		Assert.True(value);

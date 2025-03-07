@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.ServiceHub.Framework.Services;
-using Xunit;
-using Xunit.Abstractions;
 
 public class AuthorizationServiceClientTests : TestBase
 {

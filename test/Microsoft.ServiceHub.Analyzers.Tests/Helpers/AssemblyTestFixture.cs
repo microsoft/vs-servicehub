@@ -2,17 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Net;
-using Xunit.Abstractions;
+using Microsoft.ServiceHub.Analyzers.Tests;
 using Xunit.Sdk;
+using Xunit.v3;
 
-[assembly: Xunit.TestFramework("Microsoft.ServiceHub.Analyzers.Tests.AssemblyTestFixture", "Microsoft.ServiceHub.Analyzers.Tests")]
+[assembly: TestFramework(typeof(AssemblyTestFixture))]
 
 namespace Microsoft.ServiceHub.Analyzers.Tests
 {
 	public class AssemblyTestFixture : XunitTestFramework
 	{
-		public AssemblyTestFixture(IMessageSink messageSink)
-			: base(messageSink)
+		public AssemblyTestFixture()
 		{
 			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 		}

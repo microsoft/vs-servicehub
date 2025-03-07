@@ -4,8 +4,6 @@
 using System.Collections.Immutable;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
-using Xunit;
-using Xunit.Abstractions;
 
 public class RemoteServiceBrokerFrameworkDescriptorTests : RpcTestBase<IRemoteServiceBroker, MockRemoteServiceBroker>
 {

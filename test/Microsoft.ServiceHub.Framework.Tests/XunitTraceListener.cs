@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft;
-using Xunit.Abstractions;
 
 internal class XunitTraceListener : TraceListener
 {

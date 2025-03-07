@@ -10,8 +10,6 @@ using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
-using Xunit;
-using Xunit.Abstractions;
 
 public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 {
@@ -38,7 +36,7 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 		var rpc = JsonRpc.Attach(pair.Item1, new Calculator());
 
 		// client
-		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe());
+		ICalculator calc = descriptor.ConstructRpc<ICalculator>(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken));
 		Assert.Equal(8, await calc.AddAsync(3, 5));
 
 		Assert.Contains("CreateConnection", innerDescriptor.MethodCalls);
@@ -69,7 +67,7 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
 
-		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe()) as ServiceJsonRpcDescriptor.JsonRpcConnection;
+		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken)) as ServiceJsonRpcDescriptor.JsonRpcConnection;
 		Assumes.NotNull(jsonRpcConnection);
 
 		JsonRpc jsonRpc = jsonRpcConnection.JsonRpc;
@@ -101,7 +99,7 @@ public partial class DelegatingServiceJsonRpcDescriptorTests : TestBase
 
 		(Stream, Stream) pair = FullDuplexStream.CreatePair();
 
-		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe()) as ServiceJsonRpcDescriptor.JsonRpcConnection;
+		var jsonRpcConnection = descriptor.ConstructRpcConnection(pair.Item2.UsePipe(cancellationToken: this.TimeoutToken)) as ServiceJsonRpcDescriptor.JsonRpcConnection;
 		Assumes.NotNull(jsonRpcConnection);
 		Assert.True(createFormatterCalled);
 		Assert.True(createJsonRpcCalled);
