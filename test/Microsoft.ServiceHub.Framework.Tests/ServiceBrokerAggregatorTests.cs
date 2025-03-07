@@ -8,8 +8,6 @@ using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServiceBrokerAggregatorTests : TestBase
 {

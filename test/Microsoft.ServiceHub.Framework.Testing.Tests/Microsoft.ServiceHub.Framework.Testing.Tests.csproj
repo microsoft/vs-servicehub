@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>exe</OutputType>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
     <RootNamespace />
@@ -21,6 +22,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Utilities.Testing" ExcludeAssets="compile" />
     <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3" />
   </ItemGroup>
 </Project>

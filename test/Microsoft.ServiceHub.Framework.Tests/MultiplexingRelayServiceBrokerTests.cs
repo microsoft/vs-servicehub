@@ -7,8 +7,6 @@ using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
-using Xunit;
-using Xunit.Abstractions;
 
 public class MultiplexingRelayServiceBrokerTests : TestBase
 {
@@ -72,7 +70,7 @@ public class MultiplexingRelayServiceBrokerTests : TestBase
 	public async Task Handshake_WithoutMultiplexing()
 	{
 		IRemoteServiceBroker client = await this.GetRemoteClientProxyAsync();
-		await Assert.ThrowsAsync<RemoteInvocationException>(() => client.HandshakeAsync(new ServiceBrokerClientMetadata { SupportedConnections = RemoteServiceConnections.IpcPipe }));
+		await Assert.ThrowsAsync<RemoteInvocationException>(() => client.HandshakeAsync(new ServiceBrokerClientMetadata { SupportedConnections = RemoteServiceConnections.IpcPipe }, this.TimeoutToken));
 	}
 
 	[Fact]

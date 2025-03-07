@@ -6,8 +6,6 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using Xunit;
-using Xunit.Abstractions;
 
 public partial class RemoteServiceBrokerTests : TestBase
 {
@@ -31,16 +29,16 @@ public partial class RemoteServiceBrokerTests : TestBase
 	[Fact]
 	public async Task ConnectToServerAsync_ValidatesInputs()
 	{
-		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToServerAsync((System.IO.Pipelines.IDuplexPipe)null!));
-		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToServerAsync((IRemoteServiceBroker)null!));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToServerAsync((System.IO.Pipelines.IDuplexPipe)null!, this.TimeoutToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToServerAsync((IRemoteServiceBroker)null!, this.TimeoutToken));
 	}
 
 	[Fact]
 	public async Task ConnectToMultiplexingServerAsync_ValidatesInputs()
 	{
-		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync((Stream)null!));
-		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync((IRemoteServiceBroker)null!, null!));
-		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync(new EmptyRemoteServiceBroker(), null!));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync((Stream)null!, this.TimeoutToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync((IRemoteServiceBroker)null!, null!, this.TimeoutToken));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => RemoteServiceBroker.ConnectToMultiplexingServerAsync(new EmptyRemoteServiceBroker(), null!, this.TimeoutToken));
 	}
 
 	[Fact]
@@ -66,7 +64,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 
 		// Verify that the server received the closing notification, and rethrow any of its exceptions.
 		await serverTask.WithCancellation(this.TimeoutToken);
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -85,7 +83,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 
 		// Verify that the server received the closing notification, and rethrow any of its exceptions.
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serverTask).WithCancellation(this.TimeoutToken);
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -152,7 +150,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 
 		// Verify that the server received the closing notification, and rethrow any of its exceptions.
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => serverTask).WithCancellation(this.TimeoutToken);
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -165,7 +163,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 
 		// Verify that the server received the closing notification, and rethrow any of its exceptions.
 		await serverTask.WithCancellation(this.TimeoutToken);
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 
 		// Verify that the method took ownership of the stream and disposed it on failure.
 		Assert.True(((IDisposableObservable)pair.Item2).IsDisposed);
@@ -199,7 +197,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		}
 
 		// Verify that the server received the closing notification.
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 
 		// The multiplexing stream should NOT be disposed, since the server was just one channel of that.
 		Assert.False(((IDisposableObservable)mx).IsDisposed);
@@ -221,7 +219,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			AssertCommonServiceConnections(server.ClientMetadata.Value.SupportedConnections, localServiceHostOffered: true);
 		}
 
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 
 		// Verify that the method completed the duplex pipe we passed in.
 		await Task.WhenAll(pair.Item2.Input.WaitForWriterCompletionAsync(), pair.Item2.Output.WaitForReaderCompletionAsync()).WithCancellation(this.TimeoutToken);
@@ -235,7 +233,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
 		await Assert.ThrowsAsync<StreamJsonRpc.RemoteInvocationException>(() => RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken));
 
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 
 		// Verify that the method completed the duplex pipe we passed in.
 		await Task.WhenAll(pair.Item2.Input.WaitForWriterCompletionAsync(), pair.Item2.Output.WaitForReaderCompletionAsync()).WithCancellation(this.TimeoutToken);
@@ -250,7 +248,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			Assert.NotNull(server.ClientMetadata);
 		}
 
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -258,7 +256,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 	{
 		var server = new AlwaysThrowServiceBroker();
 		await Assert.ThrowsAsync<NotImplementedException>(() => RemoteServiceBroker.ConnectToServerAsync(server, this.TimeoutToken));
-		await server.Disposed.WaitAsync().WithCancellation(this.TimeoutToken);
+		await server.Disposed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 	}
 
 	[Fact]
@@ -281,7 +279,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new EmptyRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.DoesNotExist, this.TimeoutToken);
@@ -295,7 +293,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			ServiceActivationFailedException ex = await Assert.ThrowsAnyAsync<ServiceActivationFailedException>(() => broker.GetProxyAsync<object>(TestServices.DoesNotExist, this.TimeoutToken).AsTask());
@@ -309,7 +307,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
@@ -330,7 +328,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			throw new NotSupportedException();
 
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
@@ -361,7 +359,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
@@ -391,7 +389,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 #pragma warning disable CS0618 // Type or member is obsolete
 			testServer.LastIssuedChannel.Input.OnWriterCompleted((ex, s) => completed.Set(), null);
 #pragma warning restore CS0618 // Type or member is obsolete
-			await completed.WaitAsync().WithCancellation(this.TimeoutToken);
+			await completed.WaitAsync(this.TimeoutToken).WithCancellation(this.TimeoutToken);
 		}
 	}
 
@@ -401,7 +399,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
@@ -428,7 +426,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
@@ -489,7 +487,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
@@ -521,7 +519,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2))
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
@@ -567,7 +565,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
 		var server = new LocalActivationRemoteServiceBroker();
 		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
-		RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2);
+		RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken);
 		this.SetupTraceListener(broker);
 		await broker.DisposeAsync();
 

@@ -22,7 +22,7 @@ public class MockBrokeredServiceContainerTests
 		var container = new MockBrokeredServiceContainer();
 		using IDisposable proffer = container.Proffer(Descriptor, (mk, options, sb, ct) => new(new MockService()));
 		IServiceBroker sb = container.GetFullAccessServiceBroker();
-		IMockService? proxy = await sb.GetProxyAsync<IMockService>(Descriptor);
+		IMockService? proxy = await sb.GetProxyAsync<IMockService>(Descriptor, TestContext.Current.CancellationToken);
 		try
 		{
 			Assert.NotNull(proxy);

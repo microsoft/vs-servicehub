@@ -6,8 +6,6 @@ using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using Xunit;
-using Xunit.Abstractions;
 
 public abstract class TestBase : IDisposable
 {
@@ -44,12 +42,12 @@ public abstract class TestBase : IDisposable
 	}
 
 	/// <summary>
-	/// Causes a <see cref="SkippableFactAttribute"/> based test to skip if <see cref="IsOnMono"/>.
+	/// Skips a test when <see cref="IsOnMono"/>.
 	/// </summary>
 	/// <param name="unsupportedFeature">Names the feature that fails on mono so the skipped test can log about the reason.</param>
 	protected static void SkipOnMono(string unsupportedFeature)
 	{
-		Skip.If(IsOnMono, "Test marked as skipped on Mono runtime due to feature: " + unsupportedFeature);
+		Assert.SkipWhen(IsOnMono, "Test marked as skipped on Mono runtime due to feature: " + unsupportedFeature);
 	}
 
 	/// <summary>

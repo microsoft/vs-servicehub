@@ -9,8 +9,6 @@ using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
-using Xunit;
-using Xunit.Abstractions;
 
 public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 {

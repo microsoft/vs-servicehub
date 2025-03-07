@@ -5,8 +5,6 @@ using System.Collections.Immutable;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.VisualStudio.Sdk.TestFramework;
-using Xunit;
-using Xunit.Abstractions;
 
 public class BrokeredServiceManifestTests : BrokeredServiceContractTestBase<IBrokeredServiceManifest, BrokeredServiceManifestMock>
 {

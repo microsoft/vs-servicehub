@@ -14,13 +14,13 @@ public class ServiceBrokerExtensionsTests
 	[Fact]
 	public void GetPipeAsync_NullBroker()
 	{
-		Assert.Throws<ArgumentNullException>(() => ServiceBrokerExtensions.GetPipeAsync(null!, SomeMoniker));
+		Assert.Throws<ArgumentNullException>(() => ServiceBrokerExtensions.GetPipeAsync(null!, SomeMoniker, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]
 	public void GetProxyAsync_NullBroker()
 	{
-		Assert.Throws<ArgumentNullException>(() => ServiceBrokerExtensions.GetProxyAsync<IDisposable>(null!, SomeDescriptor));
+		Assert.Throws<ArgumentNullException>(() => ServiceBrokerExtensions.GetProxyAsync<IDisposable>(null!, SomeDescriptor, TestContext.Current.CancellationToken));
 	}
 
 	[Fact]

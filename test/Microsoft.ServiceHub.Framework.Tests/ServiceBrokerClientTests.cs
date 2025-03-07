@@ -6,8 +6,6 @@ using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServiceBrokerClientTests : TestBase
 {
@@ -187,7 +185,7 @@ public class ServiceBrokerClientTests : TestBase
 		};
 
 		// No event can be expected before we ask for any proxy.
-		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo);
+		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo, this.TimeoutToken);
 		(proxy as IDisposable)?.Dispose();
 
 		this.InvalidateAllServices();
@@ -221,7 +219,7 @@ public class ServiceBrokerClientTests : TestBase
 		};
 
 		// No event can be expected before we ask for any proxy.
-		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo);
+		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo, this.TimeoutToken);
 		(proxy as IDisposable)?.Dispose();
 
 		this.InvalidateAllServices();
@@ -240,10 +238,10 @@ public class ServiceBrokerClientTests : TestBase
 
 		// Hold the semaphore and don't let go.
 		var releaseSemaphore = new AsyncManualResetEvent();
-		Task semaphoreHoldingTask = this.client.InvalidationSemaphore.ExecuteAsync(releaseSemaphore.WaitAsync);
+		Task semaphoreHoldingTask = this.client.InvalidationSemaphore.ExecuteAsync(releaseSemaphore.WaitAsync, this.TimeoutToken);
 
 		// No event can be expected before we ask for any proxy.
-		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo);
+		ServiceBrokerClient.Rental<IEchoService> proxy = await this.client.GetProxyAsync<IEchoService>(TestServices.Echo, this.TimeoutToken);
 		(proxy as IDisposable)?.Dispose();
 
 		// Invalidate and assert that the event handler is not raised.

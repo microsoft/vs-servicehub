@@ -4,13 +4,13 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="microsoft.testing.platform.msbuild" ExcludeAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="xunit.v3.core" ExcludeAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference
-      Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
-    <ProjectReference
-      Include="..\Microsoft.ServiceHub.Framework.Tests\Microsoft.ServiceHub.Framework.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
+    <ProjectReference Include="..\Microsoft.ServiceHub.Framework.Tests\Microsoft.ServiceHub.Framework.Tests.csproj" />
   </ItemGroup>
 </Project>

@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
-using Xunit;
-using Xunit.Abstractions;
 
 public class ServerFactoryTests : TestBase
 {
