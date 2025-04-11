@@ -288,6 +288,36 @@ public class ServiceBrokerAggregatorTests : TestBase
 		Assert.Same(this.mockBrokers[1].ProxyResults[Descriptor1.Moniker], result);
 	}
 
+	[Fact]
+	public void Lazy_Null() => Assert.Throws<ArgumentNullException>(() => ServiceBrokerAggregator.Lazy(null!));
+
+	[Fact]
+	public async Task Lazy_GetProxyAsync()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.Lazy(() => new(this.mockBrokers[1]));
+		ICalculator? result = await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
+		Assumes.NotNull(result);
+	}
+
+	[Fact]
+	public async Task Lazy_GetPipeAsync()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.Lazy(() => new(this.mockBrokers[1]));
+		IDuplexPipe? pipe = await aggregator.GetPipeAsync(Descriptor1.Moniker, this.TimeoutToken);
+		Assert.NotNull(pipe);
+	}
+
+	[Fact]
+	public async Task Lazy_AvailabilityChanged()
+	{
+		IServiceBroker aggregator = ServiceBrokerAggregator.Lazy(() => new(this.mockBrokers[0]));
+
+		// We only expected events to propagate after the first use.
+		await aggregator.GetProxyAsync<ICalculator>(Descriptor1, this.TimeoutToken);
+
+		VerifyAvailabilityChangedEvent(this.mockBrokers[0], aggregator);
+	}
+
 	private static void VerifyAvailabilityChangedEvent(Func<IServiceBroker, IServiceBroker> aggregator)
 	{
 		InternalMockServiceBroker testBroker = new();

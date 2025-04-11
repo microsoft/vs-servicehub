@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Globalization;
 using System.IO.Pipelines;
-using Nerdbank.Streams;
+using Microsoft.VisualStudio.Threading;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -19,7 +18,7 @@ public static class ServiceBrokerAggregator
 	/// </summary>
 	/// <param name="serviceBrokers">A list of service brokers aggregated into the new one. This collection is stored; not copied. The collection should *not* be modified while the returned broker is in use.</param>
 	/// <returns>The aggregate service broker.</returns>
-	public static IServiceBroker Sequential(IReadOnlyList<IServiceBroker> serviceBrokers) => new SequentialBroker(serviceBrokers);
+	public static IServiceBroker Sequential(IReadOnlyList<IServiceBroker> serviceBrokers) => new SequentialBroker(Requires.NotNull(serviceBrokers));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/>.
@@ -28,14 +27,14 @@ public static class ServiceBrokerAggregator
 	/// </summary>
 	/// <param name="serviceBrokers">A collection of service brokers aggregated into the new one. This collection is stored; not copied. The collection should *not* be modified while the returned broker is in use.</param>
 	/// <returns>The aggregate service broker.</returns>
-	public static IServiceBroker Parallel(IReadOnlyCollection<IServiceBroker> serviceBrokers) => new ParallelAtMostOneBroker(serviceBrokers);
+	public static IServiceBroker Parallel(IReadOnlyCollection<IServiceBroker> serviceBrokers) => new ParallelAtMostOneBroker(Requires.NotNull(serviceBrokers));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/> that forces all RPC calls to be marshaled even if a service is available locally.
 	/// </summary>
 	/// <param name="serviceBroker">The inner service broker.</param>
 	/// <returns>The marshaling service broker.</returns>
-	public static IServiceBroker ForceMarshal(IServiceBroker serviceBroker) => new ForceMarshalingBroker(serviceBroker);
+	public static IServiceBroker ForceMarshal(IServiceBroker serviceBroker) => new ForceMarshalingBroker(Requires.NotNull(serviceBroker));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/> that does not implement <see cref="IDisposable"/>
@@ -48,7 +47,15 @@ public static class ServiceBrokerAggregator
 	/// such that others <em>may</em> dispose of it if it is disposable, but the caller wants to retain exclusive control
 	/// over the lifetime of the broker.
 	/// </remarks>
-	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(serviceBroker);
+	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(Requires.NotNull(serviceBroker));
+
+	/// <summary>
+	/// Creates an <see cref="IServiceBroker"/> that will lazily create the inner broker when it is first needed.
+	/// </summary>
+	/// <param name="lazyServiceBroker">The factory for the inner <see cref="IServiceBroker"/>.</param>
+	/// <param name="joinableTaskFactory">The <see cref="JoinableTaskFactory"/> applicable to the process, if any.</param>
+	/// <returns>The delegating service broker.</returns>
+	public static IServiceBroker Lazy(Func<ValueTask<IServiceBroker>> lazyServiceBroker, JoinableTaskFactory? joinableTaskFactory = null) => new LazyServiceBroker(Requires.NotNull(lazyServiceBroker), joinableTaskFactory);
 
 	/// <summary>
 	/// A broker which will query many other brokers sequentially, and return the first successful result.
@@ -63,7 +70,7 @@ public static class ServiceBrokerAggregator
 		/// <param name="serviceBrokers">A list of brokers to use. This collection is stored; not copied.</param>
 		internal SequentialBroker(IReadOnlyList<IServiceBroker> serviceBrokers)
 		{
-			this.serviceBrokers = serviceBrokers ?? throw new ArgumentNullException(nameof(serviceBrokers));
+			this.serviceBrokers = serviceBrokers;
 			foreach (IServiceBroker broker in this.serviceBrokers)
 			{
 				broker.AvailabilityChanged += this.OnAvailabilityChanged;
@@ -137,7 +144,7 @@ public static class ServiceBrokerAggregator
 		/// <param name="serviceBrokers">A collection of brokers to use. This collection is stored; not copied.</param>
 		internal ParallelAtMostOneBroker(IReadOnlyCollection<IServiceBroker> serviceBrokers)
 		{
-			this.serviceBrokers = serviceBrokers ?? throw new ArgumentNullException(nameof(serviceBrokers));
+			this.serviceBrokers = serviceBrokers;
 			foreach (IServiceBroker broker in this.serviceBrokers)
 			{
 				broker.AvailabilityChanged += this.OnAvailabilityChanged;
@@ -214,12 +221,81 @@ public static class ServiceBrokerAggregator
 		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
 	}
 
-	private class DelegatingServiceBroker : IServiceBroker
+	private class LazyServiceBroker : IServiceBroker, IDisposable
+	{
+		private volatile AsyncLazy<IServiceBroker>? inner;
+
+		internal LazyServiceBroker(Func<ValueTask<IServiceBroker>> lazyServiceBroker, JoinableTaskFactory? joinableTaskFactory)
+		{
+			this.inner = new AsyncLazy<IServiceBroker>(
+				async delegate
+				{
+					IServiceBroker serviceBroker = await lazyServiceBroker().ConfigureAwait(false);
+					serviceBroker.AvailabilityChanged += this.ServiceBroker_AvailabilityChanged;
+					return serviceBroker;
+				},
+				joinableTaskFactory);
+		}
+
+		/// <inheritdoc />
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
+
+		/// <inheritdoc />
+		public async ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+		{
+			AsyncLazy<IServiceBroker>? inner = this.inner;
+			Verify.NotDisposed(inner is not null, this);
+			IServiceBroker sb = await inner.GetValueAsync(cancellationToken).ConfigureAwait(false);
+			return await sb.GetPipeAsync(serviceMoniker, options, cancellationToken).ConfigureAwait(false);
+		}
+
+		/// <inheritdoc />
+		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+		{
+			AsyncLazy<IServiceBroker>? inner = this.inner;
+			Verify.NotDisposed(inner is not null, this);
+			IServiceBroker sb = await inner.GetValueAsync(cancellationToken).ConfigureAwait(false);
+#pragma warning disable ISB001 // Dispose of proxies - Our caller should do that.
+			return await sb.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken).ConfigureAwait(false);
+#pragma warning restore ISB001 // Dispose of proxies
+		}
+
+		/// <inheritdoc />
+		public void Dispose()
+		{
+			AsyncLazy<IServiceBroker>? inner = Interlocked.Exchange(ref this.inner, null);
+			if (inner is object)
+			{
+				if (inner.IsValueCreated)
+				{
+					// It is imperative that we unsubscribe our event handler to avoid a memory leak.
+					// Offer a fast path for the case where creation is already completed,
+					// but fallback on a more expensive path that will reverse the pending creation process when it has completed.
+					if (inner.IsValueFactoryCompleted)
+					{
+						inner.GetValue().AvailabilityChanged -= this.ServiceBroker_AvailabilityChanged;
+					}
+					else
+					{
+						inner.GetValueAsync().ContinueWith(
+							(sbTask, state) => sbTask.Result.AvailabilityChanged -= ((LazyServiceBroker)state!).ServiceBroker_AvailabilityChanged,
+							this,
+							CancellationToken.None,
+							TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+							TaskScheduler.Default).Forget();
+					}
+				}
+			}
+		}
+
+		private void ServiceBroker_AvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs e) => this.AvailabilityChanged?.Invoke(this, e);
+	}
+
+	private class DelegatingServiceBroker(IServiceBroker inner) : IServiceBroker
 	{
 		private readonly object syncObject = new();
 		private EventHandler<BrokeredServicesChangedEventArgs>? availabilityChanged;
-
-		internal DelegatingServiceBroker(IServiceBroker inner) => this.Inner = Requires.NotNull(inner);
 
 		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
 		{
@@ -229,7 +305,7 @@ public static class ServiceBrokerAggregator
 				{
 					if (this.availabilityChanged is null)
 					{
-						this.Inner.AvailabilityChanged += this.OnInnerAvailabilityChanged;
+						inner.AvailabilityChanged += this.OnInnerAvailabilityChanged;
 					}
 
 					this.availabilityChanged += value;
@@ -244,20 +320,20 @@ public static class ServiceBrokerAggregator
 
 					if (this.availabilityChanged is null)
 					{
-						this.Inner.AvailabilityChanged -= this.OnInnerAvailabilityChanged;
+						inner.AvailabilityChanged -= this.OnInnerAvailabilityChanged;
 					}
 				}
 			}
 		}
 
-		protected IServiceBroker Inner { get; }
+		protected IServiceBroker Inner => inner;
 
 		public virtual ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
-			=> this.Inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
+			=> inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
 
 		public virtual ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 			where T : class
-			=> this.Inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
+			=> inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
 
 		private void OnInnerAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs e)
 		{
