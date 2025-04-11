@@ -508,3 +508,11 @@ virtual Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceCont
 ~override Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.ToString() -> string
 Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions.Equals(Microsoft.ServiceHub.Framework.ServerFactory.ClientOptions other) -> bool
 Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions.Equals(Microsoft.ServiceHub.Framework.ServerFactory.ServerOptions other) -> bool
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.AdditionalServiceInterfaces.get -> System.Collections.Immutable.ImmutableArray<System.Type!>?
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.JsonRpcConnection.JsonRpcConnection(StreamJsonRpc.JsonRpc! jsonRpc, Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor? owner) -> void
+Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor.WithAdditionalServiceInterfaces(System.Collections.Immutable.ImmutableArray<System.Type!>? value) -> Microsoft.ServiceHub.Framework.ServiceJsonRpcDescriptor!
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.ExportBrokeredServiceAttribute(string! name, string? version, params System.Type![]! optionalInterfaces) -> void
+Microsoft.VisualStudio.Shell.ServiceBroker.ExportBrokeredServiceAttribute.OptionalInterfacesImplemented.get -> string![]!
+Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents.AdditionalProxyInterfaceTypeLoadFailure = 5 -> Microsoft.VisualStudio.Utilities.ServiceBroker.GlobalBrokeredServiceContainer.TraceEvents
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.get -> System.Collections.Immutable.ImmutableArray<string!>
+Microsoft.VisualStudio.Utilities.ServiceBroker.ServiceRegistration.AdditionalServiceInterfaceTypeNames.init -> void

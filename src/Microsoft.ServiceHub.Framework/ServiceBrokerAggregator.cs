@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Globalization;
 using System.IO.Pipelines;
-using Nerdbank.Streams;
+using Microsoft.VisualStudio.Threading;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -49,6 +48,14 @@ public static class ServiceBrokerAggregator
 	/// over the lifetime of the broker.
 	/// </remarks>
 	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(Requires.NotNull(serviceBroker));
+
+	/// <summary>
+	/// Creates an <see cref="IServiceBroker"/> that will lazily create the inner broker when it is first needed.
+	/// </summary>
+	/// <param name="lazyServiceBroker">The factory for the inner <see cref="IServiceBroker"/>.</param>
+	/// <param name="joinableTaskFactory">The <see cref="JoinableTaskFactory"/> applicable to the process, if any.</param>
+	/// <returns>The delegating service broker.</returns>
+	public static IServiceBroker Lazy(Func<ValueTask<IServiceBroker>> lazyServiceBroker, JoinableTaskFactory? joinableTaskFactory = null) => new LazyServiceBroker(Requires.NotNull(lazyServiceBroker), joinableTaskFactory);
 
 	/// <summary>
 	/// A broker which will query many other brokers sequentially, and return the first successful result.
@@ -212,6 +219,77 @@ public static class ServiceBrokerAggregator
 		/// <param name="sender">This parameter is ignored. The event will be raised with "this" as the sender.</param>
 		/// <param name="args">Details regarding what changes have occurred.</param>
 		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
+	}
+
+	private class LazyServiceBroker : IServiceBroker, IDisposable
+	{
+		private volatile AsyncLazy<IServiceBroker>? inner;
+
+		internal LazyServiceBroker(Func<ValueTask<IServiceBroker>> lazyServiceBroker, JoinableTaskFactory? joinableTaskFactory)
+		{
+			this.inner = new AsyncLazy<IServiceBroker>(
+				async delegate
+				{
+					IServiceBroker serviceBroker = await lazyServiceBroker().ConfigureAwait(false);
+					serviceBroker.AvailabilityChanged += this.ServiceBroker_AvailabilityChanged;
+					return serviceBroker;
+				},
+				joinableTaskFactory);
+		}
+
+		/// <inheritdoc />
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
+
+		/// <inheritdoc />
+		public async ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+		{
+			AsyncLazy<IServiceBroker>? inner = this.inner;
+			Verify.NotDisposed(inner is not null, this);
+			IServiceBroker sb = await inner.GetValueAsync(cancellationToken).ConfigureAwait(false);
+			return await sb.GetPipeAsync(serviceMoniker, options, cancellationToken).ConfigureAwait(false);
+		}
+
+		/// <inheritdoc />
+		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+		{
+			AsyncLazy<IServiceBroker>? inner = this.inner;
+			Verify.NotDisposed(inner is not null, this);
+			IServiceBroker sb = await inner.GetValueAsync(cancellationToken).ConfigureAwait(false);
+#pragma warning disable ISB001 // Dispose of proxies - Our caller should do that.
+			return await sb.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken).ConfigureAwait(false);
+#pragma warning restore ISB001 // Dispose of proxies
+		}
+
+		/// <inheritdoc />
+		public void Dispose()
+		{
+			AsyncLazy<IServiceBroker>? inner = Interlocked.Exchange(ref this.inner, null);
+			if (inner is object)
+			{
+				if (inner.IsValueCreated)
+				{
+					// It is imperative that we unsubscribe our event handler to avoid a memory leak.
+					// Offer a fast path for the case where creation is already completed,
+					// but fallback on a more expensive path that will reverse the pending creation process when it has completed.
+					if (inner.IsValueFactoryCompleted)
+					{
+						inner.GetValue().AvailabilityChanged -= this.ServiceBroker_AvailabilityChanged;
+					}
+					else
+					{
+						inner.GetValueAsync().ContinueWith(
+							(sbTask, state) => sbTask.Result.AvailabilityChanged -= ((LazyServiceBroker)state!).ServiceBroker_AvailabilityChanged,
+							this,
+							CancellationToken.None,
+							TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+							TaskScheduler.Default).Forget();
+					}
+				}
+			}
+		}
+
+		private void ServiceBroker_AvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs e) => this.AvailabilityChanged?.Invoke(this, e);
 	}
 
 	private class DelegatingServiceBroker(IServiceBroker inner) : IServiceBroker
