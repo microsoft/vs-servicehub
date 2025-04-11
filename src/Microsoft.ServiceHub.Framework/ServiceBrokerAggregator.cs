@@ -19,7 +19,7 @@ public static class ServiceBrokerAggregator
 	/// </summary>
 	/// <param name="serviceBrokers">A list of service brokers aggregated into the new one. This collection is stored; not copied. The collection should *not* be modified while the returned broker is in use.</param>
 	/// <returns>The aggregate service broker.</returns>
-	public static IServiceBroker Sequential(IReadOnlyList<IServiceBroker> serviceBrokers) => new SequentialBroker(serviceBrokers);
+	public static IServiceBroker Sequential(IReadOnlyList<IServiceBroker> serviceBrokers) => new SequentialBroker(Requires.NotNull(serviceBrokers));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/>.
@@ -28,14 +28,14 @@ public static class ServiceBrokerAggregator
 	/// </summary>
 	/// <param name="serviceBrokers">A collection of service brokers aggregated into the new one. This collection is stored; not copied. The collection should *not* be modified while the returned broker is in use.</param>
 	/// <returns>The aggregate service broker.</returns>
-	public static IServiceBroker Parallel(IReadOnlyCollection<IServiceBroker> serviceBrokers) => new ParallelAtMostOneBroker(serviceBrokers);
+	public static IServiceBroker Parallel(IReadOnlyCollection<IServiceBroker> serviceBrokers) => new ParallelAtMostOneBroker(Requires.NotNull(serviceBrokers));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/> that forces all RPC calls to be marshaled even if a service is available locally.
 	/// </summary>
 	/// <param name="serviceBroker">The inner service broker.</param>
 	/// <returns>The marshaling service broker.</returns>
-	public static IServiceBroker ForceMarshal(IServiceBroker serviceBroker) => new ForceMarshalingBroker(serviceBroker);
+	public static IServiceBroker ForceMarshal(IServiceBroker serviceBroker) => new ForceMarshalingBroker(Requires.NotNull(serviceBroker));
 
 	/// <summary>
 	/// Creates a new <see cref="IServiceBroker"/> that does not implement <see cref="IDisposable"/>
@@ -48,7 +48,7 @@ public static class ServiceBrokerAggregator
 	/// such that others <em>may</em> dispose of it if it is disposable, but the caller wants to retain exclusive control
 	/// over the lifetime of the broker.
 	/// </remarks>
-	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(serviceBroker);
+	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(Requires.NotNull(serviceBroker));
 
 	/// <summary>
 	/// A broker which will query many other brokers sequentially, and return the first successful result.
@@ -63,7 +63,7 @@ public static class ServiceBrokerAggregator
 		/// <param name="serviceBrokers">A list of brokers to use. This collection is stored; not copied.</param>
 		internal SequentialBroker(IReadOnlyList<IServiceBroker> serviceBrokers)
 		{
-			this.serviceBrokers = serviceBrokers ?? throw new ArgumentNullException(nameof(serviceBrokers));
+			this.serviceBrokers = serviceBrokers;
 			foreach (IServiceBroker broker in this.serviceBrokers)
 			{
 				broker.AvailabilityChanged += this.OnAvailabilityChanged;
@@ -137,7 +137,7 @@ public static class ServiceBrokerAggregator
 		/// <param name="serviceBrokers">A collection of brokers to use. This collection is stored; not copied.</param>
 		internal ParallelAtMostOneBroker(IReadOnlyCollection<IServiceBroker> serviceBrokers)
 		{
-			this.serviceBrokers = serviceBrokers ?? throw new ArgumentNullException(nameof(serviceBrokers));
+			this.serviceBrokers = serviceBrokers;
 			foreach (IServiceBroker broker in this.serviceBrokers)
 			{
 				broker.AvailabilityChanged += this.OnAvailabilityChanged;
@@ -214,12 +214,10 @@ public static class ServiceBrokerAggregator
 		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
 	}
 
-	private class DelegatingServiceBroker : IServiceBroker
+	private class DelegatingServiceBroker(IServiceBroker inner) : IServiceBroker
 	{
 		private readonly object syncObject = new();
 		private EventHandler<BrokeredServicesChangedEventArgs>? availabilityChanged;
-
-		internal DelegatingServiceBroker(IServiceBroker inner) => this.Inner = Requires.NotNull(inner);
 
 		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
 		{
@@ -229,7 +227,7 @@ public static class ServiceBrokerAggregator
 				{
 					if (this.availabilityChanged is null)
 					{
-						this.Inner.AvailabilityChanged += this.OnInnerAvailabilityChanged;
+						inner.AvailabilityChanged += this.OnInnerAvailabilityChanged;
 					}
 
 					this.availabilityChanged += value;
@@ -244,20 +242,20 @@ public static class ServiceBrokerAggregator
 
 					if (this.availabilityChanged is null)
 					{
-						this.Inner.AvailabilityChanged -= this.OnInnerAvailabilityChanged;
+						inner.AvailabilityChanged -= this.OnInnerAvailabilityChanged;
 					}
 				}
 			}
 		}
 
-		protected IServiceBroker Inner { get; }
+		protected IServiceBroker Inner => inner;
 
 		public virtual ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
-			=> this.Inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
+			=> inner.GetPipeAsync(serviceMoniker, options, cancellationToken);
 
 		public virtual ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
 			where T : class
-			=> this.Inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
+			=> inner.GetProxyAsync<T>(serviceDescriptor, options, cancellationToken);
 
 		private void OnInnerAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs e)
 		{
