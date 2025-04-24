@@ -7,7 +7,7 @@
 
     <MicroBuildVersion>2.0.187</MicroBuildVersion>
     <CodeAnalysisVersion>4.12.0</CodeAnalysisVersion>
-    <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <VSThreadingVersion>17.13.2</VSThreadingVersion>
   </PropertyGroup>
