@@ -15,7 +15,7 @@
 			"customType": "regex",
 			"datasourceTemplate": "nuget",
 			"managerFilePatterns": [
-				"/test/Microsoft.ServiceHub.Analyzers.Tests/Helpers/ReferencesHelper.cs/"
+				"test/Microsoft.ServiceHub.Analyzers.Tests/Helpers/ReferencesHelper.cs"
 			],
 			"matchStrings": [
 				"PackageIdentity\\(\"(?<packageName>[^\"]+)\", \"(?<currentValue>[^\"]+)\"\\)"
