@@ -1,5 +1,5 @@
 items:
-- name: Features
-  href: features.md
-- name: Getting Started
-  href: getting-started.md
+- href: getting-started.md
+- href: framework.md
+- href: framework-testing.md
+- href: npm.md
