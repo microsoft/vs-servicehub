@@ -6,3 +6,5 @@ Analyzer ID | Description
 --|--
 ISB001 | Dispose of proxies
 ISB002 | Avoid storing rentals in fields
+
+Learn more on [our doc site](https://microsoft.github.io/vs-servicehub/analyzers/).

@@ -1,6 +1,6 @@
 # Marshalable objects
 
-This package implements [the marshalable object protocol](https://github.com/microsoft/vs-streamjsonrpc/blob/main/doc/general_marshaled_objects.md) first implemented by StreamJsonRpc.
+This package implements [the marshalable object protocol](https://microsoft.github.io/vs-streamjsonrpc/exotic_types/general_marshaled_objects.html) first implemented by StreamJsonRpc.
 The overall behavior and wire protocol are defined there.
 
 The TypeScript/javascript-specific behaviors are outlined here.
@@ -14,15 +14,15 @@ For example:
 
 ```ts
 interface ICalculator {
-	add(a: number, b: number): Promise<number> | number
+    add(a: number, b: number): Promise<number> | number
 }
 
 class Calculator implements ICalculator, RpcMarshalable {
-	readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime = 'explicit'
+    readonly _jsonRpcMarshalableLifetime: MarshaledObjectLifetime = 'explicit'
 
-	add(a: number, b: number) {
-		return a + b
-	}
+    add(a: number, b: number) {
+        return a + b
+    }
 }
 ```
 
@@ -44,7 +44,7 @@ You can leverage Typescript for type safety for this. For example, the calculato
 
 ```ts
 interface IServer {
-	doSomeMath(calc: ICalculator): Promise<number>
+    doSomeMath(calc: ICalculator): Promise<number>
 }
 ```
 
@@ -52,10 +52,10 @@ The server may be implemented like this:
 
 ```ts
 class Server {
-	doSomeMath(calc: ICalculator & IDisposable): Promise<number> {
-		const sum = await calc.add(2, 3)
-		calc.dispose()
-		return sum // 5
-	}
+    doSomeMath(calc: ICalculator & IDisposable): Promise<number> {
+        const sum = await calc.add(2, 3)
+        calc.dispose()
+        return sum // 5
+    }
 }
 ```
