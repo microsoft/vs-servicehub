@@ -14,7 +14,7 @@
 		{
 			"customType": "regex",
 			"datasourceTemplate": "nuget",
-			"fileMatch": [
+			"managerFilePatterns": [
 				"test/Microsoft.ServiceHub.Analyzers.Tests/Helpers/ReferencesHelper.cs"
 			],
 			"matchStrings": [
