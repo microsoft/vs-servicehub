@@ -21,7 +21,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
-    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="1.5.3" />
+    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="1.6.3" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.12.20" />
     <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="17.13.40008" />
     <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.13.7" />
@@ -42,13 +42,13 @@
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
-    <PackageVersion Include="xunit.v3.core" Version="1.1.0" />
+    <PackageVersion Include="xunit.v3.core" Version="2.0.2" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
-    <PackageVersion Include="xunit.v3" Version="1.1.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0" />
+    <PackageVersion Include="xunit.v3" Version="2.0.2" />
   </ItemGroup>
   <ItemGroup>
     <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
