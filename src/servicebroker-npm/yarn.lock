@@ -821,45 +821,45 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@microsoft/servicehub-framework@workspace:."
   dependencies:
-    "@microsoft/tsdoc": "npm:^0.15.0"
-    "@tsconfig/node18": "npm:^18.2.4"
-    "@types/jest": "npm:^29.5.3"
-    "@types/msgpack-lite": "npm:^0.1.11"
-    "@types/node": "npm:^18.19.31"
-    "@types/string-hash": "npm:^1.1.3"
-    "@types/uuid": "npm:^9.0.2"
-    "@typescript-eslint/eslint-plugin": "npm:^6.2.0"
-    "@typescript-eslint/parser": "npm:^6.2.0"
-    "@yarnpkg/sdks": "npm:^3.0.0-rc.48"
+    "@microsoft/tsdoc": "npm:0.15.1"
+    "@tsconfig/node18": "npm:18.2.4"
+    "@types/jest": "npm:29.5.12"
+    "@types/msgpack-lite": "npm:0.1.11"
+    "@types/node": "npm:18.19.31"
+    "@types/string-hash": "npm:1.1.3"
+    "@types/uuid": "npm:9.0.8"
+    "@typescript-eslint/eslint-plugin": "npm:6.21.0"
+    "@typescript-eslint/parser": "npm:6.21.0"
+    "@yarnpkg/sdks": "npm:3.1.0"
     await-semaphore: "npm:^0.1.3"
     cancellationtoken: "npm:^2.2.0"
     caught: "npm:^0.1.3"
-    eslint: "npm:^8.45.0"
-    eslint-config-prettier: "npm:^10.0.1"
-    eslint-plugin-import: "npm:^2.31.0"
-    eslint-plugin-jest: "npm:^28.11.0"
-    eslint-plugin-jsx-a11y: "npm:^6.10.2"
-    eslint-plugin-prettier: "npm:^5.2.3"
+    eslint: "npm:8.57.0"
+    eslint-config-prettier: "npm:10.0.1"
+    eslint-plugin-import: "npm:2.31.0"
+    eslint-plugin-jest: "npm:28.11.0"
+    eslint-plugin-jsx-a11y: "npm:6.10.2"
+    eslint-plugin-prettier: "npm:5.2.3"
     immutable: "npm:^4.3.1"
-    jest: "npm:^29.6.2"
-    jshint: "npm:^2.13.6"
+    jest: "npm:29.7.0"
+    jshint: "npm:2.13.6"
     msgpack-lite: "npm:^0.1.26"
-    nerdbank-gitversioning: "npm:^3.6.133"
+    nerdbank-gitversioning: "npm:3.6.133"
     nerdbank-streams: "npm:^2.11.79"
-    nyc: "npm:^15.1.0"
-    prettier: "npm:^3.0.0"
+    nyc: "npm:15.1.0"
+    prettier: "npm:3.2.5"
     strict-event-emitter-types: "npm:^2.0.0"
     string-hash: "npm:^1.1.3"
-    ts-jest: "npm:^29.1.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.1.6"
+    ts-jest: "npm:29.1.2"
+    ts-node: "npm:10.9.2"
+    typescript: "npm:5.4.5"
     uuid: "npm:^9.0.1"
     vscode-jsonrpc: "npm:^8.1.0"
-    yargs: "npm:^17.7.2"
+    yargs: "npm:17.7.2"
   languageName: unknown
   linkType: soft
 
-"@microsoft/tsdoc@npm:^0.15.0":
+"@microsoft/tsdoc@npm:0.15.1":
   version: 0.15.1
   resolution: "@microsoft/tsdoc@npm:0.15.1"
   checksum: 10/1a92612883088fe184dba596e7ba7a0daef0e6981caeca22bad6ad551d2247294f12e368537d0d8192525cf5743f7f15fcc2ad7b3b849f26a09a15ffdd89fd0c
@@ -1005,7 +1005,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/node18@npm:^18.2.4":
+"@tsconfig/node18@npm:18.2.4":
   version: 18.2.4
   resolution: "@tsconfig/node18@npm:18.2.4"
   checksum: 10/80623cb9c129c78d51fe6c4a256ba986f12f02ff02dc2a1e5b33dd13a7983f767b6792cfcd51b3dd1c8256ea105f1fea31f64a2070564e37787ab3d9a1a1e7e3
@@ -1113,7 +1113,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jest@npm:^29.5.3":
+"@types/jest@npm:29.5.12":
   version: 29.5.12
   resolution: "@types/jest@npm:29.5.12"
   dependencies:
@@ -1146,7 +1146,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/msgpack-lite@npm:^0.1.11":
+"@types/msgpack-lite@npm:0.1.11":
   version: 0.1.11
   resolution: "@types/msgpack-lite@npm:0.1.11"
   dependencies:
@@ -1164,7 +1164,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^18.19.31":
+"@types/node@npm:18.19.31":
   version: 18.19.31
   resolution: "@types/node@npm:18.19.31"
   dependencies:
@@ -1196,7 +1196,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/string-hash@npm:^1.1.3":
+"@types/string-hash@npm:1.1.3":
   version: 1.1.3
   resolution: "@types/string-hash@npm:1.1.3"
   checksum: 10/39a546088123efb1af9beac3854aa1eb54cf24ab75d99c8dac9ccfa7d46d70ac7c99c10983f7cc623dda1e476b6e21e7acffe6c5b3be894751ae4b9cfd103aaf
@@ -1210,7 +1210,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/uuid@npm:^9.0.2":
+"@types/uuid@npm:9.0.8":
   version: 9.0.8
   resolution: "@types/uuid@npm:9.0.8"
   checksum: 10/b8c60b7ba8250356b5088302583d1704a4e1a13558d143c549c408bf8920535602ffc12394ede77f8a8083511b023704bc66d1345792714002bfa261b17c5275
@@ -1233,7 +1233,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^6.2.0":
+"@typescript-eslint/eslint-plugin@npm:6.21.0":
   version: 6.21.0
   resolution: "@typescript-eslint/eslint-plugin@npm:6.21.0"
   dependencies:
@@ -1258,7 +1258,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^6.2.0":
+"@typescript-eslint/parser@npm:6.21.0":
   version: 6.21.0
   resolution: "@typescript-eslint/parser@npm:6.21.0"
   dependencies:
@@ -1489,7 +1489,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@yarnpkg/sdks@npm:^3.0.0-rc.48":
+"@yarnpkg/sdks@npm:3.1.0":
   version: 3.1.0
   resolution: "@yarnpkg/sdks@npm:3.1.0"
   dependencies:
@@ -3042,7 +3042,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-prettier@npm:^10.0.1":
+"eslint-config-prettier@npm:10.0.1":
   version: 10.0.1
   resolution: "eslint-config-prettier@npm:10.0.1"
   peerDependencies:
@@ -3076,7 +3076,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-import@npm:^2.31.0":
+"eslint-plugin-import@npm:2.31.0":
   version: 2.31.0
   resolution: "eslint-plugin-import@npm:2.31.0"
   dependencies:
@@ -3105,7 +3105,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jest@npm:^28.11.0":
+"eslint-plugin-jest@npm:28.11.0":
   version: 28.11.0
   resolution: "eslint-plugin-jest@npm:28.11.0"
   dependencies:
@@ -3123,7 +3123,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jsx-a11y@npm:^6.10.2":
+"eslint-plugin-jsx-a11y@npm:6.10.2":
   version: 6.10.2
   resolution: "eslint-plugin-jsx-a11y@npm:6.10.2"
   dependencies:
@@ -3148,7 +3148,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-prettier@npm:^5.2.3":
+"eslint-plugin-prettier@npm:5.2.3":
   version: 5.2.3
   resolution: "eslint-plugin-prettier@npm:5.2.3"
   dependencies:
@@ -3192,7 +3192,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:^8.45.0":
+"eslint@npm:8.57.0":
   version: 8.57.0
   resolution: "eslint@npm:8.57.0"
   dependencies:
@@ -5112,7 +5112,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest@npm:^29.6.2":
+"jest@npm:29.7.0":
   version: 29.7.0
   resolution: "jest@npm:29.7.0"
   dependencies:
@@ -5177,7 +5177,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jshint@npm:^2.13.6":
+"jshint@npm:2.13.6":
   version: 2.13.6
   resolution: "jshint@npm:2.13.6"
   dependencies:
@@ -5689,7 +5689,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nerdbank-gitversioning@npm:^3.6.133":
+"nerdbank-gitversioning@npm:3.6.133":
   version: 3.6.133
   resolution: "nerdbank-gitversioning@npm:3.6.133"
   dependencies:
@@ -5800,7 +5800,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nyc@npm:^15.1.0":
+"nyc@npm:15.1.0":
   version: 15.1.0
   resolution: "nyc@npm:15.1.0"
   dependencies:
@@ -6182,7 +6182,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.0.0":
+"prettier@npm:3.2.5":
   version: 3.2.5
   resolution: "prettier@npm:3.2.5"
   bin:
@@ -7116,7 +7116,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-jest@npm:^29.1.1":
+"ts-jest@npm:29.1.2":
   version: 29.1.2
   resolution: "ts-jest@npm:29.1.2"
   dependencies:
@@ -7149,7 +7149,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-node@npm:^10.9.2":
+"ts-node@npm:10.9.2":
   version: 10.9.2
   resolution: "ts-node@npm:10.9.2"
   dependencies:
@@ -7371,7 +7371,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.1.6":
+"typescript@npm:5.4.5":
   version: 5.4.5
   resolution: "typescript@npm:5.4.5"
   bin:
@@ -7381,7 +7381,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.1.6#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>":
   version: 5.4.5
   resolution: "typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>::version=5.4.5&hash=5adc0c"
   bin:
@@ -7737,6 +7737,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"yargs@npm:17.7.2, yargs@npm:^17.3.1":
+  version: 17.7.2
+  resolution: "yargs@npm:17.7.2"
+  dependencies:
+    cliui: "npm:^8.0.1"
+    escalade: "npm:^3.1.1"
+    get-caller-file: "npm:^2.0.5"
+    require-directory: "npm:^2.1.1"
+    string-width: "npm:^4.2.3"
+    y18n: "npm:^5.0.5"
+    yargs-parser: "npm:^21.1.1"
+  checksum: 10/abb3e37678d6e38ea85485ed86ebe0d1e3464c640d7d9069805ea0da12f69d5a32df8e5625e370f9c96dd1c2dc088ab2d0a4dd32af18222ef3c4224a19471576
+  languageName: node
+  linkType: hard
+
 "yargs@npm:^15.0.2":
   version: 15.4.1
   resolution: "yargs@npm:15.4.1"
@@ -7753,21 +7768,6 @@ __metadata:
     y18n: "npm:^4.0.0"
     yargs-parser: "npm:^18.1.2"
   checksum: 10/bbcc82222996c0982905b668644ca363eebe6ffd6a572fbb52f0c0e8146661d8ce5af2a7df546968779bb03d1e4186f3ad3d55dfaadd1c4f0d5187c0e3a5ba16
-  languageName: node
-  linkType: hard
-
-"yargs@npm:^17.3.1, yargs@npm:^17.7.2":
-  version: 17.7.2
-  resolution: "yargs@npm:17.7.2"
-  dependencies:
-    cliui: "npm:^8.0.1"
-    escalade: "npm:^3.1.1"
-    get-caller-file: "npm:^2.0.5"
-    require-directory: "npm:^2.1.1"
-    string-width: "npm:^4.2.3"
-    y18n: "npm:^5.0.5"
-    yargs-parser: "npm:^21.1.1"
-  checksum: 10/abb3e37678d6e38ea85485ed86ebe0d1e3464c640d7d9069805ea0da12f69d5a32df8e5625e370f9c96dd1c2dc088ab2d0a4dd32af18222ef3c4224a19471576
   languageName: node
   linkType: hard
 
