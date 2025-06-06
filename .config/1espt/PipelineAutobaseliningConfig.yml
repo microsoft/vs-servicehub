@@ -35,6 +35,8 @@ pipelines:
           lastModifiedDate: 2024-08-28
         armory:
           lastModifiedDate: 2024-08-28
+        accessibilityinsights:
+          lastModifiedDate: 2025-06-06
   18732:
     retail:
       source:
