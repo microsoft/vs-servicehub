@@ -1,0 +1,40 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/renovate.json" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+    <File Path="stylecop.json" />
+    <File Path="version.json" />
+  </Folder>
+  <Folder Name="/Solution Items/src/">
+    <File Path="src/.editorconfig" />
+    <File Path="src/Directory.Build.props" />
+    <File Path="src/Directory.Build.targets" />
+  </Folder>
+  <Folder Name="/Solution Items/test/">
+    <File Path="test/.editorconfig" />
+    <File Path="test/Directory.Build.props" />
+    <File Path="test/Directory.Build.targets" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/OptProf.targets" />
+    <Project Path="src/Microsoft.ServiceHub.Analyzers.CodeFixes/Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" />
+    <Project Path="src/Microsoft.ServiceHub.Analyzers.CSharp/Microsoft.ServiceHub.Analyzers.CSharp.csproj" />
+    <Project Path="src/Microsoft.ServiceHub.Analyzers.VisualBasic/Microsoft.ServiceHub.Analyzers.VisualBasic.csproj" />
+    <Project Path="src/Microsoft.ServiceHub.Analyzers/Microsoft.ServiceHub.Analyzers.csproj" />
+    <Project Path="src/Microsoft.ServiceHub.Framework.Testing/Microsoft.ServiceHub.Framework.Testing.csproj" />
+    <Project Path="src/Microsoft.ServiceHub.Framework/Microsoft.ServiceHub.Framework.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/ExternalTestAssembly/ExternalTestAssembly.csproj" />
+    <Project Path="test/Microsoft.ServiceHub.Analyzers.Tests/Microsoft.ServiceHub.Analyzers.Tests.csproj" />
+    <Project Path="test/Microsoft.ServiceHub.Framework.Testing.Tests/Microsoft.ServiceHub.Framework.Testing.Tests.csproj" />
+    <Project Path="test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj" />
+    <Project Path="test/ServiceBrokerTest/ServiceBrokerTest.csproj" />
+  </Folder>
+</Solution>
