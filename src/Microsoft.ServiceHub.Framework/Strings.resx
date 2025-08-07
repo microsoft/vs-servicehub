@@ -159,4 +159,7 @@
     <value>More than one service found for "{0}" but at most one was allowed.</value>
     <comment>{0} is a placeholder for a service moniker.</comment>
   </data>
+  <data name="UseOtherDescriptorInstead" xml:space="preserve">
+    <value>The '{formatter}' formatter is not supported by this descriptor. Use {descriptorType} instead.</value>
+  </data>
 </root>

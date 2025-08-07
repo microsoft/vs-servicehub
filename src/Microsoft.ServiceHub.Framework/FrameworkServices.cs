@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.ServiceHub.Framework.Services;
 using Newtonsoft.Json.Converters;
 using StreamJsonRpc;
@@ -10,6 +11,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// Services and service contracts that provide core infrastructure.
 /// </summary>
+[RequiresUnreferencedCode(Reasons.Formatters)]
+[RequiresDynamicCode(Reasons.Formatters)]
 public static class FrameworkServices
 {
 	/// <summary>
@@ -51,6 +54,8 @@ public static class FrameworkServices
 	/// A <see cref="ServiceJsonRpcDescriptor"/> derived type that applies camelCase naming transforms to method and event names
 	/// and trims off any trailing "Async" suffix.
 	/// </summary>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	private class CamelCaseTransformingDescriptor : ServiceJsonRpcDescriptor
 	{
 		private const string AsyncSuffix = "Async";

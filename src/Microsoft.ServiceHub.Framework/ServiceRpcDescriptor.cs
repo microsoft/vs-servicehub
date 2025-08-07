@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
-using System.Reflection;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 
@@ -33,7 +32,7 @@ public abstract partial class ServiceRpcDescriptor
 	/// and initializes all fields based on a template instance.
 	/// </summary>
 	/// <param name="copyFrom">The instance to copy all fields from.</param>
-	protected ServiceRpcDescriptor(ServiceRpcDescriptor copyFrom)
+	protected ServiceRpcDescriptor([ValidatedNotNull] ServiceRpcDescriptor copyFrom)
 	{
 		Requires.NotNull(copyFrom, nameof(copyFrom));
 
@@ -319,15 +318,7 @@ public abstract partial class ServiceRpcDescriptor
 		/// particularly when <paramref name="interfaceType"/> includes events.
 		/// </remarks>
 		/// <exception cref="InvalidOperationException">May be thrown when <see cref="StartListening"/> has already been called.</exception>
-		public virtual object ConstructRpcClient(Type interfaceType)
-		{
-			Requires.NotNull(interfaceType, nameof(interfaceType));
-
-			MethodInfo? genericOverload = this.GetType().GetTypeInfo().GetRuntimeMethod(nameof(this.ConstructRpcClient), Type.EmptyTypes);
-			Assumes.NotNull(genericOverload);
-			MethodInfo closedGenericOverload = genericOverload.MakeGenericMethod(interfaceType);
-			return closedGenericOverload.Invoke(this, Array.Empty<object>())!;
-		}
+		public abstract object ConstructRpcClient(Type interfaceType);
 
 		/// <summary>
 		/// Begins listening for incoming messages.

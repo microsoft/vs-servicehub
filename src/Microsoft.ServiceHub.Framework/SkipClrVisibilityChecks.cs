@@ -8,6 +8,7 @@
  */
 
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
@@ -18,6 +19,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// Gives a dynamic assembly the ability to skip CLR visibility checks,
 /// allowing the assembly to access private members of another assembly.
 /// </summary>
+[RequiresDynamicCode(Reasons.DynamicProxy)]
+[RequiresUnreferencedCode(Reasons.DynamicProxy)]
 internal class SkipClrVisibilityChecks
 {
 	/// <summary>

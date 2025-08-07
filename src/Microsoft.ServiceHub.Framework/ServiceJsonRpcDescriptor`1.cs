@@ -2,11 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.ServiceHub.Framework;
 
 /// <inheritdoc cref="ServiceJsonRpcDescriptor"/>
 /// <typeparam name="T">The RPC interface used to call the service.</typeparam>
+[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.Formatters)]
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 public class ServiceJsonRpcDescriptor<T> : ServiceJsonRpcDescriptor
 	where T : class
