@@ -4,7 +4,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
@@ -486,12 +485,6 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				DictionaryKeyPolicy = null,
 				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
 				DefaultIgnoreCondition = STJ.Serialization.JsonIgnoreCondition.WhenWritingNull,
-				Converters =
-				{
-					// These converters are a workaround for https://github.com/dotnet/runtime/issues/85981
-					JsonConverterWrapper<Version>.Instance,
-					JsonConverterWrapper<Uri>.Instance,
-				},
 			},
 		};
 	}
@@ -501,8 +494,6 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	public class JsonRpcConnection : RpcConnection
 	{
-		private const string GetOptionalInterfacesMethodName = "__jsonrpc_getOptionalInterfaces";
-
 		private readonly ServiceJsonRpcDescriptor? owner;
 
 		/// <summary>
