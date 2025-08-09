@@ -27,6 +27,8 @@ public partial class ServiceJsonRpcDescriptor
 	/// <summary>
 	/// Creates and caches proxies generated to wrap local target objects for the <see cref="ConstructLocalProxy{T}(T)"/> method.
 	/// </summary>
+	[RequiresUnreferencedCode(Reasons.DynamicProxy)]
+	[RequiresDynamicCode(Reasons.DynamicProxy)]
 	private static class LocalProxyGeneration
 	{
 		private static readonly List<(ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder)> TransparentProxyModuleBuilderByVisibilityCheck = new List<(ImmutableHashSet<AssemblyName>, ModuleBuilder)>();

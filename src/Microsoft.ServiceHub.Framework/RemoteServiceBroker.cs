@@ -4,6 +4,7 @@
 #pragma warning disable RS0026 // Do not add multiple public overloads with optional parameters
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,6 +19,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// Exposes a remote <see cref="IRemoteServiceBroker"/> service as a local <see cref="IServiceBroker"/>.
 /// </summary>
+[RequiresUnreferencedCode(Reasons.Formatters)]
+[RequiresDynamicCode(Reasons.Formatters)]
 public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDisposable
 {
 	private const string NETFrameworkDescription = ".NET Framework";
@@ -672,25 +675,10 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		};
 		if (serviceHostInformation.Runtime == ServiceHostRuntime.NETCore)
 		{
-			serviceHostInformation.RuntimeVersion = GetNetCoreVersion();
+			serviceHostInformation.RuntimeVersion = Environment.Version;
 		}
 
 		return serviceHostInformation;
-	}
-
-	private static Version? GetNetCoreVersion()
-	{
-		Assembly assembly = typeof(System.Runtime.GCSettings).Assembly;
-		Assumes.NotNull(assembly.Location);
-		string[] assemblyPath = assembly.Location.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-
-		int netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
-		if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)
-		{
-			return Version.Parse(VersionFinder.Match(assemblyPath[netCoreAppIndex + 1]).Value);
-		}
-
-		return null;
 	}
 
 	private async Task<ServiceActivationOptions> ApplyActivationOptionDefaultsAsync(ServiceActivationOptions options, CancellationToken cancellationToken)
