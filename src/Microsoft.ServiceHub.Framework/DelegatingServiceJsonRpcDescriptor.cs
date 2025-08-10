@@ -22,6 +22,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// </para>
 /// </remarks>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
+[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.Formatters)]
 public abstract class DelegatingServiceJsonRpcDescriptor : ServiceJsonRpcDescriptor
 {
 	private ServiceJsonRpcDescriptor innerDescriptor;
