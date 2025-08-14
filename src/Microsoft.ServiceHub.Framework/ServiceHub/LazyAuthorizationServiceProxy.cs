@@ -14,8 +14,6 @@ public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 	private readonly CancellationTokenSource disposalToken = new();
 	private readonly AsyncLazy<IAuthorizationService> authorizationService;
 
-	private bool disposed;
-
 	/// <summary>
 	/// Initializes a new instance of the <see cref="LazyAuthorizationServiceProxy"/> class.
 	/// </summary>
@@ -24,7 +22,7 @@ public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 	public LazyAuthorizationServiceProxy(IServiceBroker serviceBroker, JoinableTaskFactory? joinableTaskFactory)
 	{
 		Requires.NotNull(serviceBroker);
-		this.authorizationService = new(() => this.ActivateAsync(serviceBroker), joinableTaskFactory ?? JoinableTaskContext.CreateNoOpContext().Factory);
+		this.authorizationService = new(() => this.ActivateAsync(serviceBroker), joinableTaskFactory);
 	}
 
 	/// <inheritdoc/>
@@ -45,19 +43,10 @@ public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 	/// <inheritdoc/>
 	public void Dispose()
 	{
-		if (!this.disposed)
+		if (!this.DisposeToken.IsCancellationRequested)
 		{
-			this.disposed = true;
 			this.disposalToken.Cancel();
-
-			// If this value hasn't been created yet, the `DisposeToken` will throw right away because it was cancelled
-			// and a default authorization service will be returned without going through the service broker to request the actual service proxy.
-			IAuthorizationService service = this.authorizationService.GetValue();
-
-			service.CredentialsChanged -= this.AuthService_CredentialsChanged;
-			service.AuthorizationChanged -= this.AuthService_AuthorizationChanged;
-
-			(service as IDisposable)?.Dispose();
+			this.authorizationService.DisposeValue();
 			this.disposalToken.Dispose();
 		}
 	}
@@ -78,7 +67,7 @@ public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 			this.DisposeToken.ThrowIfCancellationRequested();
 			authService = await serviceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, this.DisposeToken).ConfigureAwait(false);
 		}
-		catch (Exception e) when (e is ServiceActivationFailedException || e is OperationCanceledException || e is TaskCanceledException)
+		catch (Exception e) when (e is ServiceActivationFailedException)
 		{
 		}
 

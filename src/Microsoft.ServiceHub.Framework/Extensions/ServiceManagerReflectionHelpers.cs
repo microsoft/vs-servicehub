@@ -53,7 +53,7 @@ internal static class ServiceManagerReflectionHelpers
 	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service.
 	/// </devremarks>
 	internal static Task<AuthorizationServiceClient> GetAuthorizationServiceClientAsync(IServiceBroker broker, CancellationToken cancellationToken) =>
-		Task.FromResult(new AuthorizationServiceClient(new LazyAuthorizationServiceProxy(broker, JoinableTaskContext.CreateNoOpContext().Factory), ownsAuthorizationService: true));
+		Task.FromResult(new AuthorizationServiceClient(new LazyAuthorizationServiceProxy(broker, joinableTaskFactory: null), ownsAuthorizationService: true));
 
 	/// <summary>
 	/// Helper method for getting a <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".
