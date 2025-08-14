@@ -29,4 +29,9 @@
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\..\src\Microsoft.ServiceHub.Framework\ServiceHub\LazyAuthorizationServiceProxy.cs" />
+    <Compile Include="..\..\src\Microsoft.ServiceHub.Framework\Services\DefaultAuthorizationService.cs" />
+  </ItemGroup>
+  
 </Project>
