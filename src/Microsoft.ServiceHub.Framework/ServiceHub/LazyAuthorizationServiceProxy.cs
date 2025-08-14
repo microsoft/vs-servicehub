@@ -60,16 +60,8 @@ public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 
 	private async Task<IAuthorizationService> ActivateAsync(IServiceBroker serviceBroker)
 	{
-		IAuthorizationService? authService = null;
-
-		try
-		{
-			this.DisposeToken.ThrowIfCancellationRequested();
-			authService = await serviceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, this.DisposeToken).ConfigureAwait(false);
-		}
-		catch (Exception e) when (e is ServiceActivationFailedException)
-		{
-		}
+		this.DisposeToken.ThrowIfCancellationRequested();
+		IAuthorizationService? authService = await serviceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, this.DisposeToken).ConfigureAwait(false);
 
 		authService ??= new DefaultAuthorizationService();
 		authService.CredentialsChanged += this.AuthService_CredentialsChanged;
