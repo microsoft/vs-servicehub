@@ -1,1 +1,8 @@
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.AuthorizationChanged -> System.EventHandler?
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.CheckAuthorizationAsync(Microsoft.ServiceHub.Framework.Services.ProtectedOperation! operation, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<bool>
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.CredentialsChanged -> System.EventHandler?
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.Dispose() -> void
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.GetCredentialsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyDictionary<string!, string!>!>
+Microsoft.ServiceHub.Framework.LazyAuthorizationServiceProxy.LazyAuthorizationServiceProxy(Microsoft.ServiceHub.Framework.IServiceBroker! serviceBroker, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory) -> void
 static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.Lazy(System.Func<System.Threading.Tasks.ValueTask<Microsoft.ServiceHub.Framework.IServiceBroker!>>! lazyServiceBroker, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory = null) -> Microsoft.ServiceHub.Framework.IServiceBroker!

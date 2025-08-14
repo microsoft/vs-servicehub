@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework.Services;
+using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
 
@@ -51,28 +52,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// This called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
 	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service.
 	/// </devremarks>
-	internal static async Task<AuthorizationServiceClient> GetAuthorizationServiceClientAsync(IServiceBroker broker, CancellationToken cancellationToken)
-	{
-		IAuthorizationService? authService = null;
-
-		if (broker != null)
-		{
-			try
-			{
-				authService = await broker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, cancellationToken).ConfigureAwait(false);
-			}
-			catch (ServiceActivationFailedException)
-			{
-			}
-		}
-
-		if (authService is null)
-		{
-			authService = new DefaultAuthorizationService();
-		}
-
-		return new AuthorizationServiceClient(authService);
-	}
+	internal static Task<AuthorizationServiceClient> GetAuthorizationServiceClientAsync(IServiceBroker broker, CancellationToken cancellationToken) =>
+		Task.FromResult(new AuthorizationServiceClient(new LazyAuthorizationServiceProxy(broker, JoinableTaskContext.CreateNoOpContext().Factory), ownsAuthorizationService: true));
 
 	/// <summary>
 	/// Helper method for getting a <see cref="AuthorizationServiceClient"/> that always returns "Unauthorized".
