@@ -9,7 +9,7 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// An authorization service that waits until it is used before it is created. This is useful because most ServiceHub services do not use their AuthorizationService and so resources are wasted acquiring one.
 /// </summary>
-public class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
+internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 {
 	private readonly CancellationTokenSource disposalToken = new();
 	private readonly AsyncLazy<IAuthorizationService> authorizationService;
