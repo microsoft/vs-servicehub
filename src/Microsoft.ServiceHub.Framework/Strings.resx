@@ -120,6 +120,9 @@
   <data name="ClientProxyTypeArgumentMustBeAnInterface" xml:space="preserve">
     <value>"{0}" is not an interface.</value>
   </data>
+  <data name="ConstructRpcClientTypeMismatch" xml:space="preserve">
+    <value>Constructed RPC client proxy must be based on the interface given in the type argument ({typeArg}) but was '{actual}' instead.</value>
+  </data>
   <data name="CouldNotGetProcessId" xml:space="preserve">
     <value>Failed to get the process id of the client.</value>
   </data>
@@ -154,6 +157,9 @@
   </data>
   <data name="ServiceMoniker_AlreadyProffered" xml:space="preserve">
     <value>The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.</value>
+  </data>
+  <data name="SetDescriptorPropertyFirst" xml:space="preserve">
+    <value>The '{0}' property must be set on the descriptor first.</value>
   </data>
   <data name="TooManyServices" xml:space="preserve">
     <value>More than one service found for "{0}" but at most one was allowed.</value>
