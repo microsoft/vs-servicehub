@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Microsoft.ServiceHub.Analyzers
@@ -58,7 +56,7 @@ namespace Microsoft.ServiceHub.Analyzers
 			}
 
 			bool found = false;
-			foreach (IOperation? op in operation.Parent.Children)
+			foreach (IOperation? op in operation.Parent.ChildOperations)
 			{
 				if (found)
 				{
@@ -79,7 +77,7 @@ namespace Microsoft.ServiceHub.Analyzers
 			}
 
 			IOperation? priorOperation = null;
-			foreach (IOperation? op in operation.Parent.Children)
+			foreach (IOperation? op in operation.Parent.ChildOperations)
 			{
 				if (op == operation)
 				{
