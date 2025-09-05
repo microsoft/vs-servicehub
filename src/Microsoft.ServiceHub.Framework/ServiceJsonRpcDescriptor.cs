@@ -3,7 +3,6 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Reflection;
 using Microsoft.VisualStudio.Threading;
@@ -93,12 +92,6 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// This <em>can</em> be wire-protocol compatible with <see cref="UTF8"/> if the <see cref="System.Text.Json.JsonSerializerOptions"/> are configured to be compatible with JSON.NET.
 		/// </summary>
 		UTF8SystemTextJson,
-
-		/// <summary>
-		/// Format messages as MessagePack for a high throughput, compact binary representation
-		/// using <see cref="NerdbankMessagePackFormatter"/> (the <see href="https://github.com/AArnott/Nerdbank.MessagePack">Nerdbank.MessagePack serializer</see>).
-		/// </summary>
-		NerdbankMessagePack,
 	}
 
 	/// <summary>
@@ -428,8 +421,6 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 				return this.CreateMessagePackFormatter();
 			case Formatters.UTF8SystemTextJson:
 				return this.CreateSystemTextJsonFormatter();
-			case Formatters.NerdbankMessagePack:
-				throw new NotSupportedException(Strings.FormatUseOtherDescriptorInstead(this.Formatter, nameof(ServiceJsonRpcPolyTypeDescriptor)));
 			default:
 				throw new NotSupportedException(Strings.FormatFormatterNotSupported(this.Formatter, this.Protocol));
 		}

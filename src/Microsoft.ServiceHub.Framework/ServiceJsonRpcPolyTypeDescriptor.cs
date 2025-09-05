@@ -1,7 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO.Pipelines;
+using System.Reflection;
+using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using PolyType;
 using StreamJsonRpc;
@@ -12,14 +16,12 @@ namespace Microsoft.ServiceHub.Framework;
 /// An RPC descriptor for services that support JSON-RPC using a PolyType-based formatter.
 /// </summary>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
-public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
+public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable<ServiceJsonRpcPolyTypeDescriptor>
 {
 	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, ITypeShapeProvider)" />
 	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter, ITypeShapeProvider typeShapeProvider)
-		: this(serviceMoniker, clientInterface: null, formatter, messageDelimiter, typeShapeProvider)
+		: this(serviceMoniker, clientInterface: null, formatter, messageDelimiter, multiplexingStreamOptions: null, typeShapeProvider)
 	{
-		Requires.NotNull(typeShapeProvider);
-		this.TypeShapeProvider = typeShapeProvider;
 	}
 
 	/// <summary>
@@ -28,7 +30,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
 	/// </summary>
 	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, MultiplexingStream.Options?, ITypeShapeProvider)" />
 	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter, [ValidatedNotNull] ITypeShapeProvider typeShapeProvider)
-		: base(serviceMoniker, clientInterface, formatter, messageDelimiter)
+		: this(serviceMoniker, clientInterface, formatter, messageDelimiter, multiplexingStreamOptions: null, typeShapeProvider)
 	{
 		Requires.NotNull(typeShapeProvider);
 		this.TypeShapeProvider = typeShapeProvider;
@@ -36,7 +38,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ServiceJsonRpcPolyTypeDescriptor"/> class
-	/// with support for opening additional streams with <see cref="ServiceJsonRpcDescriptor.MultiplexingStreamOptions"/>.
+	/// with support for opening additional streams with <see cref="ServiceJsonRpcPolyTypeDescriptor.MultiplexingStreamOptions"/>.
 	/// </summary>
 	/// <param name="serviceMoniker">The service moniker.</param>
 	/// <param name="clientInterface">The interface type that the client's "callback" RPC target is expected to implement. May be null if the service does not invoke methods on the client.</param>
@@ -45,9 +47,12 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
 	/// <param name="multiplexingStreamOptions">The options that a <see cref="MultiplexingStream" /> may be created with. A <see langword="null"/> value will prevent a <see cref="MultiplexingStream" /> from being created for the RPC connection.</param>
 	/// <param name="typeShapeProvider">The source of type shapes for all parameter and return types used in the RPC contract.</param>
 	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter, MultiplexingStream.Options? multiplexingStreamOptions, [ValidatedNotNull] ITypeShapeProvider typeShapeProvider)
-		: base(serviceMoniker, clientInterface, formatter, messageDelimiter, multiplexingStreamOptions)
+		: base(serviceMoniker, clientInterface)
 	{
 		Requires.NotNull(typeShapeProvider);
+		this.Formatter = formatter;
+		this.MessageDelimiter = messageDelimiter;
+		this.MultiplexingStreamOptions = multiplexingStreamOptions?.GetFrozenCopy();
 		this.TypeShapeProvider = typeShapeProvider;
 	}
 
@@ -58,13 +63,262 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
 	protected ServiceJsonRpcPolyTypeDescriptor([ValidatedNotNull] ServiceJsonRpcPolyTypeDescriptor copyFrom)
 		: base(copyFrom)
 	{
+		this.Formatter = copyFrom.Formatter;
+		this.MessageDelimiter = copyFrom.MessageDelimiter;
+		this.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions;
+		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
+		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
 		this.TypeShapeProvider = copyFrom.TypeShapeProvider;
 	}
+
+	/// <summary>
+	/// The formats that JSON-RPC can be serialized to.
+	/// </summary>
+	public enum Formatters
+	{
+		/// <summary>
+		/// Format messages as MessagePack for a high throughput, compact binary representation
+		/// using <see cref="NerdbankMessagePackFormatter"/> (the <see href="https://github.com/AArnott/Nerdbank.MessagePack">Nerdbank.MessagePack serializer</see>).
+		/// </summary>
+		NerdbankMessagePack,
+	}
+
+	/// <summary>
+	/// The various headers that introduce a JSON-RPC message.
+	/// </summary>
+	public enum MessageDelimiters
+	{
+		/// <summary>
+		/// Adds an HTTP-like header in front of each JSON-RPC message that describes its encoding and length.
+		/// </summary>
+		HttpLikeHeaders,
+
+		/// <summary>
+		/// Adds a big endian 32-bit integer before each JSON-RPC message describing its length.
+		/// </summary>
+		BigEndianInt32LengthHeader,
+	}
+
+	/// <inheritdoc />
+	public override string Protocol => "json-rpc";
+
+	/// <summary>
+	/// Gets the formatting used by the service.
+	/// </summary>
+	public Formatters Formatter { get; }
+
+	/// <summary>
+	/// Gets the mechanism by which message boundaries may be discerned. Some expected values are found in <see cref="MessageDelimiters"/>.
+	/// </summary>
+	public MessageDelimiters MessageDelimiter { get; }
+
+	/// <summary>
+	/// Gets the way exceptions are communicated from the service to the client.
+	/// This is set on the <see cref="JsonRpc.ExceptionStrategy"/> property when the <see cref="JsonRpc"/> instance is created.
+	/// </summary>
+	/// <value>The default value is <see cref="ExceptionProcessing.CommonErrorData"/>.</value>
+	public ExceptionProcessing ExceptionStrategy { get; private set; } = ExceptionProcessing.CommonErrorData;
+
+	/// <summary>
+	/// Gets the options to use when creating a new <see cref="Nerdbank.Streams.MultiplexingStream"/> as a prerequisite to establishing an RPC connection.
+	/// </summary>
+	/// <remarks>
+	/// Any non-null value from this property is always <see cref="MultiplexingStream.Options.IsFrozen">frozen</see>.
+	/// </remarks>
+	public MultiplexingStream.Options? MultiplexingStreamOptions { get; private set; }
 
 	/// <summary>
 	/// Gets the <see cref="ITypeShapeProvider"/> to use for serializing and deserializing parameter and return types.
 	/// </summary>
 	public ITypeShapeProvider TypeShapeProvider { get; private set; }
+
+	/// <summary>
+	/// Gets the set of interfaces that will be added to a generated proxy in addition to the one specified
+	/// as the type argument to <see cref="JsonRpcConnection.ConstructRpcClient{T}"/> or
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>.
+	/// </summary>
+	/// <value>The default value is <see langword="null"/>.</value>
+	/// <remarks>
+	/// A <see langword="null" /> value may signal an implementation of
+	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>
+	/// to supply some default set of optional interfaces based on service registration.
+	/// Such implementations should honor any non-<see langword="null" /> value from this property (including an empty array)
+	/// by not adding any additional interfaces beyond those specified.
+	/// </remarks>
+	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
+
+	/// <summary>
+	/// Gets a string for the debugger to display for this struct.
+	/// </summary>
+	[ExcludeFromCodeCoverage]
+	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter}";
+
+	/// <inheritdoc/>
+#pragma warning disable CS0672 // Base Member overrides obsolete member, To be handled at ServiceJsonRpcPolyTypeDescriptor only later for backward compatibility.
+	public override ServiceRpcDescriptor WithMultiplexingStream(MultiplexingStream? multiplexingStream)
+#pragma warning restore CS0672 // Base Member overrides obsolete member
+	{
+#pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
+		ServiceRpcDescriptor result = base.WithMultiplexingStream(multiplexingStream);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+		if (result is ServiceJsonRpcPolyTypeDescriptor serviceJsonRpcDescriptor)
+		{
+			if (serviceJsonRpcDescriptor.MultiplexingStreamOptions is null)
+			{
+				return result;
+			}
+
+			result = serviceJsonRpcDescriptor.Clone();
+			((ServiceJsonRpcPolyTypeDescriptor)result).MultiplexingStreamOptions = null;
+		}
+
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with the <see cref="MultiplexingStreamOptions" /> property set to a frozen copy of the specified value.
+	/// If a <see cref="MultiplexingStream"/> has been set, it is cleared.
+	/// </summary>
+	/// <param name="multiplexingStreamOptions">Options to use when setting up a new <see cref="Nerdbank.Streams.MultiplexingStream"/> that should be set up on a pipe before initializing RPC; <see langword="null"/> to not set up or use any.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceRpcDescriptor WithMultiplexingStream(MultiplexingStream.Options? multiplexingStreamOptions)
+	{
+		if (this.MultiplexingStreamOptions == multiplexingStreamOptions && this.MultiplexingStream is null)
+		{
+			return this;
+		}
+
+#pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
+		var result = (ServiceJsonRpcPolyTypeDescriptor)base.WithMultiplexingStream(null);
+#pragma warning restore CS0618 // Type or member is obsolete
+		if (this == result)
+		{
+			// We got this far without cloning. But we must clone because we're about to set a property on the result.
+			result = (ServiceJsonRpcPolyTypeDescriptor)result.Clone();
+		}
+
+		result.MultiplexingStreamOptions = multiplexingStreamOptions?.GetFrozenCopy();
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with the <see cref="ExceptionStrategy" /> property set to a new value.
+	/// </summary>
+	/// <param name="exceptionStrategy">The new value for the <see cref="ExceptionStrategy"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcPolyTypeDescriptor WithExceptionStrategy(ExceptionProcessing exceptionStrategy)
+	{
+		if (this.ExceptionStrategy == exceptionStrategy)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		result.ExceptionStrategy = exceptionStrategy;
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with the <see cref="AdditionalServiceInterfaces" /> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="AdditionalServiceInterfaces"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcPolyTypeDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type>? value)
+	{
+		Requires.Argument(value is not { IsDefault: true }, nameof(value), null);
+		if (this.AdditionalServiceInterfaces == value)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		result.AdditionalServiceInterfaces = value;
+		return result;
+	}
+
+	/// <summary>
+	/// Wraps some target object with a proxy that gives the caller the similar semantics to calling
+	/// an actual RPC object using <see cref="JsonRpc"/>.
+	/// </summary>
+	/// <typeparam name="T">The interface that the returned proxy must implement.</typeparam>
+	/// <param name="target">The object to which all calls to the proxy should be forwarded.</param>
+	/// <returns>The proxy, or null if <paramref name="target"/> is null.</returns>
+	/// <remarks>
+	/// The proxy will forward all calls made to the <typeparamref name="T"/> interface to the <paramref name="target"/> object.
+	/// Exceptions thrown from the target will be caught by the proxy and a <see cref="RemoteInvocationException"/> will be thrown instead
+	/// with some of the original exception details preserved (but not as an <see cref="Exception.InnerException"/>) in order to
+	/// emulate what an RPC connection would be like.
+	/// This proxy implements <typeparamref name="T"/>.
+	/// The proxy also implements <see cref="IDisposable"/> and will forward a call to <see cref="IDisposable.Dispose"/>
+	/// to the <paramref name="target"/> object if the target object implements <see cref="IDisposable"/>.
+	/// </remarks>
+	[return: NotNullIfNotNull("target")]
+	public override T? ConstructLocalProxy<T>(T? target)
+		where T : class
+	{
+		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
+			? (addl.Contains(typeof(T)) ? addl.Remove(typeof(T)) : addl)
+			: [];
+		throw new NotImplementedException();
+		////return target != null
+		////	? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces.AsSpan(), this.ExceptionStrategy)
+		////	: null;
+	}
+
+	/// <inheritdoc/>
+	public override RpcConnection ConstructRpcConnection(IDuplexPipe pipe)
+	{
+		Requires.NotNull(pipe, nameof(pipe));
+
+		if (this.MultiplexingStream is null && this.MultiplexingStreamOptions is object)
+		{
+			this.MultiplexingStreamOptions = this.CreateSeedChannels();
+			var mxstream = MultiplexingStream.Create(pipe.AsStream(), this.MultiplexingStreamOptions);
+
+			MultiplexingStream.Channel rpcChannel = mxstream.AcceptChannel(0); // accepting the seeded channelId = 0 only.
+			rpcChannel.Completion.ContinueWith(_ => mxstream.DisposeAsync().Forget(), TaskScheduler.Default).Forget();
+
+#pragma warning disable CS0618 // Type or member is obsolete
+			return this.WithMultiplexingStream(mxstream).ConstructRpcConnection(rpcChannel);
+#pragma warning restore CS0618 // Type or member is obsolete
+		}
+
+		IJsonRpcMessageHandler handler = this.CreateHandler(pipe, this.CreateFormatter());
+		JsonRpc jsonRpc = this.CreateJsonRpc(handler);
+		jsonRpc.ExceptionStrategy = this.ExceptionStrategy;
+		jsonRpc.ActivityTracingStrategy = new CorrelationManagerTracingStrategy { TraceSource = this.TraceSource };
+		jsonRpc.SynchronizationContext = new NonConcurrentSynchronizationContext(sticky: false);
+		jsonRpc.JoinableTaskFactory = this.JoinableTaskFactory;
+
+		// Only set the TraceSource if we've been given one, so we don't set it to null (which would throw).
+		if (this.TraceSource != null)
+		{
+			jsonRpc.TraceSource = this.TraceSource;
+		}
+
+		return this.CreateConnection(jsonRpc);
+	}
+
+	/// <inheritdoc />
+	public bool Equals(ServiceJsonRpcPolyTypeDescriptor? other)
+	{
+		return other != null
+			&& this.Moniker.Equals(other.Moniker)
+			&& this.Formatter == other.Formatter
+			&& this.MessageDelimiter == other.MessageDelimiter
+			&& this.TypeShapeProvider == other.TypeShapeProvider;
+	}
+
+	/// <inheritdoc />
+	public override int GetHashCode() => this.Moniker.GetHashCode();
+
+	/// <inheritdoc />
+	public override bool Equals(object? obj) => this.Equals(obj as ServiceJsonRpcPolyTypeDescriptor);
 
 	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
@@ -86,16 +340,222 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcDescriptor
 		return copy;
 	}
 
-	/// <inheritdoc/>
-	protected internal override IJsonRpcMessageFormatter CreateFormatter()
+	/// <summary>
+	/// Initializes a new instance of a <see cref="JsonRpcConnection"/> or derived type.
+	/// </summary>
+	/// <param name="jsonRpc">The <see cref="JsonRpc"/> object that will have to be passed to <see cref="JsonRpcConnection(JsonRpc)"/>.</param>
+	/// <returns>The new instance of <see cref="JsonRpcConnection"/>.</returns>
+	protected internal virtual JsonRpcConnection CreateConnection(JsonRpc jsonRpc) => new JsonRpcConnection(jsonRpc, this);
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="IJsonRpcMessageHandler"/> for use in a new server or client.
+	/// </summary>
+	/// <param name="pipe">The pipe the handler should use to send and receive messages.</param>
+	/// <param name="formatter">The <see cref="IJsonRpcMessageFormatter"/> the handler should use to encode messages.</param>
+	/// <returns>The new message handler.</returns>
+	protected internal virtual IJsonRpcMessageHandler CreateHandler(IDuplexPipe pipe, IJsonRpcMessageFormatter formatter)
+	{
+		Requires.NotNull(pipe, nameof(pipe));
+
+		IJsonRpcMessageHandler handler;
+		switch (this.MessageDelimiter)
+		{
+			case MessageDelimiters.BigEndianInt32LengthHeader:
+				handler = new LengthHeaderMessageHandler(pipe, formatter);
+				break;
+			case MessageDelimiters.HttpLikeHeaders:
+				handler = new HeaderDelimitedMessageHandler(pipe, formatter);
+				break;
+			default:
+				throw new NotSupportedException(Strings.FormatMessageDelimiterNotSupported(this.MessageDelimiter, this.Protocol));
+		}
+
+		return handler;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="IJsonRpcMessageFormatter"/> for use in a new server or client.
+	/// </summary>
+	/// <returns>The new message formatter.</returns>
+	protected internal virtual IJsonRpcMessageFormatter CreateFormatter()
 		=> this.Formatter switch
 		{
 			Formatters.NerdbankMessagePack => this.CreateNerdbankMessagePackFormatter(this.TypeShapeProvider),
 			_ => throw new NotSupportedException(Strings.FormatFormatterNotSupported(this.Formatter, this.Protocol)),
 		};
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="JsonRpc"/> for use in a new server or client.
+	/// </summary>
+	/// <param name="handler">The message handler that the <see cref="JsonRpc"/> instance should use.</param>
+	/// <returns>The new <see cref="JsonRpc"/>.</returns>
+	protected internal virtual JsonRpc CreateJsonRpc(IJsonRpcMessageHandler handler)
+	{
+		Requires.NotNull(handler, nameof(handler));
+
+		return new JsonRpc(handler);
+	}
+
 	/// <inheritdoc/>
-	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcPolyTypeDescriptor(this) { TypeShapeProvider = this.TypeShapeProvider };
+	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcPolyTypeDescriptor(this);
 
 	private IJsonRpcMessageFormatter CreateNerdbankMessagePackFormatter(ITypeShapeProvider provider) => new NerdbankMessagePackFormatter { TypeShapeProvider = provider };
+
+	/// <summary>
+	/// Create first seed channel if not being assigned by the owner of the service descriptor.
+	/// Sets the protocol version to be used. 1 is the original. 2 is a
+	/// protocol breaking change backpressure support, 3 is a protocol breaking change and default version that
+	/// removes the initial handshake so no round-trip to establish the connection is necessary.
+	/// </summary>
+	/// <returns>The options that a Nerdbank.Streams.MultiplexingStream may be created.</returns>
+	private MultiplexingStream.Options? CreateSeedChannels()
+	{
+		Requires.Argument(this.MultiplexingStreamOptions?.ProtocolMajorVersion > 2, nameof(MultiplexingStream.Options.ProtocolMajorVersion), $"Should be greater than 2.");
+
+		if (this.MultiplexingStreamOptions.SeededChannels.Count == 0)
+		{
+			return new MultiplexingStream.Options(this.MultiplexingStreamOptions)
+			{
+				SeededChannels =
+					{
+						new MultiplexingStream.ChannelOptions { }, // Channel 0
+					},
+				ProtocolMajorVersion = 3, // Removes initial handshake if a protocol version of 3 or later is specified.
+			};
+		}
+		else
+		{
+			return this.MultiplexingStreamOptions;
+		}
+	}
+
+	/// <summary>
+	/// A <see cref="ServiceRpcDescriptor.RpcConnection"/>-derived type specifically for <see cref="JsonRpc"/>.
+	/// </summary>
+	public class JsonRpcConnection : RpcConnection
+	{
+		private readonly ServiceJsonRpcPolyTypeDescriptor? owner;
+
+		/// <summary>
+		/// Backing field for the <see cref="LocalRpcTargetOptions"/> property.
+		/// </summary>
+		/// <devremarks>
+		/// Create a new instance of <see cref="JsonRpcTargetOptions"/> every time because it's mutable.
+		/// </devremarks>
+		private JsonRpcTargetOptions localRpcTargetOptions = new JsonRpcTargetOptions { DisposeOnDisconnect = true };
+
+		/// <summary>
+		/// Backing field for the <see cref="LocalRpcProxyOptions"/> property.
+		/// </summary>
+		/// <devremarks>
+		/// Create a new instance of <see cref="JsonRpcProxyOptions"/> every time because it's mutable.
+		/// </devremarks>
+		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { };
+
+		/// <inheritdoc cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcPolyTypeDescriptor)"/>
+		public JsonRpcConnection(JsonRpc jsonRpc)
+			: this(jsonRpc, null)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="JsonRpcConnection"/> class.
+		/// </summary>
+		/// <param name="jsonRpc">The JSON-RPC object.</param>
+		/// <param name="owner">The descriptor that created this object.</param>
+		public JsonRpcConnection(JsonRpc jsonRpc, ServiceJsonRpcPolyTypeDescriptor? owner)
+		{
+			this.JsonRpc = jsonRpc ?? throw new ArgumentNullException(nameof(jsonRpc));
+			this.owner = owner;
+		}
+
+		/// <inheritdoc/>
+		public override TraceSource TraceSource
+		{
+			get => this.JsonRpc.TraceSource;
+			set => this.JsonRpc.TraceSource = value;
+		}
+
+		/// <inheritdoc/>
+		public override bool IsDisposed => this.JsonRpc.IsDisposed;
+
+		/// <summary>
+		/// Gets or sets the options to pass to <see cref="JsonRpc.AddLocalRpcTarget(object, JsonRpcTargetOptions?)"/> in the default implementation of <see cref="AddLocalRpcTarget(object)"/>.
+		/// </summary>
+		public JsonRpcTargetOptions LocalRpcTargetOptions
+		{
+			get => this.localRpcTargetOptions;
+			set
+			{
+				Requires.NotNull(value, nameof(value));
+				this.localRpcTargetOptions = value;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the options to pass to <see cref="JsonRpc.Attach{T}(JsonRpcProxyOptions?)"/> in the default implementation of <see cref="ConstructRpcClient{T}()"/>.
+		/// </summary>
+		public JsonRpcProxyOptions LocalRpcProxyOptions
+		{
+			get => this.localRpcProxyOptions;
+			set
+			{
+				Requires.NotNull(value, nameof(value));
+				this.localRpcProxyOptions = value;
+			}
+		}
+
+		/// <summary>
+		/// Gets the underlying <see cref="JsonRpc"/> object.
+		/// </summary>
+		public JsonRpc JsonRpc { get; }
+
+		/// <inheritdoc/>
+		public override Task Completion => this.JsonRpc.Completion;
+
+		/// <inheritdoc/>
+		public override void AddLocalRpcTarget(object rpcTarget)
+		{
+			Requires.NotNull(rpcTarget, nameof(rpcTarget));
+
+			this.JsonRpc.AddLocalRpcTarget(rpcTarget, this.LocalRpcTargetOptions);
+		}
+
+		/// <inheritdoc/>
+		public override T ConstructRpcClient<T>()
+		{
+			if (this.owner?.AdditionalServiceInterfaces is { Length: > 0 })
+			{
+				ReadOnlySpan<Type> ifaceTypes = this.owner.AdditionalServiceInterfaces.Contains(typeof(T)) is true
+					? this.owner.AdditionalServiceInterfaces.Value.AsSpan()
+					: [typeof(T), .. this.owner.AdditionalServiceInterfaces];
+				return (T)this.JsonRpc.Attach(ifaceTypes, this.LocalRpcProxyOptions);
+			}
+			else
+			{
+				return this.JsonRpc.Attach<T>(this.LocalRpcProxyOptions);
+			}
+		}
+
+		/// <inheritdoc/>
+		public override object ConstructRpcClient(Type interfaceType)
+		{
+			Requires.NotNull(interfaceType, nameof(interfaceType));
+
+			MethodInfo? genericOverload = this.GetType().GetTypeInfo().GetRuntimeMethod(nameof(this.ConstructRpcClient), Type.EmptyTypes);
+			Assumes.NotNull(genericOverload);
+			MethodInfo closedGenericOverload = genericOverload.MakeGenericMethod(interfaceType);
+			return closedGenericOverload.Invoke(this, Array.Empty<object>())!;
+		}
+
+		/// <inheritdoc/>
+		public override void Dispose()
+		{
+			GC.SuppressFinalize(this);
+			this.JsonRpc.Dispose();
+		}
+
+		/// <inheritdoc/>
+		public override void StartListening() => this.JsonRpc.StartListening();
+	}
 }
