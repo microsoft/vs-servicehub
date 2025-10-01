@@ -5,7 +5,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 
-    <MicroBuildVersion>2.0.199</MicroBuildVersion>
+    <MicroBuildVersion>2.0.201</MicroBuildVersion>
     <CodeAnalysisVersion>4.12.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>3.11.0-beta1.24324.1</MicrosoftCodeAnalysisAnalyzersVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
@@ -58,7 +58,7 @@
     <GlobalPackageReference Include="DotNetAnalyzers.DocumentationAnalyzers" Version="1.0.0-beta.59" />
     <GlobalPackageReference Include="Microsoft.VisualStudio.Internal.MicroBuild.VisualStudio" Version="$(MicroBuildVersion)" />
     <!-- The condition works around https://github.com/dotnet/sdk/issues/44951 -->
-    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.7.115" Condition="!('$(TF_BUILD)'=='true' and '$(dotnetformat)'=='true')" />
+    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.8.118" Condition="!('$(TF_BUILD)'=='true' and '$(dotnetformat)'=='true')" />
     <GlobalPackageReference Include="PolySharp" Version="1.15.0" Condition="'$(DoNotReferenceNullable)'!='true'" />
     <GlobalPackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556" />
   </ItemGroup>
