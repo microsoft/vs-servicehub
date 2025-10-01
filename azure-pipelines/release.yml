@@ -82,7 +82,7 @@ extends:
                 { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
               ]
 
-        - template: npm_push.yml
+        - template: /azure-pipelines/npm_push.yml@self
           parameters:
             tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
             feedName: npmjs.org
