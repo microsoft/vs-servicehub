@@ -80,6 +80,7 @@ extends:
                 { "label" : "bug", "displayName" : "Fixes", "state" : "closed" },
                 { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
               ]
+          continueOnError: true # https://developercommunity.visualstudio.com/t/GitHubRelease-task-update-broke-releases/10975854
 
         - template: /azure-pipelines/npm_push.yml@self
           parameters:
