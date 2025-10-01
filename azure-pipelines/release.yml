@@ -57,7 +57,9 @@ extends:
         - download: CI
           artifact: deployables-Windows
           displayName: 🔻 Download deployables-Windows artifact
-          patterns: 'NuGet/*'
+          patterns: |
+            NuGet/*
+            npm/*
         - task: GitHubRelease@1
           displayName: 📢 GitHub release (create)
           inputs:
