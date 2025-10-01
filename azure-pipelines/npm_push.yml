@@ -12,11 +12,11 @@ steps:
   - powershell: |
       $feedUrl = [Uri]'${{ parameters.feedUrl }}'
       $feedSkipScheme = "//$($feedUrl.Host)$($feedUrl.PathAndQuery)"
-      Set-Content -Path $HOME/.npmrc -Value "@microsoft:registry=$($feedUrl.AbsoluteUri)`n$($feedSkipScheme):username=VssSessionToken`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=`${NPM_TOKEN_BASE64}"
       $access_token = '${{ parameters.access_token }}'
       if (!$access_token) { $access_token = '$(System.AccessToken)' }
       if (!$access_token) { Write-Error "No access token found." }
       $env:NPM_TOKEN_BASE64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($access_token))
+      Set-Content -Path $HOME/.npmrc -Value "@microsoft:registry=$($feedUrl.AbsoluteUri)`n$($feedSkipScheme):username=VssSessionToken`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=${env:NPM_TOKEN_BASE64}"
       Get-ChildItem @microsoft-*.tgz |% {
         Write-Host "##[command]npm publish $_ --verbose"
         npm publish $_ --verbose
