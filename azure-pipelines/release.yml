@@ -42,7 +42,6 @@ extends:
             nuGetFeedType: external
             publishFeedCredentials: VisualStudioExtensibility (nuget.org)
         steps:
-        - checkout: none
         - powershell: |
             Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
             if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
