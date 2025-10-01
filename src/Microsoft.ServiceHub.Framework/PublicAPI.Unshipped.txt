@@ -1,1 +1,0 @@
-static Microsoft.ServiceHub.Framework.ServiceBrokerAggregator.Lazy(System.Func<System.Threading.Tasks.ValueTask<Microsoft.ServiceHub.Framework.IServiceBroker!>>! lazyServiceBroker, Microsoft.VisualStudio.Threading.JoinableTaskFactory? joinableTaskFactory = null) -> Microsoft.ServiceHub.Framework.IServiceBroker!
