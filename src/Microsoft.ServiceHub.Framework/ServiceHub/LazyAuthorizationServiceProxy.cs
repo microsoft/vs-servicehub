@@ -17,7 +17,7 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 	/// <summary>
 	/// Initializes a new instance of the <see cref="LazyAuthorizationServiceProxy"/> class.
 	/// </summary>
-	/// <param name="serviceBroker">A service broker used to acquire the activation service.</param>
+	/// <param name="serviceBroker">An optional service broker used to acquire the activation service.</param>
 	/// <param name="joinableTaskFactory">An optional <see cref="JoinableTaskFactory"/> to use when scheduling async work, to avoid deadlocks in an application with a main thread.</param>
 	public LazyAuthorizationServiceProxy(IServiceBroker? serviceBroker, JoinableTaskFactory? joinableTaskFactory)
 	{
