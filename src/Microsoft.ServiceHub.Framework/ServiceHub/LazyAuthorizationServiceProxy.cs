@@ -19,9 +19,8 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 	/// </summary>
 	/// <param name="serviceBroker">A service broker used to acquire the activation service.</param>
 	/// <param name="joinableTaskFactory">An optional <see cref="JoinableTaskFactory"/> to use when scheduling async work, to avoid deadlocks in an application with a main thread.</param>
-	public LazyAuthorizationServiceProxy(IServiceBroker serviceBroker, JoinableTaskFactory? joinableTaskFactory)
+	public LazyAuthorizationServiceProxy(IServiceBroker? serviceBroker, JoinableTaskFactory? joinableTaskFactory)
 	{
-		Requires.NotNull(serviceBroker);
 		this.authorizationService = new(() => this.ActivateAsync(serviceBroker), joinableTaskFactory);
 	}
 
@@ -58,10 +57,14 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 		return await service.GetCredentialsAsync(cancellationToken).ConfigureAwait(false);
 	}
 
-	private async Task<IAuthorizationService> ActivateAsync(IServiceBroker serviceBroker)
+	private async Task<IAuthorizationService> ActivateAsync(IServiceBroker? serviceBroker)
 	{
 		this.DisposeToken.ThrowIfCancellationRequested();
-		IAuthorizationService? authService = await serviceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, this.DisposeToken).ConfigureAwait(false);
+
+		IAuthorizationService? authService =
+			serviceBroker is not null
+				? await serviceBroker.GetProxyAsync<IAuthorizationService>(FrameworkServices.Authorization, this.DisposeToken).ConfigureAwait(false)
+				: null;
 
 		authService ??= new DefaultAuthorizationService();
 		authService.CredentialsChanged += this.AuthService_CredentialsChanged;
