@@ -13,6 +13,13 @@ public class LazyAuthorizationServiceProxyTests : TestBase
 	}
 
 	[Fact]
+	public async Task CanActivateWithNullBroker()
+	{
+		using LazyAuthorizationServiceProxy proxy = new(serviceBroker: null, joinableTaskFactory: null);
+		Assert.False(await proxy.CheckAuthorizationAsync(new ProtectedOperation("operation"), this.TimeoutToken));
+	}
+
+	[Fact]
 	public async Task ActivatedAuthorizationServiceProxyIsDisposed()
 	{
 		ServiceBroker.AuthorizationService authorizationService = new();
