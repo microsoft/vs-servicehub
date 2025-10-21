@@ -20,13 +20,16 @@ variables:
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
+    settings:
+      networkIsolationPolicy: Permissive,CFSClean
     sdl:
       sourceAnalysisPool: VSEngSS-MicroBuild2022-1ES
 
     stages:
     - stage: release
       jobs:
-      - job: release
+      - job: nuget
+        displayName: 📦 Push nuget.org packages
         pool:
           name: AzurePipelines-EO
           demands:
@@ -42,14 +45,6 @@ extends:
             nuGetFeedType: external
             publishFeedCredentials: VisualStudioExtensibility (nuget.org)
         steps:
-        - powershell: |
-            Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
-            if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
-              Write-Host "##vso[task.setvariable variable=IsPrerelease]true"
-            } else {
-              Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
-            }
-          displayName: ⚙ Set up pipeline
         - task: NodeTool@0
           inputs:
             versionSpec: 18.x
@@ -60,6 +55,38 @@ extends:
           patterns: |
             NuGet/*
             npm/*
+        - template: /azure-pipelines/npm_push.yml@self
+          parameters:
+            tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
+            feedName: npmjs.org
+            feedUrl: https://registry.npmjs.org/
+            service_connection: npmjs.org (andrewarnott)
+      - job: github
+        displayName: 📢 GitHub release
+        dependsOn: nuget
+        pool:
+          name: AzurePipelines-EO
+          demands:
+          - ImageOverride -equals 1ESPT-Ubuntu22.04
+          os: Linux
+        templateContext:
+          type: releaseJob
+          isProduction: true
+          inputs:
+          - input: pipelineArtifact
+            pipeline: CI
+            artifactName: deployables-Windows
+            targetPath: $(Pipeline.Workspace)/CI/deployables-Windows
+        steps:
+        - checkout: none
+        - powershell: |
+            Write-Host "##vso[build.updatebuildnumber]$(resources.pipeline.CI.runName)"
+            if ('$(resources.pipeline.CI.runName)'.Contains('-')) {
+              Write-Host "##vso[task.setvariable variable=IsPrerelease]true"
+            } else {
+              Write-Host "##vso[task.setvariable variable=IsPrerelease]false"
+            }
+          displayName: ⚙ Set up pipeline
         - task: GitHubRelease@1
           displayName: 📢 GitHub release (create)
           inputs:
@@ -83,10 +110,3 @@ extends:
                 { "label" : "enhancement", "displayName": "Enhancements", "state" : "closed" }
               ]
           continueOnError: true # https://developercommunity.visualstudio.com/t/GitHubRelease-task-update-broke-releases/10975854
-
-        - template: /azure-pipelines/npm_push.yml@self
-          parameters:
-            tgzDir: $(Pipeline.Workspace)/CI/deployables-Windows/npm
-            feedName: npmjs.org
-            feedUrl: https://registry.npmjs.org/
-            service_connection: npmjs.org (andrewarnott)
