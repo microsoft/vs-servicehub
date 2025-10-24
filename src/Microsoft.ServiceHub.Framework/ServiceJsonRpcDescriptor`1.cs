@@ -7,6 +7,14 @@ namespace Microsoft.ServiceHub.Framework;
 
 /// <inheritdoc cref="ServiceJsonRpcDescriptor"/>
 /// <typeparam name="T">The RPC interface used to call the service.</typeparam>
+/// <devremarks>
+/// This class was a fine idea, except that its benefits only comes by exposing this derived type in the public API of the service contract,
+/// which is generally discouraged and folks should expose the base <see cref="ServiceRpcDescriptor"/> class for flexibility.
+/// If <see cref="IServiceBroker"/> methods took an interface for the descriptor instead of a class, we could have recovered from this.
+/// Oh well.
+/// </devremarks>
+[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.Formatters)]
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 public class ServiceJsonRpcDescriptor<T> : ServiceJsonRpcDescriptor
 	where T : class

@@ -3,8 +3,8 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
+using System.Reflection;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using StreamJsonRpc;
@@ -17,6 +17,8 @@ namespace Microsoft.ServiceHub.Framework;
 /// An RPC descriptor for services that support JSON-RPC.
 /// </summary>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
+[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.Formatters)]
 public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable<ServiceJsonRpcDescriptor>
 {
 	/// <inheritdoc cref="ServiceJsonRpcDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters)" />
@@ -26,7 +28,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ServiceJsonRpcDescriptor"/> class and no support for opening additional streams except by relying on the underlying service broker to provide one.
+	/// Initializes a new instance of the <see cref="ServiceJsonRpcDescriptor"/> class
+	/// with no support for opening additional streams except by relying on the underlying service broker to provide one.
 	/// </summary>
 	/// <inheritdoc cref="ServiceJsonRpcDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, MultiplexingStream.Options?)" />
 	public ServiceJsonRpcDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter)
@@ -37,7 +40,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ServiceJsonRpcDescriptor"/> class and does support for opening additional streams with <see cref="ServiceJsonRpcDescriptor.MultiplexingStreamOptions"/>.
+	/// Initializes a new instance of the <see cref="ServiceJsonRpcDescriptor"/> class
+	/// with support for opening additional streams with <see cref="MultiplexingStreamOptions"/>.
 	/// </summary>
 	/// <param name="serviceMoniker">The service moniker.</param>
 	/// <param name="clientInterface">The interface type that the client's "callback" RPC target is expected to implement. May be null if the service does not invoke methods on the client.</param>
@@ -56,7 +60,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// Initializes a new instance of the <see cref="ServiceJsonRpcDescriptor"/> class and initializes all fields based on a template instance.
 	/// </summary>
 	/// <param name="copyFrom">The instance to copy all fields from.</param>
-	protected ServiceJsonRpcDescriptor(ServiceJsonRpcDescriptor copyFrom)
+	protected ServiceJsonRpcDescriptor([ValidatedNotNull] ServiceJsonRpcDescriptor copyFrom)
 		: base(copyFrom)
 	{
 		this.Formatter = copyFrom.Formatter;
@@ -78,7 +82,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		UTF8,
 
 		/// <summary>
-		/// Format messages with MessagePack for a high throughput, compact binary representation.
+		/// Format messages as MessagePack for a high throughput, compact binary representation
+		/// using <see cref="MessagePackFormatter"/> (the <see href="https://github.com/MessagePack-CSharp/MessagePack-CSharp">MessagePack-CSharp serializer</see>).
 		/// </summary>
 		MessagePack,
 
@@ -492,6 +497,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	/// <summary>
 	/// A <see cref="ServiceRpcDescriptor.RpcConnection"/>-derived type specifically for <see cref="JsonRpc"/>.
 	/// </summary>
+	[RequiresDynamicCode(Reasons.Formatters)]
+	[RequiresUnreferencedCode(Reasons.Formatters)]
 	public class JsonRpcConnection : RpcConnection
 	{
 		private readonly ServiceJsonRpcDescriptor? owner;
@@ -598,7 +605,22 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		}
 
 		/// <inheritdoc/>
-		public override void Dispose() => this.JsonRpc.Dispose();
+		public override object ConstructRpcClient(Type interfaceType)
+		{
+			Requires.NotNull(interfaceType, nameof(interfaceType));
+
+			MethodInfo? genericOverload = this.GetType().GetTypeInfo().GetRuntimeMethod(nameof(this.ConstructRpcClient), Type.EmptyTypes);
+			Assumes.NotNull(genericOverload);
+			MethodInfo closedGenericOverload = genericOverload.MakeGenericMethod(interfaceType);
+			return closedGenericOverload.Invoke(this, Array.Empty<object>())!;
+		}
+
+		/// <inheritdoc/>
+		public override void Dispose()
+		{
+			GC.SuppressFinalize(this);
+			this.JsonRpc.Dispose();
+		}
 
 		/// <inheritdoc/>
 		public override void StartListening() => this.JsonRpc.StartListening();

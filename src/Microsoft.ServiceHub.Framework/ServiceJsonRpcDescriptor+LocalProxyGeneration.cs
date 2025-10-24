@@ -7,15 +7,13 @@
 #endif
 
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.ServiceHub.Framework.Reflection;
 using StreamJsonRpc;
-using StreamJsonRpc.Protocol;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -27,6 +25,8 @@ public partial class ServiceJsonRpcDescriptor
 	/// <summary>
 	/// Creates and caches proxies generated to wrap local target objects for the <see cref="ConstructLocalProxy{T}(T)"/> method.
 	/// </summary>
+	[RequiresUnreferencedCode(Reasons.DynamicProxy)]
+	[RequiresDynamicCode(Reasons.DynamicProxy)]
 	private static class LocalProxyGeneration
 	{
 		private static readonly List<(ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder)> TransparentProxyModuleBuilderByVisibilityCheck = new List<(ImmutableHashSet<AssemblyName>, ModuleBuilder)>();
@@ -40,7 +40,7 @@ public partial class ServiceJsonRpcDescriptor
 		private static readonly MethodInfo INotifyDisposableAddHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed))!.AddMethod!;
 		private static readonly MethodInfo INotifyDisposableRemoveHandler = typeof(INotifyDisposable).GetTypeInfo().GetRuntimeEvent(nameof(INotifyDisposable.Disposed))!.RemoveMethod!;
 		private static readonly ConstructorInfo ObjectDisposedExceptionCtor = typeof(ObjectDisposedException).GetTypeInfo().GetConstructor(new Type[] { typeof(string) })!;
-		private static readonly MethodInfo ExceptionHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ExceptionHelper), BindingFlags.Static | BindingFlags.NonPublic)!;
+		private static readonly MethodInfo ExceptionHelperMethod = typeof(ProxyBase).GetTypeInfo().GetMethod(nameof(ProxyBase.ExceptionHelper), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ReturnedTaskHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedTaskHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ReturnedTaskOfTHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedTaskOfTHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
 		private static readonly MethodInfo ReturnedValueTaskHelperMethod = typeof(LocalProxyGeneration).GetTypeInfo().GetMethod(nameof(ReturnedValueTaskHelperAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -166,7 +166,7 @@ public partial class ServiceJsonRpcDescriptor
 			{
 				if (!additionalInterface.IsInterface)
 				{
-					throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture, Strings.ClientProxyTypeArgumentMustBeAnInterface, additionalInterface));
+					throw new NotSupportedException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(additionalInterface));
 				}
 			}
 
@@ -714,38 +714,6 @@ public partial class ServiceJsonRpcDescriptor
 			}
 		}
 
-		/// <summary>
-		/// Called from the generated proxy to help prepare the exception to throw.
-		/// </summary>
-		/// <param name="ex">The exception thrown from the target object.</param>
-		/// <param name="exceptionStrategy">The value of <see cref="JsonRpc.ExceptionStrategy"/> to emulate.</param>
-		/// <returns>The exception the generated code should throw.</returns>
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		private static Exception ExceptionHelper(Exception ex, ExceptionProcessing exceptionStrategy)
-		{
-			var localRpcEx = ex as LocalRpcException;
-			object errorData = localRpcEx?.ErrorData ?? new CommonErrorData(ex);
-			if (localRpcEx is object)
-			{
-				throw new RemoteInvocationException(
-					ex.Message,
-					localRpcEx?.ErrorCode ?? (int)JsonRpcErrorCode.InvocationError,
-					errorData,
-					errorData);
-			}
-
-			return exceptionStrategy switch
-			{
-				ExceptionProcessing.CommonErrorData => new RemoteInvocationException(
-					ex.Message,
-					localRpcEx?.ErrorCode ?? (int)JsonRpcErrorCode.InvocationError,
-					errorData,
-					errorData),
-				ExceptionProcessing.ISerializable => new RemoteInvocationException(ex.Message, (int)JsonRpcErrorCode.InvocationErrorWithException, ex),
-				_ => throw new NotSupportedException("Unsupported exception strategy: " + exceptionStrategy),
-			};
-		}
-
 		private static Task? ReturnedTaskHelperAsync(Task task, ExceptionProcessing exceptionStrategy)
 		{
 #pragma warning disable VSTHRD110 // Observe result of async calls -- https://github.com/microsoft/vs-threading/issues/899
@@ -755,7 +723,7 @@ public partial class ServiceJsonRpcDescriptor
 				{
 					if (_.IsFaulted)
 					{
-						throw ExceptionHelper(_.Exception!.InnerException ?? _.Exception, exceptionStrategy);
+						throw ProxyBase.ExceptionHelper(_.Exception!.InnerException ?? _.Exception, exceptionStrategy);
 					}
 
 					if (_.IsCanceled)
@@ -778,7 +746,7 @@ public partial class ServiceJsonRpcDescriptor
 				{
 					if (_.IsFaulted)
 					{
-						throw ExceptionHelper(_.Exception!.InnerException ?? _.Exception, exceptionStrategy);
+						throw ProxyBase.ExceptionHelper(_.Exception!.InnerException ?? _.Exception, exceptionStrategy);
 					}
 
 					if (_.IsCanceled)
@@ -802,7 +770,7 @@ public partial class ServiceJsonRpcDescriptor
 			}
 			catch (Exception ex) when (!(ex is OperationCanceledException))
 			{
-				throw ExceptionHelper(ex, exceptionStrategy);
+				throw ProxyBase.ExceptionHelper(ex, exceptionStrategy);
 			}
 		}
 
@@ -814,7 +782,7 @@ public partial class ServiceJsonRpcDescriptor
 			}
 			catch (Exception ex) when (!(ex is OperationCanceledException))
 			{
-				throw ExceptionHelper(ex, exceptionStrategy);
+				throw ProxyBase.ExceptionHelper(ex, exceptionStrategy);
 			}
 		}
 

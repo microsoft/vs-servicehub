@@ -18,6 +18,7 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// Exposes a remote <see cref="IRemoteServiceBroker"/> service as a local <see cref="IServiceBroker"/>.
 /// </summary>
+[RequiresUnreferencedCode(Reasons.TypeLoad)]
 public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDisposable
 {
 	private const string NETFrameworkDescription = ".NET Framework";
@@ -143,9 +144,13 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// </param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, CancellationToken cancellationToken = default) => ConnectToMultiplexingServerAsync(duplexStream, options: null, cancellationToken: cancellationToken);
 
 	/// <inheritdoc cref="ConnectToMultiplexingServerAsync(Stream, MultiplexingStream.Options?, TraceSource?, CancellationToken)"/>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, CancellationToken cancellationToken = default) => ConnectToMultiplexingServerAsync(duplexStream, options, traceSource: null, cancellationToken);
 
 	/// <summary>
@@ -164,6 +169,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <param name="traceSource">An optional means of logging activity.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(Stream duplexStream, MultiplexingStream.Options? options, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(duplexStream, nameof(duplexStream));
@@ -224,6 +231,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	}
 
 	/// <inheritdoc cref="ConnectToServerAsync(IDuplexPipe, TraceSource?, CancellationToken)"/>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, CancellationToken cancellationToken = default) => ConnectToServerAsync(pipe, traceSource: null, cancellationToken);
 
 	/// <summary>
@@ -241,6 +250,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(pipe, nameof(pipe));
@@ -256,6 +267,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	}
 
 	/// <inheritdoc cref="ConnectToServerAsync(string, TraceSource?, CancellationToken)"/>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, CancellationToken cancellationToken = default) => ConnectToServerAsync(pipeName, traceSource: null, cancellationToken);
 
 	/// <summary>
@@ -271,6 +284,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	public static async Task<RemoteServiceBroker> ConnectToServerAsync(string pipeName, TraceSource? traceSource, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
@@ -630,6 +645,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// </summary>
 	/// <param name="serviceActivation">Details on which service to activate.</param>
 	/// <returns>The activated service object.</returns>
+	[RequiresUnreferencedCode(Reasons.TypeLoad)]
 	private static object ActivateLocalService(RemoteServiceConnectionInfo.LocalCLRServiceActivation serviceActivation)
 	{
 		Requires.NotNull(serviceActivation, nameof(serviceActivation));
@@ -672,25 +688,10 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		};
 		if (serviceHostInformation.Runtime == ServiceHostRuntime.NETCore)
 		{
-			serviceHostInformation.RuntimeVersion = GetNetCoreVersion();
+			serviceHostInformation.RuntimeVersion = Environment.Version;
 		}
 
 		return serviceHostInformation;
-	}
-
-	private static Version? GetNetCoreVersion()
-	{
-		Assembly assembly = typeof(System.Runtime.GCSettings).Assembly;
-		Assumes.NotNull(assembly.Location);
-		string[] assemblyPath = assembly.Location.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-
-		int netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
-		if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)
-		{
-			return Version.Parse(VersionFinder.Match(assemblyPath[netCoreAppIndex + 1]).Value);
-		}
-
-		return null;
 	}
 
 	private async Task<ServiceActivationOptions> ApplyActivationOptionDefaultsAsync(ServiceActivationOptions options, CancellationToken cancellationToken)

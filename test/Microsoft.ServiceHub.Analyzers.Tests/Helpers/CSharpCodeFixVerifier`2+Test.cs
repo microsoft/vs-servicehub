@@ -2,12 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Reflection;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.ServiceHub.Framework;
 
@@ -17,7 +13,7 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 	{
 		public Test()
 		{
-			this.ReferenceAssemblies = ReferencesHelper.DefaultReferences;
+			this.ReferenceAssemblies = ReferencesHelper.References;
 
 			this.SolutionTransforms.Add((solution, projectId) =>
 			{
