@@ -372,6 +372,24 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with the <see cref="RpcTargetMetadata" /> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="RpcTargetMetadata"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcPolyTypeDescriptor WithRpcTargetMetadata(RpcTargetMetadata? value)
+	{
+		if (this.RpcTargetMetadata == value)
+		{
+			return this;
+		}
+
+		var copy = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		copy.RpcTargetMetadata = value;
+		return copy;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of a <see cref="JsonRpcConnection"/> or derived type.
 	/// </summary>
 	/// <param name="jsonRpc">The <see cref="JsonRpc"/> object that will have to be passed to <see cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcPolyTypeDescriptor)"/>.</param>
