@@ -284,7 +284,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 
 		if (!typeof(T).IsInterface)
 		{
-			throw new ArgumentException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(typeof(T).FullName), nameof(T));
+			throw new NotSupportedException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(typeof(T).FullName));
 		}
 
 		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
@@ -499,7 +499,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		/// <devremarks>
 		/// Create a new instance of <see cref="JsonRpcProxyOptions"/> every time because it's mutable.
 		/// </devremarks>
-		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { };
+		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { AcceptProxyWithExtraInterfaces = true };
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="JsonRpcConnection"/> class.
@@ -538,6 +538,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		/// <summary>
 		/// Gets or sets the options to pass to <see cref="JsonRpc.Attach{T}(JsonRpcProxyOptions?)"/> in the default implementation of <see cref="ConstructRpcClient{T}()"/>.
 		/// </summary>
+		/// <value>The default value has <see cref="JsonRpcProxyOptions.AcceptProxyWithExtraInterfaces"/> set to <see langword="true" />.</value>
 		public JsonRpcProxyOptions LocalRpcProxyOptions
 		{
 			get => this.localRpcProxyOptions;
@@ -573,13 +574,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			Requires.NotNull(interfaceType, nameof(interfaceType));
 
-			ImmutableArray<Type> ifaceTypes = [];
-			if (this.owner?.AdditionalServiceInterfaces is { Length: > 0 })
-			{
-				ifaceTypes = this.owner.AdditionalServiceInterfaces.Contains(interfaceType) is true
-					? this.owner.AdditionalServiceInterfaces.Value
-					: [interfaceType, .. this.owner.AdditionalServiceInterfaces];
-			}
+			ImmutableArray<Type> ifaceTypes = this.owner?.AdditionalServiceInterfaces ?? [];
 
 			ProxyInputs proxyInputs = new()
 			{

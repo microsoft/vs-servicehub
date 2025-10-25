@@ -39,7 +39,13 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	/// <summary>
 	/// Gets the actual service object.
 	/// </summary>
+	/// <exception cref="ObjectDisposedException">Thrown if the proxy has already been disposed.</exception>
 	protected object Target => this.target ?? throw new ObjectDisposedException(this.GetType().FullName);
+
+	/// <summary>
+	/// Gets the actual service object, or <see langword="null" /> if this proxy has been disposed.
+	/// </summary>
+	protected object? TargetOrNull => this.target;
 
 	/// <summary>
 	/// Creates a source generated proxy for the specified target object and <see cref="Reflection.ProxyInputs"/>.

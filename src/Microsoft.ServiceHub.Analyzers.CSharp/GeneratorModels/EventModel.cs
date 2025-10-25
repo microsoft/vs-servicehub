@@ -5,20 +5,28 @@ namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
 internal record EventModel(string DeclaringType, string Name, string DelegateType, string EventArgsType) : FormattableModel
 {
-	internal override void WriteHookupStatements(SourceWriter writer)
-	{
-		writer.WriteLine($"""
-			this.JsonRpc.AddLocalRpcMethod(this.TransformEventName("{this.Name}", typeof({this.DeclaringType})), this.On{this.Name});
-			""");
-	}
-
 	internal override void WriteEvents(SourceWriter writer)
 	{
 		writer.WriteLine($$"""
 
-			public event {{this.DelegateType}}? {{this.Name}};
+			public event {{this.DelegateType}}? {{this.Name}}
+			{
+				add
+				{
+					if (this.TargetOrNull is {{this.DeclaringType}} target)
+					{
+						target.{{this.Name}} += value;
+					}
+				}
 
-			protected virtual void On{{this.Name}}({{this.EventArgsType}} args) => this.{{this.Name}}?.Invoke(this, args);
+				remove
+				{
+					if (this.TargetOrNull is {{this.DeclaringType}} target)
+					{
+						target.{{this.Name}} -= value;
+					}
+				}
+			}
 			""");
 	}
 

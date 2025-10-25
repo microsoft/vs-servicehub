@@ -43,6 +43,23 @@ public class ProxyGeneratorTests
 	}
 
 	[Fact]
+	public async Task Events()
+	{
+		await VerifyCS.RunDefaultAsync("""
+			[JsonRpcContract]
+			public partial interface IMyRpcWithEvent
+			{
+				event EventHandler VanillaEvent;
+				event EventHandler<MyEventArgs> MyEvent;
+			}
+			public class MyEventArgs : EventArgs
+			{
+				public string Message { get; set; }
+			}
+			""");
+	}
+
+	[Fact]
 	public async Task ContractGroups()
 	{
 		await VerifyCS.RunDefaultAsync("""
