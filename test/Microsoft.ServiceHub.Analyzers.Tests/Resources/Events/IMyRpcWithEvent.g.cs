@@ -26,8 +26,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				global::IMyRpcWithEvent? target = (global::IMyRpcWithEvent?)this.TargetOrNull;
-				if (target is not null)
+				if (this.TargetOrNull is global::IMyRpcWithEvent target)
 				{
 					target.VanillaEvent += value;
 				}
@@ -35,8 +34,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 			remove
 			{
-				global::IMyRpcWithEvent? target = (global::IMyRpcWithEvent?)this.TargetOrNull;
-				if (target is not null)
+				if (this.TargetOrNull is global::IMyRpcWithEvent target)
 				{
 					target.VanillaEvent -= value;
 				}
@@ -47,8 +45,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				global::IMyRpcWithEvent? target = (global::IMyRpcWithEvent?)this.TargetOrNull;
-				if (target is not null)
+				if (this.TargetOrNull is global::IMyRpcWithEvent target)
 				{
 					target.MyEvent += value;
 				}
@@ -56,8 +53,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 			remove
 			{
-				global::IMyRpcWithEvent? target = (global::IMyRpcWithEvent?)this.TargetOrNull;
-				if (target is not null)
+				if (this.TargetOrNull is global::IMyRpcWithEvent target)
 				{
 					target.MyEvent -= value;
 				}
