@@ -218,6 +218,12 @@ public partial class ServiceJsonRpcDescriptor
 						continue;
 					}
 
+					// Check for static interface methods (only applicable on .NET) and skip those.
+					if (method.IsStatic)
+					{
+						continue;
+					}
+
 					EmitMethodThunk(method.ReflectedType!.GetTypeInfo(), proxyTypeBuilder, targetField, exceptionStrategyField, method);
 				}
 
