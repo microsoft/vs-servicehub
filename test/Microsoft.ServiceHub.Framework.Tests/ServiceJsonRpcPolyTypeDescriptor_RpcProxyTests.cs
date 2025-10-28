@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
+using PolyType;
 using PolyType.Abstractions;
 using StreamJsonRpc;
 
@@ -30,11 +32,27 @@ public class ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests : ServiceRpcDescript
 			return null;
 		}
 
-		descriptor = ((ServiceJsonRpcPolyTypeDescriptor)descriptor).WithRpcTargetMetadata(RpcTargetMetadata.FromShape(TypeShapeResolver.ResolveDynamicOrThrow<T>()));
+		TraceSource traceSource = new("test") { Switch = { Level = SourceLevels.Information } };
+		traceSource.Listeners.Add(new XunitTraceListener(this.Logger));
+		descriptor = descriptor.WithTraceSource(traceSource);
+
+		var typedDescriptor = (ServiceJsonRpcPolyTypeDescriptor)descriptor;
+
+		ImmutableArray<RpcTargetMetadata>.Builder targetMetadata = ImmutableArray.CreateBuilder<RpcTargetMetadata>(1 + (typedDescriptor.AdditionalServiceInterfaces?.Length ?? 0));
+		targetMetadata.Add(RpcTargetMetadata.FromShape(TypeShapeResolver.ResolveDynamicOrThrow<T>()));
+		if (typedDescriptor.AdditionalServiceInterfaces is not null)
+		{
+			foreach (Type additionalInterface in typedDescriptor.AdditionalServiceInterfaces)
+			{
+				targetMetadata.Add(RpcTargetMetadata.FromShape(typedDescriptor.TypeShapeProvider.GetTypeShapeOrThrow(additionalInterface)));
+			}
+		}
+
+		typedDescriptor = typedDescriptor.WithRpcTargetMetadata(targetMetadata.MoveToImmutable());
 
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
-		descriptor.ConstructRpc(target, pipePair.Item1);
-		return descriptor.ConstructRpc<T>(null, pipePair.Item2);
+		typedDescriptor.ConstructRpc(target, pipePair.Item1);
+		return typedDescriptor.ConstructRpc<T>(null, pipePair.Item2);
 	}
 
 	protected override ServiceRpcDescriptor DescriptorWithAdditionalServiceInterfaces(ServiceRpcDescriptor descriptor, ImmutableArray<Type>? additionalServiceInterfaces)

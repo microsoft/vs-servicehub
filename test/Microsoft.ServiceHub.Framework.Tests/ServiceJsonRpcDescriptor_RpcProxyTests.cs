@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 using StreamJsonRpc;
@@ -22,6 +23,10 @@ public class ServiceJsonRpcDescriptor_RpcProxyTests : ServiceRpcDescriptor_Proxy
 		{
 			return null;
 		}
+
+		TraceSource traceSource = new("test") { Switch = { Level = SourceLevels.Information } };
+		traceSource.Listeners.Add(new XunitTraceListener(this.Logger));
+		descriptor = descriptor.WithTraceSource(traceSource);
 
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
 		descriptor.ConstructRpc(target, pipePair.Item1);

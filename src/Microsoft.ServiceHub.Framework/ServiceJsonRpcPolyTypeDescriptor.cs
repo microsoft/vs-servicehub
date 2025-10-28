@@ -108,9 +108,13 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	public ITypeShapeProvider TypeShapeProvider { get; private set; }
 
 	/// <summary>
-	/// Gets the <see cref="StreamJsonRpc.RpcTargetMetadata"/> for use when calling <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/>.
+	/// Gets a collection of <see cref="StreamJsonRpc.RpcTargetMetadata"/> for use when calling <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/>.
 	/// </summary>
-	public RpcTargetMetadata? RpcTargetMetadata { get; private set; }
+	/// <remarks>
+	/// The RPC target object passed to <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/> is expected to be assignable to the type designated
+	/// by the <see cref="RpcTargetMetadata.TargetType"/> property of all elements of this collection.
+	/// </remarks>
+	public ImmutableArray<RpcTargetMetadata> RpcTargetMetadata { get; private set; } = ImmutableArray<RpcTargetMetadata>.Empty;
 
 	/// <summary>
 	/// Gets the formatting used by the service.
@@ -377,11 +381,24 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	/// </summary>
 	/// <param name="value">The new value for the <see cref="RpcTargetMetadata"/> property.</param>
 	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
-	public ServiceJsonRpcPolyTypeDescriptor WithRpcTargetMetadata(RpcTargetMetadata? value)
+	public ServiceJsonRpcPolyTypeDescriptor WithRpcTargetMetadata(params ImmutableArray<RpcTargetMetadata> value)
 	{
-		if (this.RpcTargetMetadata == value)
+		if (this.RpcTargetMetadata.Length == value.Length)
 		{
-			return this;
+			bool equal = true;
+			for (int i = 0; i < value.Length; i++)
+			{
+				if (!ReferenceEquals(this.RpcTargetMetadata[i], value[i]))
+				{
+					equal = false;
+					break;
+				}
+			}
+
+			if (equal)
+			{
+				return this;
+			}
 		}
 
 		var copy = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
@@ -561,9 +578,18 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		public override void AddLocalRpcTarget(object rpcTarget)
 		{
 			Requires.NotNull(rpcTarget, nameof(rpcTarget));
-			Verify.Operation(this.owner.RpcTargetMetadata is not null, Strings.FormatSetDescriptorPropertyFirst(nameof(this.owner.RpcTargetMetadata)));
+			Verify.Operation(this.owner.RpcTargetMetadata.Length > 0, Strings.FormatSetDescriptorPropertyFirst(nameof(this.owner.RpcTargetMetadata)));
+			Type rpcTargetType = rpcTarget.GetType();
 
-			this.JsonRpc.AddLocalRpcTarget(this.owner.RpcTargetMetadata, rpcTarget, this.LocalRpcTargetOptions);
+			foreach (RpcTargetMetadata targetMetadata in this.owner.RpcTargetMetadata)
+			{
+				Requires.Argument(targetMetadata.TargetType.IsAssignableFrom(rpcTargetType), nameof(rpcTarget), "RPC target type must be assignable to all RpcTargetMetadata elements.");
+			}
+
+			foreach (RpcTargetMetadata targetMetadata in this.owner.RpcTargetMetadata)
+			{
+				this.JsonRpc.AddLocalRpcTarget(targetMetadata, rpcTarget, this.LocalRpcTargetOptions);
+			}
 		}
 
 		/// <inheritdoc/>
