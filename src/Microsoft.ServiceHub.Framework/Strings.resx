@@ -155,8 +155,14 @@
   <data name="ServiceMoniker_AlreadyProffered" xml:space="preserve">
     <value>The service "{0}" has already been proffered. Dispose the result of the last proffered factory before proffering another one.</value>
   </data>
+  <data name="SetDescriptorPropertyFirst" xml:space="preserve">
+    <value>The '{0}' property must be set on the descriptor first.</value>
+  </data>
   <data name="TooManyServices" xml:space="preserve">
     <value>More than one service found for "{0}" but at most one was allowed.</value>
     <comment>{0} is a placeholder for a service moniker.</comment>
+  </data>
+  <data name="UseOtherDescriptorInstead" xml:space="preserve">
+    <value>The '{formatter}' formatter is not supported by this descriptor. Use {descriptorType} instead.</value>
   </data>
 </root>

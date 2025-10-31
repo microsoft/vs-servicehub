@@ -16,7 +16,7 @@ public static partial class VisualBasicCodeFixVerifier<TAnalyzer, TCodeFix>
 	{
 		public Test()
 		{
-			this.ReferenceAssemblies = ReferencesHelper.DefaultReferences;
+			this.ReferenceAssemblies = ReferencesHelper.References;
 
 			this.SolutionTransforms.Add((solution, projectId) =>
 			{

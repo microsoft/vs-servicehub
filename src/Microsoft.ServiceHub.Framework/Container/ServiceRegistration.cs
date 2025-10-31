@@ -88,6 +88,7 @@ public class ServiceRegistration
 	/// </summary>
 	/// <param name="logger">The logger to use for tracing out any errors when loading the additional types.</param>
 	/// <returns>The array of types.</returns>
+	[RequiresUnreferencedCode(Reasons.TypeLoad)]
 	internal ImmutableArray<Type> GetAdditionalServiceInterfaceTypes(TraceSource logger)
 	{
 		if (this.additionalServiceInterfacesResolvedTypes.IsDefault)

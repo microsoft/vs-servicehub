@@ -17,6 +17,8 @@ public partial class GlobalBrokeredServiceContainer
 	/// Services a brokered service that is proffered via a <see cref="IRemoteServiceBroker"/>.
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	protected class ProfferedRemoteServiceBroker : IProffered
 	{
 		private readonly GlobalBrokeredServiceContainer container;

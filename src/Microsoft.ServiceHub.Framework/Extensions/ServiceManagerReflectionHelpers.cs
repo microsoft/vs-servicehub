@@ -25,6 +25,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// This is called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceBrokerFromServiceActivationOptionsAsync so that the
 	/// <see cref="IServiceBroker"/> can be passed directly to the constructor of a ServiceHub service.
 	/// </devremarks>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	internal static async Task<IServiceBroker?> GetServiceBrokerAsync(ServiceActivationOptions options, CancellationToken cancellationToken)
 	{
 		string serverPipeName = options.GetServiceBrokerServerPipeName();
@@ -52,6 +54,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// This called via reflection from Microsoft.ServiceHub.HostStub.ServiceManager.GetServiceFactoryCreateAsyncArguments so that an
 	/// <see cref="AuthorizationServiceClient"/> can be passed directly to the constructor of a ServiceHub service.
 	/// </devremarks>
+	[RequiresUnreferencedCode(Reasons.Formatters)]
+	[RequiresDynamicCode(Reasons.Formatters)]
 	internal static Task<AuthorizationServiceClient> GetAuthorizationServiceClientAsync(IServiceBroker broker, CancellationToken cancellationToken) =>
 		Task.FromResult(new AuthorizationServiceClient(new LazyAuthorizationServiceProxy(broker, joinableTaskFactory: null), ownsAuthorizationService: true));
 

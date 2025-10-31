@@ -5,6 +5,7 @@
     <File Path=".github/renovate.json" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.Analyzers.props" />
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
     <File Path="nuget.config" />
@@ -32,6 +33,7 @@
     <Project Path="src/Microsoft.ServiceHub.Framework/Microsoft.ServiceHub.Framework.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <File Path="test/AnalyzerUser.targets" />
     <Project Path="test/ExternalTestAssembly/ExternalTestAssembly.csproj" />
     <Project Path="test/Microsoft.ServiceHub.Analyzers.Tests/Microsoft.ServiceHub.Analyzers.Tests.csproj" />
     <Project Path="test/Microsoft.ServiceHub.Framework.Testing.Tests/Microsoft.ServiceHub.Framework.Testing.Tests.csproj" />

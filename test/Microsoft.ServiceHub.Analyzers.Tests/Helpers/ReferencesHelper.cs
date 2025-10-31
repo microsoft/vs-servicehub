@@ -3,20 +3,32 @@
 
 #pragma warning disable SA1202 // Elements should be ordered by access - because field initializer depend on each other
 
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis.Testing;
+using Microsoft;
+using Microsoft.ServiceHub.Framework;
+using PolyType;
+using StreamJsonRpc;
 
 internal static class ReferencesHelper
 {
 	private static readonly string NuGetConfigPath = FindNuGetConfigPath();
 
-	public static readonly ReferenceAssemblies DefaultReferences = ReferenceAssemblies.Net.Net80
+	public static readonly ReferenceAssemblies References = ReferenceAssemblies.Net.Net80
 		.WithNuGetConfigFilePath(NuGetConfigPath)
-		.WithPackages(ImmutableArray.Create(
+		.WithPackages(
+		[
 			new PackageIdentity("System.ComponentModel.Composition", "8.0.0"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.13.2"),
-			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.8.8")));
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.14.15"),
+			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.13.22"),
+		]);
+
+	internal static IEnumerable<MetadataReference> GetReferences()
+	{
+		yield return MetadataReference.CreateFromFile(typeof(JsonRpc).Assembly.Location);
+		yield return MetadataReference.CreateFromFile(typeof(GenerateShapeAttribute).Assembly.Location);
+		yield return MetadataReference.CreateFromFile(typeof(IServiceBroker).Assembly.Location);
+		yield return MetadataReference.CreateFromFile(typeof(IDisposableObservable).Assembly.Location);
+	}
 
 	private static string FindNuGetConfigPath()
 	{
