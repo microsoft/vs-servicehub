@@ -407,6 +407,45 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with <see cref="ExceptionStrategy"/>, <see cref="MultiplexingStreamOptions"/>, <see cref="JoinableTaskFactory"/> and <see cref="TraceSource"/>
+	/// altered to match a given descriptor.
+	/// </summary>
+	/// <param name="copyFrom">The descriptor to copy settings from.</param>
+	/// <returns>A clone of this instance, with the properties changed or this same instance if the properties already match.</returns>
+	internal ServiceJsonRpcPolyTypeDescriptor WithSettingsFrom(ServiceJsonRpcPolyTypeDescriptor copyFrom)
+	{
+		if (this.ExceptionStrategy == copyFrom.ExceptionStrategy &&
+			this.MultiplexingStreamOptions == copyFrom.MultiplexingStreamOptions &&
+			this.MultiplexingStream == copyFrom.MultiplexingStream &&
+			this.JoinableTaskFactory == copyFrom.JoinableTaskFactory &&
+			this.TraceSource == copyFrom.TraceSource)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		result.ExceptionStrategy = copyFrom.ExceptionStrategy;
+
+		if (copyFrom.MultiplexingStreamOptions is not null)
+		{
+#pragma warning disable CS0618 // Type or member is obsolete
+			result = (ServiceJsonRpcPolyTypeDescriptor)result.WithMultiplexingStream((MultiplexingStream?)null);
+			result.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions.GetFrozenCopy();
+		}
+		else
+		{
+			result = (ServiceJsonRpcPolyTypeDescriptor)result.WithMultiplexingStream(copyFrom.MultiplexingStream);
+#pragma warning restore CS0618 // Type or member is obsolete
+		}
+
+		result = (ServiceJsonRpcPolyTypeDescriptor)result.WithJoinableTaskFactory(copyFrom.JoinableTaskFactory);
+		result = (ServiceJsonRpcPolyTypeDescriptor)result.WithTraceSource(copyFrom.TraceSource);
+
+		return result;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of a <see cref="JsonRpcConnection"/> or derived type.
 	/// </summary>
 	/// <param name="jsonRpc">The <see cref="JsonRpc"/> object that will have to be passed to <see cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcPolyTypeDescriptor)"/>.</param>

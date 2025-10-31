@@ -326,7 +326,8 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 
 	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
-	/// but with <see cref="ExceptionStrategy"/>, <see cref="MultiplexingStreamOptions"/>, <see cref="JoinableTaskFactory"/> and <see cref="TraceSource"/> matching to passed in descriptor.
+	/// but with <see cref="ExceptionStrategy"/>, <see cref="MultiplexingStreamOptions"/>, <see cref="JoinableTaskFactory"/> and <see cref="TraceSource"/>
+	/// altered to match a given descriptor.
 	/// </summary>
 	/// <param name="copyFrom">The descriptor to copy settings from.</param>
 	/// <returns>A clone of this instance, with the properties changed or this same instance if the properties already match.</returns>
