@@ -136,9 +136,14 @@ internal class SourceWriter
 	/// <returns>The <see cref="SourceText"/>.</returns>
 	public SourceText ToSourceText()
 	{
-		if (this.indentation != 0 || this.builder.Length == 0)
+		if (this.builder.Length == 0)
 		{
 			throw new InvalidOperationException("Nothing was written.");
+		}
+
+		if (this.indentation != 0)
+		{
+			throw new InvalidOperationException($"Indentation level expected to be 0 but is {this.indentation}.");
 		}
 
 		return SourceText.From(this.builder.ToString(), Encoding.UTF8);

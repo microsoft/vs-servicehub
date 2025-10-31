@@ -149,6 +149,7 @@ public partial class SourceGeneratedLocalProxyTests
 		ICalculator calculator = CalculatorDescriptor.ConstructLocalProxy<ICalculator>(new GoodCalculator());
 		IClientProxy proxy = (IClientProxy)calculator;
 
+		Assert.IsNotType<GoodCalculator>(proxy);
 		Assert.True(proxy.Is(typeof(ICalculator)));
 		Assert.True(proxy.Is(typeof(IDisposable)));
 		Assert.True(proxy.Is(typeof(IClientProxy)));
