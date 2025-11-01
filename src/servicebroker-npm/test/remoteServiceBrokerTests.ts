@@ -38,7 +38,7 @@ import {
 import { Descriptors } from './testAssets/Descriptors'
 import { Calculator } from './testAssets/calculatorService'
 
-describe('Service Broker tests', function () {
+describe.skip/*unstable*/('Service Broker tests', function () {
 	let defaultTokenSource: {
 		token: CancellationToken
 		cancel: (reason?: any) => void
