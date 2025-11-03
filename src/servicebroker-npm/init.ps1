@@ -1,3 +1,3 @@
 & "$PSScriptRoot/../../init.ps1"
 dotnet build "$PSScriptRoot/../../test/ServiceBrokerTest"
-yarn
+node $PSScriptRoot/.yarn/releases/yarn-4.5.0.cjs

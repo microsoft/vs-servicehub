@@ -3,7 +3,7 @@ parameters:
 
 steps:
 
-- script: yarn test
+- script: node .yarn/releases/yarn-4.5.0.cjs test # yarn, but avoids network isolation violation
   displayName: 🧪 yarn test
   workingDirectory: src/servicebroker-npm
   condition: and(succeeded(), ${{ parameters.RunTests }})
