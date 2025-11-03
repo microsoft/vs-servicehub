@@ -1,0 +1,31 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "Microsoft ServiceHub Host",
+	"type": "object",
+	"required": ["hostExecutable", "hostArgs"],
+	"properties": {
+		"hostExecutable": {
+			"type": "string",
+			"description": "The path to the executable to launch to start the host, relative to this file."
+		},
+		"hostArgs": {
+			"type": "array",
+			"description": "The array of arguments to pass to the executable. $HOSTID will be replaced with the host id; $PIPE will be replaced with the host callback pipe name.",
+			"items": {
+				"type": "string"
+			},
+			"minItems": 2
+		},
+		"additionalEnvironmentVariables": {
+			"type": "object",
+			"description": "Additional environment variables to set when launching the host.",
+			"additionalProperties": {
+				"type": "string"
+			}
+		},
+		"dotnetRootOverride": {
+			"type": "string",
+			"description": "Path to override .NET runtime."
+		}
+	}
+}
