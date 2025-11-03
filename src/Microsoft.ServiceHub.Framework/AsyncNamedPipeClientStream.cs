@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#if WINDOWS
+
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -198,22 +198,3 @@ internal class AsyncNamedPipeClientStream : PipeStream
 		return secAttr;
 	}
 }
-#else
-using System.IO.Pipes;
-
-#pragma warning disable SA1600 // Elements should be documented
-internal class AsyncNamedPipeClientStream : PipeStream
-{
-	internal AsyncNamedPipeClientStream(PipeDirection direction, int bufferSize)
-		: base(direction, bufferSize)
-	{
-	}
-
-	internal AsyncNamedPipeClientStream(PipeDirection direction, PipeTransmissionMode transmissionMode, int outBufferSize)
-		: base(direction, transmissionMode, outBufferSize)
-	{
-	}
-}
-#pragma warning restore SA1600 // Elements should be documented
-
-#endif

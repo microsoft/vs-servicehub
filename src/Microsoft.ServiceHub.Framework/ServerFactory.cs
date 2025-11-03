@@ -5,11 +5,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 using Windows.Win32.Foundation;
-#if WINDOWS
 using static Windows.Win32.PInvoke;
-#endif
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -103,7 +102,6 @@ public static class ServerFactory
 		PipeStream? pipeStream = null;
 		try
 		{
-#if WINDOWS
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
 				pipeStream = new AsyncNamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
@@ -114,10 +112,6 @@ public static class ServerFactory
 				pipeStream = new NamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
 				await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
 			}
-#else
-			pipeStream = new NamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
-			await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
-#endif
 
 			return pipeStream;
 		}
