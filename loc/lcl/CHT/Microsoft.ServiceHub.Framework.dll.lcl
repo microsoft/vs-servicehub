@@ -121,11 +121,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SetDescriptorPropertyFirst" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{0}' property must be set on the descriptor first.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[必須先在描述元件上設定 '{0}' 屬性。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[找到多個 "{0}" 的服務，但最多只允許一個。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UseOtherDescriptorInstead" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{formatter}' formatter is not supported by this descriptor. Use {descriptorType} instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此描述元件不支援 '{formatter}' 格式化程式。請改用 {descriptorType}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
