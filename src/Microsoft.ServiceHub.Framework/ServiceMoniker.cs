@@ -3,7 +3,6 @@
 
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Serialization;
 using JsonNET = Newtonsoft.Json;
@@ -38,6 +37,7 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// <param name="version">The version of the service or expected by the client. May be null.</param>
 	[JsonNET.JsonConstructor]
 	[STJ.JsonConstructor]
+	[PolyType.ConstructorShape]
 	public ServiceMoniker(string name, Version? version)
 		: this(name)
 	{
