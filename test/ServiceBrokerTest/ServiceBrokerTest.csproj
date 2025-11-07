@@ -7,7 +7,7 @@
     <PackageReference Include="microsoft.testing.platform.msbuild" ExcludeAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="xunit.v3.core" ExcludeAssets="all" />
+    <PackageReference Include="xunit.v3.core.mtp-v1" ExcludeAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
