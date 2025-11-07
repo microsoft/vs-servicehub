@@ -79,8 +79,6 @@ public class MultiplexingRelayServiceBroker : IRemoteServiceBroker, IDisposable,
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
 	public static async Task<MultiplexingRelayServiceBroker> ConnectToServerAsync(IServiceBroker serviceBroker, Stream duplexStreamWithClient, CancellationToken cancellationToken = default)
 	{
 		Requires.NotNull(serviceBroker, nameof(serviceBroker));

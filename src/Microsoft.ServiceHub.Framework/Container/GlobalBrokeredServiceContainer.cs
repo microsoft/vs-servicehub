@@ -21,8 +21,7 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 /// <remarks>
 /// <para>When a service is registered without a version, it doubles as a fallback service when a request for that service name is made but no exact version match can be found.</para>
 /// </remarks>
-[RequiresUnreferencedCode(Reasons.Formatters)]
-[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.TypeLoad)]
 public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceContainer, IBrokeredServiceContainerInternal, IBrokeredServiceContainerDiagnostics
 {
 	/// <summary>

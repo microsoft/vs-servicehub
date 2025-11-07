@@ -21,8 +21,6 @@ namespace Microsoft.VisualStudio.Shell.ServiceBroker;
 /// At startup, the IDE should acquire this export and call <see cref="RegisterAndProfferServicesAsync(System.Threading.CancellationToken)"/>
 /// to add MEF exported brokered services to the container.
 /// </remarks>
-[RequiresUnreferencedCode(Reasons.Formatters)]
-[RequiresDynamicCode(Reasons.Formatters)]
 public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 {
 	private static readonly ProtectedOperation ClientIsOwnerProtectedOperation = WellKnownProtectedOperations.CreateClientIsOwner();
@@ -248,8 +246,6 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 	/// <param name="serviceActivationOptions">The activation options to use with this service.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>The MEF export representing this sharing boundary.</returns>
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
 	private async ValueTask<Export<ServiceBrokerForExportedBrokeredServices>?> ActivateBrokeredServiceAsync(ServiceMoniker serviceMoniker, IServiceBroker contextualServiceBroker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
 	{
 		Export<ServiceBrokerForExportedBrokeredServices> sb = this.ServiceBrokerFactory.CreateExport();

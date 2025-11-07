@@ -30,8 +30,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 	/// Services a brokered service that is proffered via an in-proc factory.
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
+	[RequiresUnreferencedCode(Reasons.TypeLoad)]
 	protected class ProfferedViewIntrinsicService : ProfferedServiceFactory
 	{
 		private readonly ViewIntrinsicBrokeredServiceFactory factory;

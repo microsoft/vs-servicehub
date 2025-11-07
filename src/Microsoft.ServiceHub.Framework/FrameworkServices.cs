@@ -16,8 +16,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// Services and service contracts that provide core infrastructure.
 /// </summary>
-[RequiresUnreferencedCode(Reasons.Formatters)]
-[RequiresDynamicCode(Reasons.Formatters)]
 public static partial class FrameworkServices
 {
 	/// <summary>
@@ -64,8 +62,6 @@ public static partial class FrameworkServices
 	/// A <see cref="ServiceJsonRpcPolyTypeDescriptor"/> derived type that applies camelCase naming transforms to method and event names
 	/// and trims off any trailing "Async" suffix.
 	/// </summary>
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
 	private class CamelCaseTransformingDescriptor : ServiceJsonRpcPolyTypeDescriptor
 	{
 		private const string AsyncSuffix = "Async";

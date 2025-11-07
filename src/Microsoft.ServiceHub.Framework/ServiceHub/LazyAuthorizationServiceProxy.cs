@@ -19,10 +19,6 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 	/// </summary>
 	/// <param name="serviceBroker">A service broker used to acquire the activation service.</param>
 	/// <param name="joinableTaskFactory">An optional <see cref="JoinableTaskFactory"/> to use when scheduling async work, to avoid deadlocks in an application with a main thread.</param>
-#if SHIPPING
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
-#endif
 	public LazyAuthorizationServiceProxy(IServiceBroker? serviceBroker, JoinableTaskFactory? joinableTaskFactory)
 	{
 		this.authorizationService = new(() => this.ActivateAsync(serviceBroker), joinableTaskFactory);
@@ -61,10 +57,6 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 		return await service.GetCredentialsAsync(cancellationToken).ConfigureAwait(false);
 	}
 
-#if SHIPPING
-	[RequiresUnreferencedCode(Reasons.Formatters)]
-	[RequiresDynamicCode(Reasons.Formatters)]
-#endif
 	private async Task<IAuthorizationService> ActivateAsync(IServiceBroker? serviceBroker)
 	{
 		this.DisposeToken.ThrowIfCancellationRequested();

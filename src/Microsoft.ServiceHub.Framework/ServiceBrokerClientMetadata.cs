@@ -19,7 +19,7 @@ public struct ServiceBrokerClientMetadata
 	/// when responding to future service requests.
 	/// </remarks>
 	[JsonNET.JsonConverter(typeof(JsonNET.Converters.StringEnumConverter))]
-	[STJ.JsonConverter(typeof(STJ.JsonStringEnumConverter))]
+	[STJ.JsonConverter(typeof(STJ.JsonStringEnumConverter<RemoteServiceConnections>))]
 	public RemoteServiceConnections SupportedConnections { get; set; }
 
 	/// <summary>

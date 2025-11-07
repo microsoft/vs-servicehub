@@ -22,8 +22,6 @@ namespace Microsoft.ServiceHub.Framework;
 /// </para>
 /// </remarks>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
-[RequiresDynamicCode(Reasons.Formatters)]
-[RequiresUnreferencedCode(Reasons.Formatters)]
 public abstract class DelegatingServiceJsonRpcPolyTypeDescriptor : ServiceJsonRpcPolyTypeDescriptor
 {
 	private ServiceJsonRpcPolyTypeDescriptor innerDescriptor;

@@ -17,6 +17,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 	/// A filtered view on the services proffered to a <see cref="GlobalBrokeredServiceContainer"/>, exposed as an <see cref="IServiceBroker"/>.
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
+	[RequiresUnreferencedCode(Reasons.TypeLoad)]
 	protected class View : IServiceBroker, IRemoteServiceBroker
 	{
 		/// <summary>
