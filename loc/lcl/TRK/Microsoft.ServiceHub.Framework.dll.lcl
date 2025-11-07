@@ -121,11 +121,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SetDescriptorPropertyFirst" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{0}' property must be set on the descriptor first.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{0}' özelliği önce tanımlayıcı üzerinde ayarlanmalıdır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{0}" için birden fazla hizmet bulundu ancak en fazla bir hizmete izin veriliyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UseOtherDescriptorInstead" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{formatter}' formatter is not supported by this descriptor. Use {descriptorType} instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{formatter}' biçimlendiricisi bu tanımlayıcı tarafından desteklenmez. Bunun yerine {descriptorType} kullanın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
+using StreamJsonRpc;
 
-public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_ProxyTestBase
+public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTestBase
 {
 	public ServiceJsonRpcDescriptor_ProxyTests(ITestOutputHelper logger)
 		: base(logger)
@@ -16,6 +18,8 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 	{
 		void NoReturnValue();
 	}
+
+	protected override ServiceRpcDescriptor SomeDescriptor { get; } = new ServiceJsonRpcDescriptor(new ServiceMoniker("SomeMoniker"), clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
 
 	[Fact]
 	public void CreatePassThroughProxy_ForwardsMethodsWithVoidReturn()
@@ -216,16 +220,22 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceJsonRpcDescriptor_Prox
 	{
 		ServiceCompositionException ex = Assert.Throws<ServiceCompositionException>(() => this.CreateProxy<ISomeService>(
 			new SomeNonDisposableService(),
-			SomeDescriptor.WithAdditionalServiceInterfaces([typeof(IDisposable)])));
+			this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(IDisposable)])));
 		Assert.IsType<InvalidCastException>(ex.InnerException);
 		this.Logger.WriteLine(ex.ToString());
 	}
 
-	protected override T? CreateProxy<T>(T? target, ServiceJsonRpcDescriptor descriptor)
+	protected override T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class
 	{
 		return descriptor.ConstructLocalProxy(target);
 	}
+
+	protected override ServiceRpcDescriptor DescriptorWithAdditionalServiceInterfaces(ServiceRpcDescriptor descriptor, ImmutableArray<Type>? additionalServiceInterfaces)
+		=> ((ServiceJsonRpcDescriptor)descriptor).WithAdditionalServiceInterfaces(additionalServiceInterfaces);
+
+	protected override ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy)
+		=> ((ServiceJsonRpcDescriptor)descriptor).WithExceptionStrategy(strategy);
 
 	private protected class SomeService : SomeNonDisposableService, IServerWithVoidMethod
 	{

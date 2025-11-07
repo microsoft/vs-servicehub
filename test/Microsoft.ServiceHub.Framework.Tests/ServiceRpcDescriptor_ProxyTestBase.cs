@@ -1,29 +1,34 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
+using PolyType;
 using StreamJsonRpc;
 using StreamJsonRpc.Protocol;
 
-public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
+public abstract partial class ServiceRpcDescriptor_ProxyTestBase : TestBase
 {
-	protected static readonly ServiceJsonRpcDescriptor SomeDescriptor = new ServiceJsonRpcDescriptor(new ServiceMoniker("SomeMoniker"), clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null);
-
-	public ServiceJsonRpcDescriptor_ProxyTestBase(ITestOutputHelper logger)
+	public ServiceRpcDescriptor_ProxyTestBase(ITestOutputHelper logger)
 		: base(logger)
 	{
 	}
 
-	internal interface ISomeService
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	[JsonRpcProxyInterfaceGroup(typeof(ISomeService2))]
+	internal partial interface ISomeService
 	{
 		event EventHandler<PropertyChangedEventArgs> PropertyChanged;
 
-		public interface IPublicInterfaceUnderInternalOne
+		[JsonRpcContract]
+		[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+		public partial interface IPublicInterfaceUnderInternalOne
 		{
 		}
 
@@ -52,11 +57,15 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		Task<Guid> GetIdentifier();
 	}
 
-	internal interface ISomeServiceDisposable : ISomeService, IDisposable
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	internal partial interface ISomeServiceDisposable : ISomeService, IDisposable
 	{
 	}
 
-	internal interface ISomeService2
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	internal partial interface ISomeService2
 	{
 		event EventHandler<PropertyChangingEventArgs> PropertyChanging;
 
@@ -65,9 +74,13 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		Task<Guid> GetIdentifier();
 	}
 
-	internal interface ISomeServiceNotImplemented
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	internal partial interface ISomeServiceNotImplemented
 	{
 	}
+
+	protected abstract ServiceRpcDescriptor SomeDescriptor { get; }
 
 	[Fact]
 	public async Task TargetNotDisposable()
@@ -127,7 +140,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	public async Task CatchesAndRethrows_FaultedTasks(bool yieldFirst, ExceptionProcessing exceptionStrategy)
 	{
 		ISomeService target = new SomeDisposableService();
-		ISomeService proxy = this.CreateProxy(target, SomeDescriptor.WithExceptionStrategy(exceptionStrategy));
+		ISomeService proxy = this.CreateProxy(target, this.DescriptorWithExceptionStrategy(this.SomeDescriptor, exceptionStrategy));
 		Assumes.NotNull(proxy);
 		AssertInnerException(await Assert.ThrowsAsync<RemoteInvocationException>(() => proxy.YieldThenThrow()));
 		AssertInnerException(await Assert.ThrowsAsync<RemoteInvocationException>(() => proxy.GetFaultedTask(yieldFirst, CancellationToken.None)));
@@ -239,7 +252,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		const int errorCode = 15;
 
 		ISomeService target = new SomeDisposableService();
-		ISomeService proxy = this.CreateProxy(target, SomeDescriptor.WithExceptionStrategy(exceptionStrategy));
+		ISomeService proxy = this.CreateProxy(target, this.DescriptorWithExceptionStrategy(this.SomeDescriptor, exceptionStrategy));
 		Assumes.NotNull(proxy);
 		RemoteInvocationException ex = await Assert.ThrowsAsync<RemoteInvocationException>(() => proxy.FaultWithErrorCodeAsync(msg1, errorCode, msg2, hresult));
 		Assert.Null(ex.InnerException);
@@ -283,7 +296,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	public async Task WithAdditionalServiceInterfaces()
 	{
 		SomeNonDisposableService service = new();
-		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(ISomeService2)]));
 
 		// Test method calls
 		Assert.Equal(3, await proxy.AddAsync(1, 2));
@@ -309,7 +322,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	public async Task WithAdditionalServiceInterfaces_RequestWithRedundantAddlIface()
 	{
 		SomeNonDisposableService service = new();
-		ISomeService2 proxy = this.CreateProxy<ISomeService2>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2)]));
+		ISomeService2 proxy = this.CreateProxy<ISomeService2>(service, this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(ISomeService2)]));
 		Assert.Equal(4, await proxy.AddValue2Async(1, 3));
 	}
 
@@ -317,7 +330,7 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 	public async Task WithAdditionalServiceInterfaces_NonUniqueAddlIfaceList()
 	{
 		SomeNonDisposableService service = new();
-		ISomeService proxy = this.CreateProxy<ISomeService>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService2), typeof(ISomeService2)]));
+		ISomeService proxy = this.CreateProxy<ISomeService>(service, this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(ISomeService2), typeof(ISomeService2)]));
 		Assert.Equal(4, await proxy.AddValueAsync(1, 3));
 	}
 
@@ -327,16 +340,20 @@ public abstract class ServiceJsonRpcDescriptor_ProxyTestBase : TestBase
 		SomeDisposableService service = new();
 
 		// Verify that creating the proxy doesn't throw (due to a failure in generating the proxy type).
-		ISomeServiceDisposable proxy = this.CreateProxy<ISomeServiceDisposable>(service, SomeDescriptor.WithAdditionalServiceInterfaces([typeof(ISomeService)]));
+		ISomeServiceDisposable proxy = this.CreateProxy<ISomeServiceDisposable>(service, this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(ISomeService)]));
 	}
 
 	[return: NotNullIfNotNull("target")]
-	protected abstract T? CreateProxy<T>(T? target, ServiceJsonRpcDescriptor descriptor)
+	protected abstract T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class;
 
 	[return: NotNullIfNotNull("target")]
 	protected T? CreateProxy<T>(T? target)
-		where T : class => this.CreateProxy(target, SomeDescriptor);
+		where T : class => this.CreateProxy(target, this.SomeDescriptor);
+
+	protected abstract ServiceRpcDescriptor DescriptorWithAdditionalServiceInterfaces(ServiceRpcDescriptor descriptor, ImmutableArray<Type>? additionalServiceInterfaces);
+
+	protected abstract ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy);
 
 	private protected class SomeNonDisposableService : ISomeService, ISomeService2, ISomeService.IPublicInterfaceUnderInternalOne
 	{

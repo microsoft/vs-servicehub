@@ -32,6 +32,11 @@
   <ItemGroup>
     <Compile Include="..\..\src\Microsoft.ServiceHub.Framework\ServiceHub\LazyAuthorizationServiceProxy.cs" />
     <Compile Include="..\..\src\Microsoft.ServiceHub.Framework\Services\DefaultAuthorizationService.cs" />
+    <Compile Update="ServiceJsonRpcDescriptor_ProxyTests.cs" DependentUpon="ServiceRpcDescriptor_ProxyTestBase.cs" />
+    <Compile Update="ServiceJsonRpcDescriptor_RpcProxyTests.cs" DependentUpon="ServiceRpcDescriptor_ProxyTestBase.cs" />
+    <Compile Update="ServiceJsonRpcPolyTypeDescriptor_ProxyTests.cs" DependentUpon="ServiceRpcDescriptor_ProxyTestBase.cs" />
+    <Compile Update="ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests.cs" DependentUpon="ServiceRpcDescriptor_ProxyTestBase.cs" />
   </ItemGroup>
-  
+
+  <Import Project="$(RepoRootPath)test\AnalyzerUser.targets" />
 </Project>

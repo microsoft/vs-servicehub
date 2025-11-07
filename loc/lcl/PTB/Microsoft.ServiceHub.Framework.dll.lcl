@@ -121,11 +121,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SetDescriptorPropertyFirst" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{0}' property must be set on the descriptor first.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[A propriedade "{0}" deve ser definida primeiro no descritor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TooManyServices" ItemType="0" PsrId="211" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[More than one service found for "{0}" but at most one was allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Mais de um serviço foi encontrado para "{0}", mas foi permitido no máximo um.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UseOtherDescriptorInstead" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The '{formatter}' formatter is not supported by this descriptor. Use {descriptorType} instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Este descritor não dá suporte ao formatador "{formatter}". Em vez disso, use {descriptorType}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
