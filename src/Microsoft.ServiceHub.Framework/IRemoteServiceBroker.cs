@@ -1,12 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using PolyType;
+using StreamJsonRpc;
+
 namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
 /// Describes a remotable service broker.
 /// </summary>
-public interface IRemoteServiceBroker
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IRemoteServiceBroker
 {
 	/// <summary>
 	/// Occurs when a service previously queried for since the last <see cref="AvailabilityChanged"/> event may have changed availability.

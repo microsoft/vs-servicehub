@@ -98,7 +98,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			  {
 				  try
 				  {
-					  var connection = (ServiceJsonRpcDescriptor.JsonRpcConnection)FrameworkServices.RemoteServiceBroker.ConstructRpcConnection(stream.UsePipe());
+					  var connection = (ServiceJsonRpcPolyTypeDescriptor.JsonRpcConnection)FrameworkServices.RemoteServiceBroker.ConstructRpcConnection(stream.UsePipe());
 					  connection.AddLocalRpcTarget(server);
 					  connection.JsonRpc.Disconnected += (sender, e) =>
 					  {

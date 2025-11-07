@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma warning disable PolyTypeJson
+
 using System.Collections.Immutable;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
@@ -20,9 +22,9 @@ public class RemoteServiceBrokerFrameworkDescriptorTests : RpcTestBase<IRemoteSe
 	[Fact]
 	public void FormatterAndDelimiter()
 	{
-		ServiceJsonRpcDescriptor descriptor = Assert.IsAssignableFrom<ServiceJsonRpcDescriptor>(FrameworkServices.RemoteServiceBroker);
-		Assert.Equal(ServiceJsonRpcDescriptor.Formatters.UTF8SystemTextJson, descriptor.Formatter);
-		Assert.Equal(ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, descriptor.MessageDelimiter);
+		ServiceJsonRpcPolyTypeDescriptor descriptor = Assert.IsAssignableFrom<ServiceJsonRpcPolyTypeDescriptor>(FrameworkServices.RemoteServiceBroker);
+		Assert.Equal(ServiceJsonRpcPolyTypeDescriptor.Formatters.UTF8, descriptor.Formatter);
+		Assert.Equal(ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.HttpLikeHeaders, descriptor.MessageDelimiter);
 	}
 
 	[Fact]
