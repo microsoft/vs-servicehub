@@ -30,6 +30,9 @@ jobs:
     - name: ⚙ Install prerequisites
       run: ./init.ps1 -UpgradePrerequisites
 
+    - name: 🏗️ Build analyzers
+      run: dotnet build -c Release tools/analyzers.proj
+
     - run: dotnet docfx docfx/docfx.json
       name: 📚 Generate documentation
 

@@ -38,6 +38,7 @@ indent_style = space
 # JSON files
 [*.json]
 indent_size = 2
+indent_style = space
 
 [*.ps1]
 indent_style = space
