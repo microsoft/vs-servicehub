@@ -2,13 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.ServiceHub.Framework;
+using PolyType;
+using StreamJsonRpc;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 
 /// <summary>
 /// Provides diagnostics to understand why brokered services are not activatable.
 /// </summary>
-public interface IMissingServiceDiagnosticsService
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+[JsonRpcContract]
+public partial interface IMissingServiceDiagnosticsService
 {
 	/// <summary>
 	/// Analyzes possible explanations for why a brokered service could not be acquired.

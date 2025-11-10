@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using PolyType;
+using StreamJsonRpc;
 
 namespace Microsoft.ServiceHub.Framework.Services;
 
@@ -14,7 +16,9 @@ namespace Microsoft.ServiceHub.Framework.Services;
 /// For example if an instance of this service is obtained by a Live Share guest
 /// the results from method calls may vary from an instance of this service obtained by a Codespaces client.
 /// </remarks>
-public interface IBrokeredServiceManifest
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IBrokeredServiceManifest
 {
 	/// <summary>
 	/// Gets the list of services that are available from an <see cref="IServiceBroker"/>.

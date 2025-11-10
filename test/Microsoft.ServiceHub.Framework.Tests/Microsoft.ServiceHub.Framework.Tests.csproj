@@ -38,5 +38,5 @@
     <Compile Update="ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests.cs" DependentUpon="ServiceRpcDescriptor_ProxyTestBase.cs" />
   </ItemGroup>
 
-  <Import Project="$(RepoRootPath)test\AnalyzerUser.targets" />
+  <Import Project="$(RepoRootPath)src\AnalyzerUser.targets" />
 </Project>

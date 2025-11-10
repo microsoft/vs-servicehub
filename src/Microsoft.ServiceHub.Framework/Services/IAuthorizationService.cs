@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using PolyType;
+using StreamJsonRpc;
+
 namespace Microsoft.ServiceHub.Framework.Services;
 
 /// <summary>
@@ -10,7 +13,9 @@ namespace Microsoft.ServiceHub.Framework.Services;
 /// For improved performance, clients may pass an instance of this interface to <see cref="AuthorizationServiceClient"/> and use that
 /// so that queries are locally cached.
 /// </remarks>
-public interface IAuthorizationService
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IAuthorizationService
 {
 	/// <summary>
 	/// Occurs when the credentials previously supplied to this service are at or near expiry.

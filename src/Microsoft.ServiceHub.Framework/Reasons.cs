@@ -10,7 +10,6 @@ internal static class Reasons
 {
 #pragma warning disable SA1600 // Elements should be documented
 	internal const string Formatters = "This API may create formatters that require this functionality.";
-	internal const string CloseGenerics = "This API closes generic types or methods.";
 	internal const string DynamicProxy = "This API creates dynamic proxies that require this functionality.";
 	internal const string TypeLoad = "This API loads types by name.";
 }

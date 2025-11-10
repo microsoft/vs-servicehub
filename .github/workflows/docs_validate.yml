@@ -25,6 +25,8 @@ jobs:
         ./init.ps1 -UpgradePrerequisites
         dotnet --info
       shell: pwsh
+    - name: 🏗️ Build analyzers
+      run: dotnet build -c Release tools/analyzers.proj
     - name: 📚 Verify docfx build
       run: dotnet docfx docfx/docfx.json --warningsAsErrors --disableGitFeatures
       if: runner.os == 'Linux'

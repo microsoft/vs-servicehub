@@ -15,7 +15,7 @@ public class MissingServiceAnalysis
 	/// </summary>
 	/// <param name="errorCode">The error code explaining why the service could not be obtained.</param>
 	/// <param name="expectedSource">The source that the service was expected to come from.</param>
-	internal MissingServiceAnalysis(MissingBrokeredServiceErrorCode errorCode, ServiceSource? expectedSource)
+	public MissingServiceAnalysis(MissingBrokeredServiceErrorCode errorCode, ServiceSource? expectedSource)
 	{
 		this.ErrorCode = errorCode;
 		this.ExpectedSource = expectedSource;

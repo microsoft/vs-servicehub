@@ -79,7 +79,7 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 				(target as IDisposable)?.Dispose();
 			}
 
-			throw new NotImplementedException($"Unable to find a source generated proxy filling the specified requirements: {proxyInputs.Requirements}. Research the NativeAOT topic in the documentation at https://microsoft.github.io/vs-streamjsonrpc");
+			throw new NotImplementedException($"Unable to find a source generated proxy for *local* services filling the specified requirements: {proxyInputs.Requirements}. Research the NativeAOT topic in the documentation at https://microsoft.github.io/vs-streamjsonrpc");
 		}
 	}
 

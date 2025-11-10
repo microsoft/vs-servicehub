@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using StreamJsonRpc;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 
@@ -20,8 +21,7 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 /// <remarks>
 /// <para>When a service is registered without a version, it doubles as a fallback service when a request for that service name is made but no exact version match can be found.</para>
 /// </remarks>
-[RequiresUnreferencedCode(Reasons.Formatters)]
-[RequiresDynamicCode(Reasons.Formatters)]
+[RequiresUnreferencedCode(Reasons.TypeLoad)]
 public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceContainer, IBrokeredServiceContainerInternal, IBrokeredServiceContainerDiagnostics
 {
 	/// <summary>
@@ -99,10 +99,12 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// Gets a descriptor for the service that can diagnose the cause of a missing brokered service.
 	/// Use <see cref="IMissingServiceDiagnosticsService"/> to interact with this service.
 	/// </summary>
-	public static ServiceRpcDescriptor MissingServiceDiagnostics { get; } = new ServiceJsonRpcDescriptor(
+	public static ServiceRpcDescriptor MissingServiceDiagnostics { get; } = new ServiceJsonRpcPolyTypeDescriptor(
 		new ServiceMoniker("Microsoft.VisualStudio.GlobalBrokeredServiceContainer.MissingServiceDiagnostics", new Version(1, 0)),
-		ServiceJsonRpcDescriptor.Formatters.MessagePack,
-		ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+		ServiceJsonRpcPolyTypeDescriptor.Formatters.NerdbankMessagePack,
+		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
+		PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default)
+		.WithRpcTargetMetadata(RpcTargetMetadata.FromShape(PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default.IMissingServiceDiagnosticsService));
 
 	/// <inheritdoc />
 	public abstract IReadOnlyDictionary<string, string> LocalUserCredentials { get; }

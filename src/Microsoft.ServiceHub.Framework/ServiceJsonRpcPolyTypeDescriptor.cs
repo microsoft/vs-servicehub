@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma warning disable PolyTypeJson
+
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO.Pipelines;
@@ -9,6 +11,7 @@ using Nerdbank.Streams;
 using PolyType;
 using StreamJsonRpc;
 using StreamJsonRpc.Reflection;
+using STJ = System.Text.Json;
 
 namespace Microsoft.ServiceHub.Framework;
 
@@ -69,6 +72,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
 		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
 		this.TypeShapeProvider = copyFrom.TypeShapeProvider;
+		this.RpcTargetMetadata = copyFrom.RpcTargetMetadata;
 	}
 
 	/// <summary>
@@ -81,6 +85,12 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		/// using <see cref="NerdbankMessagePackFormatter"/> (the <see href="https://github.com/AArnott/Nerdbank.MessagePack">Nerdbank.MessagePack serializer</see>).
 		/// </summary>
 		NerdbankMessagePack,
+
+		/// <summary>
+		/// Format messages with UTF-8 text for a human readable JSON representation using the <see cref="System.Text.Json.JsonSerializer"/> serializer.
+		/// </summary>
+		[Experimental("PolyTypeJson")]
+		UTF8,
 	}
 
 	/// <summary>
@@ -486,6 +496,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		=> this.Formatter switch
 		{
 			Formatters.NerdbankMessagePack => this.CreateNerdbankMessagePackFormatter(this.TypeShapeProvider),
+			Formatters.UTF8 => this.CreatePolyTypeJsonFormatter(this.TypeShapeProvider),
 			_ => throw new NotSupportedException(Strings.FormatFormatterNotSupported(this.Formatter, this.Protocol)),
 		};
 
@@ -505,6 +516,21 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcPolyTypeDescriptor(this);
 
 	private IJsonRpcMessageFormatter CreateNerdbankMessagePackFormatter(ITypeShapeProvider provider) => new NerdbankMessagePackFormatter { TypeShapeProvider = provider };
+
+	private IJsonRpcMessageFormatter CreatePolyTypeJsonFormatter(ITypeShapeProvider provider)
+	{
+		return new PolyTypeJsonFormatter
+		{
+			TypeShapeProvider = provider,
+			MultiplexingStream = this.MultiplexingStream,
+			JsonSerializerOptions =
+			{
+				DictionaryKeyPolicy = null,
+				PropertyNamingPolicy = STJ.JsonNamingPolicy.CamelCase,
+				DefaultIgnoreCondition = STJ.Serialization.JsonIgnoreCondition.WhenWritingNull,
+			},
+		};
+	}
 
 	/// <summary>
 	/// Create first seed channel if not being assigned by the owner of the service descriptor.

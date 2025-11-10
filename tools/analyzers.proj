@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.Build.Traversal">
+  <ItemGroup>
+    <ProjectReference Include="$(RepoRootPath)src\Microsoft.ServiceHub.Analyzers.CodeFixes\Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" />
+    <ProjectReference Include="$(RepoRootPath)src\Microsoft.ServiceHub.Analyzers.CSharp\Microsoft.ServiceHub.Analyzers.CSharp.csproj" />
+  </ItemGroup>
+</Project>
