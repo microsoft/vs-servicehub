@@ -95,7 +95,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				object? server = await this.factory(view, descriptor.Moniker, options, serviceBroker, cancellationToken).ConfigureAwait(false);
 				if (server != null)
 				{
-					connection.AddLocalRpcTarget(server);
+					connection.AddClientLocalRpcTarget(server);
 					connection.StartListening();
 					return pipePair.Item2;
 				}

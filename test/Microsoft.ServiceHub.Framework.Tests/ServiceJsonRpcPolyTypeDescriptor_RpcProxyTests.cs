@@ -6,7 +6,6 @@ using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 using PolyType;
-using PolyType.Abstractions;
 using StreamJsonRpc;
 
 public class ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests : ServiceRpcDescriptor_ProxyTestBase
@@ -16,13 +15,13 @@ public class ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests : ServiceRpcDescript
 	{
 	}
 
+	internal static PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests SourceGenShapes => PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests.Default;
+
 	protected override ServiceRpcDescriptor SomeDescriptor { get; } = new ServiceJsonRpcPolyTypeDescriptor(
 		new ServiceMoniker("SomeMoniker"),
-		clientInterface: null,
-		ServiceJsonRpcPolyTypeDescriptor.Formatters.NerdbankMessagePack,
-		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
-		multiplexingStreamOptions: null,
-		PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests.Default);
+		[SourceGenShapes.ISomeService],
+		[])
+		.WithOptionalServiceRpcContracts(SourceGenShapes.ISomeService2, SourceGenShapes.ISomeServiceDisposable);
 
 	protected override T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class
@@ -38,17 +37,10 @@ public class ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests : ServiceRpcDescript
 
 		var typedDescriptor = (ServiceJsonRpcPolyTypeDescriptor)descriptor;
 
-		ImmutableArray<RpcTargetMetadata>.Builder targetMetadata = ImmutableArray.CreateBuilder<RpcTargetMetadata>(1 + (typedDescriptor.AdditionalServiceInterfaces?.Length ?? 0));
-		targetMetadata.Add(RpcTargetMetadata.FromShape(TypeShapeResolver.ResolveDynamicOrThrow<T>()));
-		if (typedDescriptor.AdditionalServiceInterfaces is not null)
+		if (!typedDescriptor.ServiceRpcContracts.Any(s => s.Type == typeof(T)))
 		{
-			foreach (Type additionalInterface in typedDescriptor.AdditionalServiceInterfaces)
-			{
-				targetMetadata.Add(RpcTargetMetadata.FromShape(typedDescriptor.TypeShapeProvider.GetTypeShapeOrThrow(additionalInterface)));
-			}
+			typedDescriptor = typedDescriptor.WithServiceRpcContracts([SourceGenShapes.GetTypeShapeOrThrow(typeof(T)), .. typedDescriptor.ServiceRpcContracts]);
 		}
-
-		typedDescriptor = typedDescriptor.WithRpcTargetMetadata(targetMetadata.MoveToImmutable());
 
 		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
 		typedDescriptor.ConstructRpc(target, pipePair.Item1);
@@ -56,7 +48,12 @@ public class ServiceJsonRpcPolyTypeDescriptor_RpcProxyTests : ServiceRpcDescript
 	}
 
 	protected override ServiceRpcDescriptor DescriptorWithAdditionalServiceInterfaces(ServiceRpcDescriptor descriptor, ImmutableArray<Type>? additionalServiceInterfaces)
-		=> ((ServiceJsonRpcPolyTypeDescriptor)descriptor).WithAdditionalServiceInterfaces(additionalServiceInterfaces);
+	{
+		var typedDescriptor = (ServiceJsonRpcPolyTypeDescriptor)descriptor;
+		return additionalServiceInterfaces is { } addl
+			? typedDescriptor.WithServiceRpcContracts([typedDescriptor.ServiceRpcContracts[0], .. addl.Select(SourceGenShapes.GetTypeShapeOrThrow)])
+			: typedDescriptor.WithServiceRpcContracts([typedDescriptor.ServiceRpcContracts[0]]);
+	}
 
 	protected override ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy)
 		=> ((ServiceJsonRpcPolyTypeDescriptor)descriptor).WithExceptionStrategy(strategy);

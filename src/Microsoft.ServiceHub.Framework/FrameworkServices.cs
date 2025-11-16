@@ -29,7 +29,7 @@ public static partial class FrameworkServices
 		new ServiceMoniker(nameof(RemoteServiceBroker)),
 		ServiceJsonRpcPolyTypeDescriptor.Formatters.UTF8,
 		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.HttpLikeHeaders,
-		Witness.GeneratedTypeShapeProvider).WithRpcTargetMetadata(RpcTargetMetadata.FromShape(SourceGenProvider.IRemoteServiceBroker));
+		SourceGenProvider.IRemoteServiceBroker);
 
 	/// <summary>
 	/// The descriptor for the authorization service.
@@ -42,7 +42,7 @@ public static partial class FrameworkServices
 		new ServiceMoniker("Microsoft.ServiceHub.Framework.AuthorizationService"),
 		ServiceJsonRpcPolyTypeDescriptor.Formatters.UTF8,
 		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.HttpLikeHeaders,
-		Witness.GeneratedTypeShapeProvider).WithRpcTargetMetadata(RpcTargetMetadata.FromShape(SourceGenProvider.IAuthorizationService));
+		SourceGenProvider.IAuthorizationService);
 
 	/// <summary>
 	/// The <see cref="ServiceRpcDescriptor"/> for the manifest service which discloses information about services available at a remote source.
@@ -54,7 +54,7 @@ public static partial class FrameworkServices
 		new ServiceMoniker("Microsoft.VisualStudio.RemoteBrokeredServiceManifest", new Version(0, 2)),
 		ServiceJsonRpcPolyTypeDescriptor.Formatters.UTF8,
 		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.HttpLikeHeaders,
-		Witness.GeneratedTypeShapeProvider).WithRpcTargetMetadata(RpcTargetMetadata.FromShape(SourceGenProvider.IBrokeredServiceManifest));
+		SourceGenProvider.IBrokeredServiceManifest);
 
 	private static PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework SourceGenProvider => PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default;
 
@@ -70,9 +70,9 @@ public static partial class FrameworkServices
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CamelCaseTransformingDescriptor"/> class.
 		/// </summary>
-		/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Formatters, MessageDelimiters, ITypeShapeProvider)" />
-		public CamelCaseTransformingDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter, ITypeShapeProvider typeShapeProvider)
-			: base(serviceMoniker, formatter, messageDelimiter, typeShapeProvider)
+		/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, ITypeShape, Formatters, MessageDelimiters)" />
+		public CamelCaseTransformingDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter, ITypeShape serviceRpcContracts)
+			: base(serviceMoniker, serviceRpcContracts, formatter, messageDelimiter)
 		{
 		}
 

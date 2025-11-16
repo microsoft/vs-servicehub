@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
 
 namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 
@@ -101,10 +100,9 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// </summary>
 	public static ServiceRpcDescriptor MissingServiceDiagnostics { get; } = new ServiceJsonRpcPolyTypeDescriptor(
 		new ServiceMoniker("Microsoft.VisualStudio.GlobalBrokeredServiceContainer.MissingServiceDiagnostics", new Version(1, 0)),
+		PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default.IMissingServiceDiagnosticsService,
 		ServiceJsonRpcPolyTypeDescriptor.Formatters.NerdbankMessagePack,
-		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
-		PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default)
-		.WithRpcTargetMetadata(RpcTargetMetadata.FromShape(PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework.Default.IMissingServiceDiagnosticsService));
+		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
 
 	/// <inheritdoc />
 	public abstract IReadOnlyDictionary<string, string> LocalUserCredentials { get; }

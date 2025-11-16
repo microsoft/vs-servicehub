@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
@@ -113,6 +112,40 @@ public abstract partial class ServiceRpcDescriptor
 
 	/// <summary>
 	/// Creates an RPC client proxy over a given <see cref="IDuplexPipe"/>
+	/// and provides a local RPC target for the remote party to invoke methods locally.
+	/// </summary>
+	/// <typeparam name="T">The type of the RPC proxy to generate for invoking methods on the remote party or receiving events from it.</typeparam>
+	/// <param name="rpcTarget">
+	/// A local RPC target on which the remote party can invoke methods.
+	/// This is usually optional for requestors of a service but is typically expected for the proffering services to provide.
+	/// If this object implements <see cref="IDisposable"/>, <see cref="IDisposable.Dispose"/> will be invoked
+	/// when the client closes their connection.
+	/// </param>
+	/// <param name="pipe">The pipe used to communicate with the remote party.</param>
+	/// <returns>
+	/// The generated proxy.
+	/// This value should be disposed of when no longer needed, if it implements <see cref="IDisposable"/> at runtime.
+	/// A convenient disposal syntax is:
+	/// <code><![CDATA[(proxy as IDisposable)?.Dispose();]]></code>
+	/// </returns>
+	public T ConstructRpcForClient<T>(object? rpcTarget, IDuplexPipe pipe)
+		where T : class
+	{
+		Requires.NotNull(pipe, nameof(pipe));
+
+		RpcConnection connection = this.ConstructRpcConnection(pipe);
+		if (rpcTarget != null)
+		{
+			connection.AddClientLocalRpcTarget(rpcTarget);
+		}
+
+		T client = connection.ConstructRpcClient<T>();
+		connection.StartListening();
+		return client;
+	}
+
+	/// <summary>
+	/// Creates an RPC client proxy over a given <see cref="IDuplexPipe"/>
 	/// without providing a local RPC target for the remote party to invoke methods locally.
 	/// </summary>
 	/// <typeparam name="T">The type of the RPC proxy to generate for invoking methods on the remote party or receiving events from it.</typeparam>
@@ -124,14 +157,26 @@ public abstract partial class ServiceRpcDescriptor
 	/// <code><![CDATA[(proxy as IDisposable)?.Dispose();]]></code>
 	/// </returns>
 	public T ConstructRpc<T>(IDuplexPipe pipe)
-		where T : class
-	{
-		return this.ConstructRpc<T>(rpcTarget: null, pipe);
-	}
+		where T : class => this.ConstructRpc<T>(rpcTarget: null, pipe);
 
 	/// <summary>
-	/// Establishes an RPC connection to a given object over an <see cref="IDuplexPipe"/>,
-	/// allowing the remote party to invoke methods locally on the given object.
+	/// Creates an RPC client proxy over a given <see cref="IDuplexPipe"/>
+	/// without providing a local RPC target for the remote party to invoke methods locally.
+	/// </summary>
+	/// <typeparam name="T">The type of the RPC proxy to generate for invoking methods on the remote party or receiving events from it.</typeparam>
+	/// <param name="pipe">The pipe used to communicate with the remote party.</param>
+	/// <returns>
+	/// The generated proxy.
+	/// This value should be disposed of when no longer needed, if it implements <see cref="IDisposable"/> at runtime.
+	/// A convenient disposal syntax is:
+	/// <code><![CDATA[(proxy as IDisposable)?.Dispose();]]></code>
+	/// </returns>
+	public T ConstructRpcForClient<T>(IDuplexPipe pipe)
+		where T : class => this.ConstructRpcForClient<T>(rpcTarget: null, pipe);
+
+	/// <summary>
+	/// Establishes an RPC connection over a given <see cref="IDuplexPipe"/>,
+	/// allowing the remote party to invoke methods on the supplied service object.
 	/// </summary>
 	/// <param name="rpcTarget">
 	/// The target of any RPC calls received over the supplied <paramref name="pipe"/>.
@@ -149,6 +194,31 @@ public abstract partial class ServiceRpcDescriptor
 		if (rpcTarget != null)
 		{
 			connection.AddLocalRpcTarget(rpcTarget);
+		}
+
+		connection.StartListening();
+	}
+
+	/// <summary>
+	/// Establishes an RPC connection over a given <see cref="IDuplexPipe"/>,
+	/// allowing the remote party to invoke methods on the supplied client callback object.
+	/// </summary>
+	/// <param name="rpcTarget">
+	/// The target of any RPC calls received over the supplied <paramref name="pipe"/>.
+	/// Raising events defined on this object may result in notifications being forwarded to the remote party.
+	/// If this object implements <see cref="IDisposable"/>, <see cref="IDisposable.Dispose"/> will be invoked
+	/// when the client closes their connection.
+	/// </param>
+	/// <param name="pipe">The pipe the <paramref name="rpcTarget"/> should use to communicate.</param>
+	public void ConstructRpcForClient(object rpcTarget, IDuplexPipe pipe)
+	{
+		Requires.NotNull(rpcTarget, nameof(rpcTarget));
+		Requires.NotNull(pipe, nameof(pipe));
+
+		RpcConnection connection = this.ConstructRpcConnection(pipe);
+		if (rpcTarget != null)
+		{
+			connection.AddClientLocalRpcTarget(rpcTarget);
 		}
 
 		connection.StartListening();
@@ -285,7 +355,7 @@ public abstract partial class ServiceRpcDescriptor
 		public abstract Task Completion { get; }
 
 		/// <summary>
-		/// Adds a target object to receive RPC calls.
+		/// Adds a service target object to receive RPC calls.
 		/// </summary>
 		/// <param name="rpcTarget">
 		/// A target for any RPC calls received over the connection.
@@ -296,7 +366,19 @@ public abstract partial class ServiceRpcDescriptor
 		public abstract void AddLocalRpcTarget(object rpcTarget);
 
 		/// <summary>
-		/// Produces a proxy that provides a strongly-typed API for invoking methods offered by the remote party.
+		/// Adds a client callback target object to receive RPC calls.
+		/// </summary>
+		/// <param name="rpcTarget">
+		/// A target for any RPC calls received over the connection.
+		/// If this object implements <see cref="IDisposable"/>, <see cref="IDisposable.Dispose"/> will be invoked
+		/// when the client closes their connection.
+		/// </param>
+		/// <exception cref="InvalidOperationException">May be thrown when <see cref="StartListening"/> has already been called.</exception>
+		public virtual void AddClientLocalRpcTarget(object rpcTarget) => this.AddLocalRpcTarget(rpcTarget);
+
+		/// <summary>
+		/// Produces a proxy that provides a strongly-typed API for invoking methods offered by the remote party
+		/// for purposes of a brokered service client to access a service by a given interface.
 		/// </summary>
 		/// <typeparam name="T">The interface that the returned proxy should implement.</typeparam>
 		/// <returns>The generated proxy.</returns>
@@ -308,16 +390,8 @@ public abstract partial class ServiceRpcDescriptor
 		public abstract T ConstructRpcClient<T>()
 			where T : class;
 
-		/// <summary>
-		/// Produces a proxy that provides a strongly-typed API for invoking methods offered by the remote party.
-		/// </summary>
-		/// <param name="interfaceType">The interface that the returned proxy should implement.</param>
-		/// <returns>The generated proxy.</returns>
-		/// <remarks>
-		/// This method may be called any number of times, but restrictions may apply after <see cref="StartListening"/> is called,
-		/// particularly when <paramref name="interfaceType"/> includes events.
-		/// </remarks>
-		/// <exception cref="InvalidOperationException">May be thrown when <see cref="StartListening"/> has already been called.</exception>
+		/// <inheritdoc cref="ConstructRpcClient{T}()"/>
+		/// <param name="interfaceType"><inheritdoc cref="ConstructRpcClient{T}()" path="/typeparam"/></param>
 		public abstract object ConstructRpcClient(Type interfaceType);
 
 		/// <summary>

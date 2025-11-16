@@ -124,7 +124,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				{
 					if (server is object)
 					{
-						connection.AddLocalRpcTarget(server);
+						connection.AddClientLocalRpcTarget(server);
 						connection.StartListening();
 						return pipePair.Item2;
 					}

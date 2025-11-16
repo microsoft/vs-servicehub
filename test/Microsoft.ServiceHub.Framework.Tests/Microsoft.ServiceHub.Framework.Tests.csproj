@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>exe</OutputType>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
     <RootNamespace />
     <NoWarn>$(NoWarn);ISB001</NoWarn>

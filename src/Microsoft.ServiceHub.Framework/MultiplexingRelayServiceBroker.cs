@@ -88,7 +88,7 @@ public class MultiplexingRelayServiceBroker : IRemoteServiceBroker, IDisposable,
 		{
 			MultiplexingStream multiplexingStreamWithClient = await MultiplexingStream.CreateAsync(duplexStreamWithClient, cancellationToken).ConfigureAwait(false);
 			MultiplexingStream.Channel clientChannel = await multiplexingStreamWithClient.OfferChannelAsync(string.Empty, cancellationToken).ConfigureAwait(false);
-			var result = new MultiplexingRelayServiceBroker(serviceBroker, multiplexingStreamWithClient)
+			MultiplexingRelayServiceBroker result = new(serviceBroker, multiplexingStreamWithClient)
 			{
 				multiplexingStreamWithRemoteClientOwned = true,
 			};

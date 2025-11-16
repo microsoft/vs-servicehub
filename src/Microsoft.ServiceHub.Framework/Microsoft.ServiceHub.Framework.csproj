@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net472</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net472</TargetFrameworks>
     <Description>The distributed ServiceHub Framework.</Description>
     <PackageValidationBaselineVersion>4.8.55</PackageValidationBaselineVersion>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)','net8.0'))">true</IsAotCompatible>

@@ -150,7 +150,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 					// Arrange for proxy disposal to also dispose of our export to avoid a MEF leak.
 					connection.Completion.ContinueWith((_, s) => ((IDisposable)s!).Dispose(), export, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Forget();
 
-					connection.AddLocalRpcTarget(brokeredService);
+					connection.AddClientLocalRpcTarget(brokeredService);
 					connection.StartListening();
 					return pipePair.Item2;
 				}

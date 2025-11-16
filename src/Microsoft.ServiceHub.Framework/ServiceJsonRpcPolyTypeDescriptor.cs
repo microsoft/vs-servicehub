@@ -6,6 +6,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
 using PolyType;
@@ -21,22 +22,10 @@ namespace Microsoft.ServiceHub.Framework;
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable<ServiceJsonRpcPolyTypeDescriptor>
 {
-	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, ITypeShapeProvider)" />
-	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter, ITypeShapeProvider typeShapeProvider)
-		: this(serviceMoniker, clientInterface: null, formatter, messageDelimiter, multiplexingStreamOptions: null, typeShapeProvider)
+	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, ImmutableArray{ITypeShape}, ImmutableArray{ITypeShape}, Formatters, MessageDelimiters, MultiplexingStream.Options?)" />
+	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, ITypeShape serviceRpcContracts, Formatters formatter = Formatters.NerdbankMessagePack, MessageDelimiters messageDelimiter = MessageDelimiters.BigEndianInt32LengthHeader)
+		: this(serviceMoniker, [serviceRpcContracts], [], formatter, messageDelimiter, multiplexingStreamOptions: null)
 	{
-	}
-
-	/// <summary>
-	/// Initializes a new instance of the <see cref="ServiceJsonRpcPolyTypeDescriptor"/> class
-	/// with no support for opening additional streams except by relying on the underlying service broker to provide one.
-	/// </summary>
-	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, MultiplexingStream.Options?, ITypeShapeProvider)" />
-	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter, [ValidatedNotNull] ITypeShapeProvider typeShapeProvider)
-		: this(serviceMoniker, clientInterface, formatter, messageDelimiter, multiplexingStreamOptions: null, typeShapeProvider)
-	{
-		Requires.NotNull(typeShapeProvider);
-		this.TypeShapeProvider = typeShapeProvider;
 	}
 
 	/// <summary>
@@ -44,19 +33,31 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	/// with support for opening additional streams with <see cref="ServiceJsonRpcPolyTypeDescriptor.MultiplexingStreamOptions"/>.
 	/// </summary>
 	/// <param name="serviceMoniker">The service moniker.</param>
-	/// <param name="clientInterface">The interface type that the client's "callback" RPC target is expected to implement. May be null if the service does not invoke methods on the client.</param>
 	/// <param name="formatter">The formatter to use for the JSON-RPC message.</param>
 	/// <param name="messageDelimiter">The message delimiter scheme to use.</param>
 	/// <param name="multiplexingStreamOptions">The options that a <see cref="MultiplexingStream" /> may be created with. A <see langword="null"/> value will prevent a <see cref="MultiplexingStream" /> from being created for the RPC connection.</param>
-	/// <param name="typeShapeProvider">The source of type shapes for all parameter and return types used in the RPC contract.</param>
-	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Type? clientInterface, Formatters formatter, MessageDelimiters messageDelimiter, MultiplexingStream.Options? multiplexingStreamOptions, [ValidatedNotNull] ITypeShapeProvider typeShapeProvider)
-		: base(serviceMoniker, clientInterface)
+	/// <param name="serviceRpcContracts">The RPC contracts the service implements.</param>
+	/// <param name="clientRpcContracts">The RPC contracts that the client callback object implements.</param>
+	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, ImmutableArray<ITypeShape> serviceRpcContracts, ImmutableArray<ITypeShape> clientRpcContracts, Formatters formatter = Formatters.NerdbankMessagePack, MessageDelimiters messageDelimiter = MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStream.Options? multiplexingStreamOptions = null)
+		: base(serviceMoniker, clientRpcContracts.FirstOrDefault()?.Type)
 	{
-		Requires.NotNull(typeShapeProvider);
+		if (FindErrorsInServiceContracts(ref serviceRpcContracts) is string serviceError)
+		{
+			throw new ArgumentException(serviceError, nameof(serviceRpcContracts));
+		}
+
+		if (FindErrorsInServiceContracts(ref clientRpcContracts) is string clientError)
+		{
+			throw new ArgumentException(clientError, nameof(clientRpcContracts));
+		}
+
+		Requires.Argument(!serviceRpcContracts.IsEmpty, nameof(serviceRpcContracts), Strings.AtLeastOneRequired);
+
 		this.Formatter = formatter;
 		this.MessageDelimiter = messageDelimiter;
 		this.MultiplexingStreamOptions = multiplexingStreamOptions?.GetFrozenCopy();
-		this.TypeShapeProvider = typeShapeProvider;
+		this.ServiceRpcContracts = serviceRpcContracts;
+		this.ClientRpcContracts = clientRpcContracts;
 	}
 
 	/// <summary>
@@ -70,9 +71,8 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		this.MessageDelimiter = copyFrom.MessageDelimiter;
 		this.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions;
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
-		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
-		this.TypeShapeProvider = copyFrom.TypeShapeProvider;
-		this.RpcTargetMetadata = copyFrom.RpcTargetMetadata;
+		this.ServiceRpcContracts = copyFrom.ServiceRpcContracts;
+		this.ClientRpcContracts = copyFrom.ClientRpcContracts;
 	}
 
 	/// <summary>
@@ -113,18 +113,31 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	public override string Protocol => "json-rpc";
 
 	/// <summary>
-	/// Gets the <see cref="ITypeShapeProvider"/> to use for serializing and deserializing parameter and return types.
-	/// </summary>
-	public ITypeShapeProvider TypeShapeProvider { get; private set; }
-
-	/// <summary>
-	/// Gets a collection of <see cref="StreamJsonRpc.RpcTargetMetadata"/> for use when calling <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/>.
+	/// Gets a collection of <see cref="ITypeShape"/> where each describes an RPC contract for use when calling <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/>
+	/// with a service object.
 	/// </summary>
 	/// <remarks>
 	/// The RPC target object passed to <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/> is expected to be assignable to the type designated
 	/// by the <see cref="RpcTargetMetadata.TargetType"/> property of all elements of this collection.
 	/// </remarks>
-	public ImmutableArray<RpcTargetMetadata> RpcTargetMetadata { get; private set; } = ImmutableArray<RpcTargetMetadata>.Empty;
+	public ImmutableArray<ITypeShape> ServiceRpcContracts { get; private set; } = [];
+
+	/// <summary>
+	/// Gets a collection of <see cref="ITypeShape"/> where each describes an RPC contract that <em>may</em> be added by the user or <see cref="IBrokeredServiceContainer"/>
+	/// to the <see cref="ServiceRpcContracts"/> collection before establishing the RPC connection,
+	/// based on service registration data when calling <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/> with a service object.
+	/// </summary>
+	public ImmutableArray<ITypeShape> OptionalServiceRpcContracts { get; private set; } = [];
+
+	/// <summary>
+	/// Gets a collection of <see cref="ITypeShape"/> where each describes an RPC contract for use when calling <see cref="JsonRpcConnection.AddClientLocalRpcTarget(object)"/>
+	/// with a client callback object.
+	/// </summary>
+	/// <remarks>
+	/// The RPC target object passed to <see cref="JsonRpcConnection.AddLocalRpcTarget(object)"/> is expected to be assignable to the type designated
+	/// by the <see cref="RpcTargetMetadata.TargetType"/> property of all elements of this collection.
+	/// </remarks>
+	public ImmutableArray<ITypeShape> ClientRpcContracts { get; private set; } = [];
 
 	/// <summary>
 	/// Gets the formatting used by the service.
@@ -152,26 +165,23 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	public MultiplexingStream.Options? MultiplexingStreamOptions { get; private set; }
 
 	/// <summary>
-	/// Gets the set of interfaces that will be added to a generated proxy in addition to the one specified
-	/// as the type argument to <see cref="JsonRpcConnection.ConstructRpcClient{T}"/> or
-	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>.
-	/// </summary>
-	/// <value>The default value is <see langword="null"/>.</value>
-	/// <remarks>
-	/// A <see langword="null" /> value may signal an implementation of
-	/// <see cref="IServiceBroker.GetProxyAsync{T}(ServiceRpcDescriptor, ServiceActivationOptions, CancellationToken)"/>
-	/// to supply some default set of optional interfaces based on service registration.
-	/// Such implementations should honor any non-<see langword="null" /> value from this property (including an empty array)
-	/// by not adding any additional interfaces beyond those specified.
-	/// </remarks>
-	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
-
-	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
 	/// </summary>
 	[ExcludeFromCodeCoverage]
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter}";
+
+	private ITypeShapeProvider TypeShapeProvider => this.ServiceRpcContracts.First().Provider;
+
+#if NET
+	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptorExtensions.Create{TService}(ServiceMoniker, Formatters, MessageDelimiters, MultiplexingStream.Options?)"/>
+	public static ServiceJsonRpcPolyTypeDescriptor Create<TService>(ServiceMoniker serviceMoniker, Formatters formatter = Formatters.NerdbankMessagePack, MessageDelimiters messageDelimiter = MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStream.Options? multiplexingStreamOptions = null)
+		where TService : IShapeable<TService> => new(serviceMoniker, [TService.GetTypeShape()], [], formatter, messageDelimiter, multiplexingStreamOptions);
+
+	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptorExtensions.Create{TService, TProvider}(ServiceMoniker, Formatters, MessageDelimiters, MultiplexingStream.Options?)"/>
+	public static ServiceJsonRpcPolyTypeDescriptor Create<TService, TProvider>(ServiceMoniker serviceMoniker, Formatters formatter = Formatters.NerdbankMessagePack, MessageDelimiters messageDelimiter = MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStream.Options? multiplexingStreamOptions = null)
+		where TProvider : IShapeable<TService> => new(serviceMoniker, [TProvider.GetTypeShape()], [], formatter, messageDelimiter, multiplexingStreamOptions);
+#endif
 
 	/// <inheritdoc/>
 #pragma warning disable CS0672 // Base Member overrides obsolete member, To be handled at ServiceJsonRpcPolyTypeDescriptor only later for backward compatibility.
@@ -242,36 +252,6 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	}
 
 	/// <summary>
-	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
-	/// but with the <see cref="AdditionalServiceInterfaces" /> property set to a new value.
-	/// </summary>
-	/// <param name="value">The new value for the <see cref="AdditionalServiceInterfaces"/> property.</param>
-	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
-	public ServiceJsonRpcPolyTypeDescriptor WithAdditionalServiceInterfaces(ImmutableArray<Type>? value)
-	{
-		Requires.Argument(value is not { IsDefault: true }, nameof(value), null);
-		if (this.AdditionalServiceInterfaces == value)
-		{
-			return this;
-		}
-
-		if (value is ImmutableArray<Type> realValue)
-		{
-			foreach (Type type in realValue)
-			{
-				if (!type.IsInterface)
-				{
-					throw new ArgumentException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(type.FullName), nameof(value));
-				}
-			}
-		}
-
-		var result = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
-		result.AdditionalServiceInterfaces = value;
-		return result;
-	}
-
-	/// <summary>
 	/// Wraps some target object with a proxy that gives the caller the similar semantics to calling
 	/// an actual RPC object using <see cref="JsonRpc"/>.
 	/// </summary>
@@ -283,10 +263,11 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	/// Exceptions thrown from the target will be caught by the proxy and a <see cref="RemoteInvocationException"/> will be thrown instead
 	/// with some of the original exception details preserved (but not as an <see cref="Exception.InnerException"/>) in order to
 	/// emulate what an RPC connection would be like.
-	/// This proxy implements <typeparamref name="T"/> and any interfaces specified in the <see cref="AdditionalServiceInterfaces"/> property.
+	/// This proxy implements <typeparamref name="T"/> and any interfaces specified in the <see cref="ServiceRpcContracts"/> property.
 	/// The proxy also implements <see cref="IDisposable"/> and will forward a call to <see cref="IDisposable.Dispose"/>
 	/// to the <paramref name="target"/> object if the target object implements <see cref="IDisposable"/>.
 	/// </remarks>
+	/// <exception cref="ArgumentException">The <typeparamref name="T"/> type is not among the interfaces specified in the <see cref="ServiceRpcContracts"/> property.</exception>
 	[return: NotNullIfNotNull("target")]
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
@@ -298,17 +279,16 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 
 		if (!typeof(T).IsInterface)
 		{
-			throw new NotSupportedException(Strings.FormatClientProxyTypeArgumentMustBeAnInterface(typeof(T).FullName));
+			throw new NotSupportedException(Strings.ClientProxyTypeArgumentMustBeAnInterface);
 		}
 
-		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
-			? (addl.Contains(typeof(T)) ? addl.Remove(typeof(T)) : addl)
-			: [];
+		// Make sure that the T type appears as a service interface.
+		Requires.Argument(this.ServiceRpcContracts.Any(shape => shape.Type == typeof(T)), nameof(T), Strings.FormatClientProxyTypeArgumentMustBeAmongServiceInterfaces(typeof(T).FullName));
 
 		Reflection.ProxyInputs localProxyInputs = new()
 		{
-			ContractInterface = typeof(T),
-			AdditionalContractInterfaces = additionalServiceInterfaces.AsMemory(),
+			ContractInterface = this.ServiceRpcContracts.First().Type,
+			AdditionalContractInterfaces = this.ServiceRpcContracts[1..].Select(s => s.Type).ToArray(),
 			ExceptionStrategy = this.ExceptionStrategy,
 		};
 
@@ -356,7 +336,8 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 			&& this.Moniker.Equals(other.Moniker)
 			&& this.Formatter == other.Formatter
 			&& this.MessageDelimiter == other.MessageDelimiter
-			&& this.TypeShapeProvider == other.TypeShapeProvider;
+			&& this.ServiceRpcContracts.SequenceEqual(other.ServiceRpcContracts)
+			&& this.ClientRpcContracts.SequenceEqual(other.ClientRpcContracts);
 	}
 
 	/// <inheritdoc />
@@ -367,52 +348,69 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 
 	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
-	/// but with the <see cref="TypeShapeProvider" /> property set to a new value.
+	/// but with the <see cref="ServiceRpcContracts" /> property set to a new value.
 	/// </summary>
-	/// <param name="value">The new value for the <see cref="TypeShapeProvider"/> property.</param>
+	/// <param name="value">The new value for the <see cref="ServiceRpcContracts"/> property. Must have at least one element.</param>
 	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
-	public ServiceJsonRpcPolyTypeDescriptor WithTypeShapeProvider(ITypeShapeProvider value)
+	public ServiceJsonRpcPolyTypeDescriptor WithServiceRpcContracts(params ImmutableArray<ITypeShape> value)
 	{
-		Requires.NotNull(value);
-
-		if (this.TypeShapeProvider == value)
+		if (this.ServiceRpcContracts == value)
 		{
 			return this;
 		}
 
+		if (FindErrorsInServiceContracts(ref value) is string serviceError)
+		{
+			throw new ArgumentException(serviceError, nameof(value));
+		}
+
+		Requires.Argument(!value.IsEmpty, nameof(value), Strings.AtLeastOneRequired);
+
 		var copy = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
-		copy.TypeShapeProvider = value;
+		copy.ServiceRpcContracts = value;
 		return copy;
 	}
 
 	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
-	/// but with the <see cref="RpcTargetMetadata" /> property set to a new value.
+	/// but with the <see cref="OptionalServiceRpcContracts" /> property set to a new value.
 	/// </summary>
-	/// <param name="value">The new value for the <see cref="RpcTargetMetadata"/> property.</param>
+	/// <param name="value">The new value for the <see cref="OptionalServiceRpcContracts"/> property.</param>
 	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
-	public ServiceJsonRpcPolyTypeDescriptor WithRpcTargetMetadata(params ImmutableArray<RpcTargetMetadata> value)
+	public ServiceJsonRpcPolyTypeDescriptor WithOptionalServiceRpcContracts(params ImmutableArray<ITypeShape> value)
 	{
-		if (this.RpcTargetMetadata.Length == value.Length)
+		if (this.OptionalServiceRpcContracts == value)
 		{
-			bool equal = true;
-			for (int i = 0; i < value.Length; i++)
-			{
-				if (!ReferenceEquals(this.RpcTargetMetadata[i], value[i]))
-				{
-					equal = false;
-					break;
-				}
-			}
+			return this;
+		}
 
-			if (equal)
-			{
-				return this;
-			}
+		if (FindErrorsInServiceContracts(ref value) is string serviceError)
+		{
+			throw new ArgumentException(serviceError, nameof(value));
 		}
 
 		var copy = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
-		copy.RpcTargetMetadata = value;
+		copy.OptionalServiceRpcContracts = value;
+		return copy;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcPolyTypeDescriptor"/> that resembles this one,
+	/// but with the <see cref="ClientRpcContracts" /> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="ClientRpcContracts"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcPolyTypeDescriptor WithClientRpcContracts(params ImmutableArray<ITypeShape> value)
+	{
+		Requires.Argument(!value.IsDefault, nameof(value), Strings.NotInitialized);
+
+		if (this.ClientRpcContracts == value)
+		{
+			return this;
+		}
+
+		var copy = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		copy.ClientRpcContracts = value;
 		return copy;
 	}
 
@@ -514,6 +512,36 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 
 	/// <inheritdoc/>
 	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcPolyTypeDescriptor(this);
+
+	private static string? FindErrorsInServiceContracts(ref ImmutableArray<ITypeShape> contracts)
+	{
+		if (contracts.IsDefault)
+		{
+			return Strings.NotInitialized;
+		}
+
+		HashSet<ITypeShape> set = [];
+		bool duplicatesFound = false;
+		foreach (ITypeShape typeShape in contracts)
+		{
+			if (!typeShape.Type.IsInterface)
+			{
+				return Strings.FormatClientProxyTypeArgumentMustBeAnInterface(typeShape.Type.FullName);
+			}
+
+			if (!set.Add(typeShape))
+			{
+				duplicatesFound = true;
+			}
+		}
+
+		if (duplicatesFound)
+		{
+			contracts = [.. set];
+		}
+
+		return null;
+	}
 
 	private IJsonRpcMessageFormatter CreateNerdbankMessagePackFormatter(ITypeShapeProvider provider) => new NerdbankMessagePackFormatter { TypeShapeProvider = provider };
 
@@ -643,17 +671,35 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		public override void AddLocalRpcTarget(object rpcTarget)
 		{
 			Requires.NotNull(rpcTarget, nameof(rpcTarget));
-			Verify.Operation(this.owner.RpcTargetMetadata.Length > 0, Strings.FormatSetDescriptorPropertyFirst(nameof(this.owner.RpcTargetMetadata)));
+
 			Type rpcTargetType = rpcTarget.GetType();
 
-			foreach (RpcTargetMetadata targetMetadata in this.owner.RpcTargetMetadata)
+			foreach (ITypeShape typeShape in this.owner.ServiceRpcContracts)
 			{
-				Requires.Argument(targetMetadata.TargetType.IsAssignableFrom(rpcTargetType), nameof(rpcTarget), "RPC target type must be assignable to all RpcTargetMetadata elements.");
+				Requires.Argument(typeShape.Type.IsAssignableFrom(rpcTargetType), nameof(rpcTarget), $"RPC target type must be assignable to all {nameof(ServiceJsonRpcPolyTypeDescriptor.ServiceRpcContracts)} elements.");
 			}
 
-			foreach (RpcTargetMetadata targetMetadata in this.owner.RpcTargetMetadata)
+			foreach (ITypeShape typeShape in this.owner.ServiceRpcContracts)
 			{
-				this.JsonRpc.AddLocalRpcTarget(targetMetadata, rpcTarget, this.LocalRpcTargetOptions);
+				this.JsonRpc.AddLocalRpcTarget(RpcTargetMetadata.FromShape(typeShape), rpcTarget, this.LocalRpcTargetOptions);
+			}
+		}
+
+		/// <inheritdoc/>
+		public override void AddClientLocalRpcTarget(object rpcTarget)
+		{
+			Requires.NotNull(rpcTarget, nameof(rpcTarget));
+
+			Type rpcTargetType = rpcTarget.GetType();
+
+			foreach (ITypeShape typeShape in this.owner.ClientRpcContracts)
+			{
+				Requires.Argument(typeShape.Type.IsAssignableFrom(rpcTargetType), nameof(rpcTarget), $"RPC target type must be assignable to all {nameof(ServiceJsonRpcPolyTypeDescriptor.ClientRpcContracts)} elements.");
+			}
+
+			foreach (ITypeShape typeShape in this.owner.ClientRpcContracts)
+			{
+				this.JsonRpc.AddLocalRpcTarget(RpcTargetMetadata.FromShape(typeShape), rpcTarget, this.LocalRpcTargetOptions);
 			}
 		}
 
@@ -665,12 +711,17 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			Requires.NotNull(interfaceType, nameof(interfaceType));
 
-			ImmutableArray<Type> ifaceTypes = this.owner?.AdditionalServiceInterfaces ?? [];
+			if (!interfaceType.IsInterface)
+			{
+				throw new NotSupportedException(Strings.ClientProxyTypeArgumentMustBeAnInterface);
+			}
+
+			Requires.Argument(this.owner.ServiceRpcContracts.Any(shape => shape.Type == interfaceType), nameof(interfaceType), Strings.FormatClientProxyTypeArgumentMustBeAmongServiceInterfaces(interfaceType.FullName));
 
 			ProxyInputs proxyInputs = new()
 			{
-				ContractInterface = interfaceType,
-				AdditionalContractInterfaces = ifaceTypes.AsMemory(),
+				ContractInterface = this.owner.ServiceRpcContracts[0].Type,
+				AdditionalContractInterfaces = this.owner.ServiceRpcContracts[1..].Select(c => c.Type).ToArray(),
 				Options = this.LocalRpcProxyOptions,
 			};
 

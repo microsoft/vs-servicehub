@@ -541,7 +541,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 				}
 			}
 
-			return serviceDescriptor.ConstructRpc<T>(options.ClientRpcTarget, pipe);
+			return serviceDescriptor.ConstructRpcForClient<T>(options.ClientRpcTarget, pipe);
 		}
 		catch (Exception ex)
 		{

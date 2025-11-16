@@ -12,11 +12,7 @@ using StreamJsonRpc;
 public partial class SourceGeneratedLocalProxyTests
 {
 	private static readonly ServiceMoniker CalculatorMoniker = new("Calc");
-	private static readonly ServiceJsonRpcPolyTypeDescriptor CalculatorDescriptor = new(
-		CalculatorMoniker,
-		ServiceJsonRpcPolyTypeDescriptor.Formatters.NerdbankMessagePack,
-		ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader,
-		PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests.Default);
+	private static readonly ServiceJsonRpcPolyTypeDescriptor CalculatorDescriptor = ServiceJsonRpcPolyTypeDescriptor.Create<ICalculator>(CalculatorMoniker);
 
 	[JsonRpcContract]
 	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
@@ -40,6 +36,8 @@ public partial class SourceGeneratedLocalProxyTests
 	{
 		ValueTask<double> GetPiAsync();
 	}
+
+	internal static PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests SourceGenShapes => PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests.Default;
 
 	[Fact]
 	public void Dispose_OnDisposableTarget()
@@ -174,7 +172,7 @@ public partial class SourceGeneratedLocalProxyTests
 	public void Is_ScientificCalculator()
 	{
 		ICalculator calculator = CalculatorDescriptor
-			.WithAdditionalServiceInterfaces([typeof(IScientificCalculator)])
+			.WithServiceRpcContracts([.. CalculatorDescriptor.ServiceRpcContracts, SourceGenShapes.IScientificCalculator])
 			.ConstructLocalProxy<IMultifunctionCalculator>(new GoodCalculator());
 		IClientProxy proxy = (IClientProxy)calculator;
 
@@ -196,7 +194,7 @@ public partial class SourceGeneratedLocalProxyTests
 		ICalculator calculator = new ThrowingCalculator();
 		Assert.IsNotAssignableFrom<IScientificCalculator>(calculator); // assumption check for this test to be effective.
 		Assert.Throws<InvalidCastException>(() => CalculatorDescriptor
-			.WithAdditionalServiceInterfaces([typeof(IScientificCalculator)])
+			.WithServiceRpcContracts([.. CalculatorDescriptor.ServiceRpcContracts, SourceGenShapes.IScientificCalculator])
 			.ConstructLocalProxy(calculator));
 	}
 

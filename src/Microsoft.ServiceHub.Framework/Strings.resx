@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AtLeastOneRequired" xml:space="preserve">
+    <value>At least one element is required.</value>
+  </data>
+  <data name="ClientProxyTypeArgumentMustBeAmongServiceInterfaces" xml:space="preserve">
+    <value>"{0}" is not an interface listed among the service interfaces.</value>
+  </data>
   <data name="ClientProxyTypeArgumentMustBeAnInterface" xml:space="preserve">
     <value>"{0}" is not an interface.</value>
   </data>
