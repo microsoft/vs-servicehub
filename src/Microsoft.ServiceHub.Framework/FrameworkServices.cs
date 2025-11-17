@@ -117,6 +117,8 @@ public static partial class FrameworkServices
 	[JsonSerializable(typeof(ServiceActivationOptions))]
 	[JsonSerializable(typeof(ServiceBrokerClientMetadata))]
 	[JsonSerializable(typeof(BrokeredServicesChangedEventArgs))]
+	[JsonSerializable(typeof(ProtectedOperation))]
 	[JsonSerializable(typeof(Guid))]
+	[JsonSerializable(typeof(EventArgs))]
 	private partial class SourceGenerationContext : JsonSerializerContext;
 }
