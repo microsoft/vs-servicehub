@@ -12,7 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
-    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="1.9.0" />
+    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="1.9.1" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.12.20" />
     <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="17.13.40008" />
@@ -34,13 +34,13 @@
     <PackageVersion Include="System.Text.Json" Version="8.0.6" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
-    <PackageVersion Include="xunit.v3.core.mtp-v1" Version="3.2.0" />
+    <PackageVersion Include="xunit.v3.core.mtp-v1" Version="3.2.1" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="xunit.v3" Version="3.2.0" />
+    <PackageVersion Include="xunit.v3" Version="3.2.1" />
   </ItemGroup>
   <ItemGroup>
     <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.25218.8" />
