@@ -280,6 +280,10 @@ jobs:
         Is1ESPT: ${{ parameters.Is1ESPT }}
         RunTests: ${{ parameters.RunTests }}
         BuildRequiresAccessToken: ${{ parameters.RealSign }} # Real signing on non-Windows machines requires passing through access token to build steps that sign
+    - template: post_build.yml
+      parameters:
+        Is1ESPT: ${{ parameters.Is1ESPT }}
+        RunTests: ${{ parameters.RunTests }}
     - ${{ if parameters.EnableDotNetFormatCheck }}:
       - script: |
           dotnet format style --verify-no-changes
@@ -326,6 +330,10 @@ jobs:
         Is1ESPT: ${{ parameters.Is1ESPT }}
         RunTests: ${{ parameters.RunTests }}
         BuildRequiresAccessToken: ${{ parameters.RealSign }} # Real signing on non-Windows machines requires passing through access token to build steps that sign
+    - template: post_build.yml
+      parameters:
+        Is1ESPT: ${{ parameters.Is1ESPT }}
+        RunTests: ${{ parameters.RunTests }}
 
 - job: WrapUp
   dependsOn:
