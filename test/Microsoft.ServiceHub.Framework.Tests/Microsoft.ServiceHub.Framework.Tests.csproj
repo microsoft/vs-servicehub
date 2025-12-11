@@ -19,14 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.VisualStudio.RpcContracts" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.Utilities" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.Utilities.Testing" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit.v3" />
     <PackageReference Include="Xunit.Combinatorial" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>
 
   <ItemGroup>

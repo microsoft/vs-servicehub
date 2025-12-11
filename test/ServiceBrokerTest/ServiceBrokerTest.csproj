@@ -2,12 +2,14 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <IsTestProject>false</IsTestProject>
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="microsoft.testing.platform.msbuild" ExcludeAssets="all" />
     <PackageReference Include="StreamJsonRpc" />
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="xunit.v3.core.mtp-v1" ExcludeAssets="all" />
+    <PackageReference Include="xunit.v3.core.mtp-v2" ExcludeAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
