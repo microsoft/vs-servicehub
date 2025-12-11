@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <DoNotReferenceNullable>true</DoNotReferenceNullable>
+    <IsTestProject>false</IsTestProject>
   </PropertyGroup>
 
 </Project>
