@@ -39,7 +39,7 @@
 	"devDependencies": {
 		"@microsoft/tsdoc": "0.15.1",
 		"@tsconfig/node18": "18.2.4",
-		"@types/jest": "29.5.12",
+		"@types/jest": "29.5.14",
 		"@types/msgpack-lite": "0.1.11",
 		"@types/node": "18.19.31",
 		"@types/string-hash": "1.1.3",
