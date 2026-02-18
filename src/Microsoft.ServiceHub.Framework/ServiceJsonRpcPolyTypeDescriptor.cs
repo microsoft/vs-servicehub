@@ -21,6 +21,8 @@ namespace Microsoft.ServiceHub.Framework;
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
 public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable<ServiceJsonRpcPolyTypeDescriptor>
 {
+	private string? displayName;
+
 	/// <inheritdoc cref="ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker, Type?, Formatters, MessageDelimiters, ITypeShapeProvider)" />
 	public ServiceJsonRpcPolyTypeDescriptor(ServiceMoniker serviceMoniker, Formatters formatter, MessageDelimiters messageDelimiter, ITypeShapeProvider typeShapeProvider)
 		: this(serviceMoniker, clientInterface: null, formatter, messageDelimiter, multiplexingStreamOptions: null, typeShapeProvider)
@@ -73,6 +75,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
 		this.TypeShapeProvider = copyFrom.TypeShapeProvider;
 		this.RpcTargetMetadata = copyFrom.RpcTargetMetadata;
+		this.displayName = copyFrom.displayName;
 	}
 
 	/// <summary>
@@ -167,11 +170,17 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
 
 	/// <summary>
+	/// Gets the display name to use for the <see cref="JsonRpc"/> instance.
+	/// </summary>
+	/// <value>The default value is the full name of this descriptor's type.</value>
+	public string DisplayName => this.displayName ?? $"{this.GetType().FullName} ({this.TypeShapeProvider.GetType().FullName})";
+
+	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
 	/// </summary>
 	[ExcludeFromCodeCoverage]
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter}";
+	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter} ({this.DisplayName})";
 
 	/// <inheritdoc/>
 #pragma warning disable CS0672 // Base Member overrides obsolete member, To be handled at ServiceJsonRpcPolyTypeDescriptor only later for backward compatibility.
@@ -349,6 +358,25 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		return this.CreateConnection(jsonRpc);
 	}
 
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="DisplayName" /> property set to a new value.
+	/// </summary>
+	/// <param name="displayName">The new value for the <see cref="DisplayName"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcPolyTypeDescriptor WithDisplayName(string displayName)
+	{
+		Requires.NotNullOrEmpty(displayName, nameof(displayName));
+		if (this.DisplayName == displayName)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcPolyTypeDescriptor)this.Clone();
+		result.displayName = displayName;
+		return result;
+	}
+
 	/// <inheritdoc />
 	public bool Equals(ServiceJsonRpcPolyTypeDescriptor? other)
 	{
@@ -509,7 +537,10 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	{
 		Requires.NotNull(handler, nameof(handler));
 
-		return new JsonRpc(handler);
+		return new JsonRpc(handler)
+		{
+			DisplayName = this.DisplayName,
+		};
 	}
 
 	/// <inheritdoc/>
