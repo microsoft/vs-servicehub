@@ -37,6 +37,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	{
 		this.Formatter = formatter;
 		this.MessageDelimiter = messageDelimiter;
+		this.DisplayName = this.DefaultDisplayName;
 	}
 
 	/// <summary>
@@ -54,6 +55,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		this.Formatter = formatter;
 		this.MessageDelimiter = messageDelimiter;
 		this.MultiplexingStreamOptions = multiplexingStreamOptions?.GetFrozenCopy();
+		this.DisplayName = this.DefaultDisplayName;
 	}
 
 	/// <summary>
@@ -68,6 +70,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		this.MultiplexingStreamOptions = copyFrom.MultiplexingStreamOptions;
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
 		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
+		this.DisplayName = copyFrom.DisplayName;
 	}
 
 	/// <summary>
@@ -154,11 +157,22 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public ImmutableArray<Type>? AdditionalServiceInterfaces { get; private set; }
 
 	/// <summary>
+	/// Gets the display name to use for the <see cref="JsonRpc"/> instance.
+	/// </summary>
+	/// <value>The default value is the full name of this descriptor's type.</value>
+	public string DisplayName { get; private set; }
+
+	/// <summary>
+	/// Gets the default display name based on this descriptor's type.
+	/// </summary>
+	private protected string DefaultDisplayName => this.GetType().FullName!;
+
+	/// <summary>
 	/// Gets a string for the debugger to display for this struct.
 	/// </summary>
 	[ExcludeFromCodeCoverage]
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter}";
+	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter} ({this.DisplayName})";
 
 	/// <summary>
 	/// Wraps some target object with a proxy that gives the caller the similar semantics to calling
@@ -275,6 +289,25 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 
 		var result = (ServiceJsonRpcDescriptor)this.Clone();
 		result.AdditionalServiceInterfaces = value;
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="DisplayName" /> property set to a new value.
+	/// </summary>
+	/// <param name="displayName">The new value for the <see cref="DisplayName"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcDescriptor WithDisplayName(string displayName)
+	{
+		Requires.NotNullOrEmpty(displayName, nameof(displayName));
+		if (this.DisplayName == displayName)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcDescriptor)this.Clone();
+		result.DisplayName = displayName;
 		return result;
 	}
 
@@ -405,7 +438,10 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	{
 		Requires.NotNull(handler, nameof(handler));
 
-		return new JsonRpc(handler);
+		return new JsonRpc(handler)
+		{
+			DisplayName = this.DisplayName,
+		};
 	}
 
 	/// <summary>
