@@ -9,16 +9,16 @@
     <MicroBuildVersion>2.0.208</MicroBuildVersion>
     <CodeAnalysisVersion>4.14.0</CodeAnalysisVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>4.14.0</MicrosoftCodeAnalysisAnalyzersVersion>
-    <VSThreadingVersion>17.13.2</VSThreadingVersion>
+    <VSThreadingVersion>18.0.37</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
     <PackageVersion Include="microsoft.testing.platform.msbuild" Version="2.0.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="17.12.20" />
-    <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="17.13.40008" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="17.13.7" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="17.13.40008" />
+    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="18.3.39" />
+    <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="18.5.38741" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.5.38741" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="18.5.38741" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33428.366" />
     <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit.v3" Version="17.11.66" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="17.13.40008" />
