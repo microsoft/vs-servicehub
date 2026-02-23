@@ -38,4 +38,6 @@ public class ServiceJsonRpcDescriptor_RpcProxyTests : ServiceRpcDescriptor_Proxy
 
 	protected override ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy)
 		=> ((ServiceJsonRpcDescriptor)descriptor).WithExceptionStrategy(strategy);
+
+	protected override string GetDisplayName(ServiceRpcDescriptor descriptor) => ((ServiceJsonRpcDescriptor)descriptor).DisplayName;
 }
