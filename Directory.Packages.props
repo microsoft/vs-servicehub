@@ -4,7 +4,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicrosoftTestingPlatformVersion>2.0.2</MicrosoftTestingPlatformVersion>
+    <MicrosoftTestingPlatformVersion>2.1.0</MicrosoftTestingPlatformVersion>
 
     <MicroBuildVersion>2.0.208</MicroBuildVersion>
     <CodeAnalysisVersion>4.14.0</CodeAnalysisVersion>
@@ -26,27 +26,27 @@
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
-    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.259" />
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.269" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.13.16" />
     <PackageVersion Include="NuGet.Protocol" Version="6.13.2" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.24.76" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.25.6" />
     <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Text.Json" Version="8.0.6" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
-    <PackageVersion Include="xunit.v3.core.mtp-v2" Version="3.2.1" />
+    <PackageVersion Include="xunit.v3.core.mtp-v2" Version="3.2.2" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.4.1" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="$(MicrosoftTestingPlatformVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingPlatformVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="$(MicrosoftTestingPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Internal.MicroBuild.NonShipping" Version="$(MicroBuildVersion)" />
-    <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.1" />
+    <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2" />
   </ItemGroup>
   <ItemGroup>
-    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.25609.16" />
+    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.26116.2" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
     <GlobalPackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" />

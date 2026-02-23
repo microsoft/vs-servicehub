@@ -6,7 +6,6 @@ using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
-using Xunit;
 
 public class ServiceRpcDescriptorTests
 {
@@ -94,6 +93,19 @@ public class ServiceRpcDescriptorTests
 		MockServiceRpcDescriptor copy = (MockServiceRpcDescriptor)descriptor.WithJoinableTaskFactory(SomeJoinableTaskFactory);
 		Assert.Same(SomeJoinableTaskFactory, copy.JoinableTaskFactory);
 		Assert.Null(descriptor.JoinableTaskFactory);
+	}
+
+	[Fact]
+	public void WithDisplayName()
+	{
+		ServiceJsonRpcDescriptor d = new(SomeMoniker, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders);
+		Assert.Equal(d.GetType().FullName, d.DisplayName);
+		ServiceJsonRpcDescriptor d2 = d.WithExceptionStrategy(StreamJsonRpc.ExceptionProcessing.CommonErrorData);
+		Assert.Equal(d.DisplayName, d2.DisplayName);
+		ServiceJsonRpcDescriptor d3 = d.WithDisplayName("Custom name");
+		Assert.Equal("Custom name", d3.DisplayName);
+		ServiceJsonRpcDescriptor d4 = d3.WithExceptionStrategy(StreamJsonRpc.ExceptionProcessing.ISerializable);
+		Assert.Equal("Custom name", d4.DisplayName);
 	}
 
 	[Fact]

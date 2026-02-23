@@ -343,6 +343,20 @@ public abstract partial class ServiceRpcDescriptor_ProxyTestBase : TestBase
 		ISomeServiceDisposable proxy = this.CreateProxy<ISomeServiceDisposable>(service, this.DescriptorWithAdditionalServiceInterfaces(this.SomeDescriptor, [typeof(ISomeService)]));
 	}
 
+	[Fact]
+	public void DisplayNameAppliedToJsonRpc()
+	{
+		ISomeService proxy = this.CreateProxy<ISomeService>(new SomeNonDisposableService());
+		if (proxy is IJsonRpcClientProxy { JsonRpc: { } jsonRpc })
+		{
+			Assert.Equal(this.GetDisplayName(this.SomeDescriptor), jsonRpc.DisplayName);
+		}
+		else
+		{
+			Assert.Skip("Proxy doesn't implement IJsonRpcClientProxy, so it doesn't have a JsonRpc property to check.");
+		}
+	}
+
 	[return: NotNullIfNotNull("target")]
 	protected abstract T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class;
@@ -354,6 +368,8 @@ public abstract partial class ServiceRpcDescriptor_ProxyTestBase : TestBase
 	protected abstract ServiceRpcDescriptor DescriptorWithAdditionalServiceInterfaces(ServiceRpcDescriptor descriptor, ImmutableArray<Type>? additionalServiceInterfaces);
 
 	protected abstract ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy);
+
+	protected abstract string GetDisplayName(ServiceRpcDescriptor descriptor);
 
 	private protected class SomeNonDisposableService : ISomeService, ISomeService2, ISomeService.IPublicInterfaceUnderInternalOne
 	{
