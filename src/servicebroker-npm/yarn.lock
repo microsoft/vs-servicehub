@@ -825,7 +825,7 @@ __metadata:
     "@tsconfig/node18": "npm:18.2.4"
     "@types/jest": "npm:29.5.12"
     "@types/msgpack-lite": "npm:0.1.11"
-    "@types/node": "npm:18.19.31"
+    "@types/node": "npm:18.19.130"
     "@types/string-hash": "npm:1.1.3"
     "@types/uuid": "npm:9.0.8"
     "@typescript-eslint/eslint-plugin": "npm:6.21.0"
@@ -1164,12 +1164,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:18.19.31":
-  version: 18.19.31
-  resolution: "@types/node@npm:18.19.31"
+"@types/node@npm:18.19.130":
+  version: 18.19.130
+  resolution: "@types/node@npm:18.19.130"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10/654194d4f3cc5867e5525a39647773a12c0c7175972bc4d288cdc74991fc969be2a9689267a3dc1cc5c5c7617e8f7c4769ac4829525726cd3e2f60eb238c1ff4
+  checksum: 10/ebb85c6edcec78df926de27d828ecbeb1b3d77c165ceef95bfc26e171edbc1924245db4eb2d7d6230206fe6b1a1f7665714fe1c70739e9f5980d8ce31af6ef82
   languageName: node
   linkType: hard
 
