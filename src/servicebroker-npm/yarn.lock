@@ -861,7 +861,7 @@ __metadata:
   resolution: "@microsoft/servicehub-framework@workspace:."
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
-    "@tsconfig/node18": "npm:18.2.6"
+    "@tsconfig/node20": "npm:20.1.0"
     "@types/jest": "npm:29.5.12"
     "@types/msgpack-lite": "npm:0.1.12"
     "@types/node": "npm:18.19.130"
@@ -1044,10 +1044,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/node18@npm:18.2.6":
-  version: 18.2.6
-  resolution: "@tsconfig/node18@npm:18.2.6"
-  checksum: 10/e3d907c20d04f0292288eb62af3481b11549eafdc686cd6357785083f9d00c99d49c5d9bdb10b1151d11cadbd8c39f2e0cb2644e2ba7612af7cbbcee38b01c3f
+"@tsconfig/node20@npm:20.1.0":
+  version: 20.1.0
+  resolution: "@tsconfig/node20@npm:20.1.0"
+  checksum: 10/be4c29944236c10433bafbbf5763cc26d7a095d894faf9bcefe527f7bd55a0aca56b9178b287579b8ad76af9624e9a0713bc1072e891e676e269fa933677386c
   languageName: node
   linkType: hard
 
