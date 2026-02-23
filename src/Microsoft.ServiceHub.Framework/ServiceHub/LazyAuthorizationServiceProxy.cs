@@ -9,6 +9,11 @@ namespace Microsoft.ServiceHub.Framework;
 /// <summary>
 /// An authorization service that waits until it is used before it is created. This is useful because most ServiceHub services do not use their AuthorizationService and so resources are wasted acquiring one.
 /// </summary>
+/// <remarks>
+/// When first used, this proxy attempts to acquire an <see cref="IAuthorizationService"/> from the provided <see cref="IServiceBroker"/> using <see cref="FrameworkServices.Authorization"/>.
+/// If the service broker is <see langword="null"/> or the authorization service is unavailable, this instance falls back to <see cref="DefaultAuthorizationService"/>, which returns <see langword="false"/> from authorization checks and provides no credentials.
+/// The selected implementation is cached and used for the lifetime of this proxy.
+/// </remarks>
 internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposable
 {
 	private readonly CancellationTokenSource disposalToken = new();
@@ -17,7 +22,7 @@ internal class LazyAuthorizationServiceProxy : IAuthorizationService, IDisposabl
 	/// <summary>
 	/// Initializes a new instance of the <see cref="LazyAuthorizationServiceProxy"/> class.
 	/// </summary>
-	/// <param name="serviceBroker">An optional service broker used to acquire the activation service.</param>
+	/// <param name="serviceBroker">An optional service broker used to acquire the <see cref="IAuthorizationService"/>.</param>
 	/// <param name="joinableTaskFactory">An optional <see cref="JoinableTaskFactory"/> to use when scheduling async work, to avoid deadlocks in an application with a main thread.</param>
 	public LazyAuthorizationServiceProxy(IServiceBroker? serviceBroker, JoinableTaskFactory? joinableTaskFactory)
 	{
