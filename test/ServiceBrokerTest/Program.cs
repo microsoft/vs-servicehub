@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
@@ -12,8 +13,14 @@ public class Program
 {
 	private static async Task<int> Main(string[] args)
 	{
-		Option<bool> fireEventSwitch = new("--event", "Fire an availability changed event.");
-		Option<bool> useNamedPipes = new("--named-pipes", "Offer services over named pipes instead of multiplexing.");
+		Option<bool> fireEventSwitch = new("--event")
+		{
+			Description = "Fire an availability changed event.",
+		};
+		Option<bool> useNamedPipes = new("--named-pipes")
+		{
+			Description = "Offer services over named pipes instead of multiplexing.",
+		};
 
 		var rootCommand = new RootCommand()
 		{
@@ -21,11 +28,18 @@ public class Program
 			useNamedPipes,
 		};
 
-		rootCommand.SetHandler(Run, fireEventSwitch, useNamedPipes);
-		return await rootCommand.InvokeAsync(args);
+		rootCommand.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
+		{
+			bool fireAvailabilityChanged = parseResult.GetValue(fireEventSwitch);
+			bool namedPipes = parseResult.GetValue(useNamedPipes);
+			await RunAsync(fireAvailabilityChanged, namedPipes, cancellationToken);
+		});
+
+		ParseResult result = rootCommand.Parse(args);
+		return await result.InvokeAsync();
 	}
 
-	private static async Task Run(bool fireAvailabilityChanged, bool useNamedPipes)
+	private static async Task RunAsync(bool fireAvailabilityChanged, bool useNamedPipes, CancellationToken cancellationToken)
 	{
 		using (Stream input = Console.OpenStandardInput())
 		using (Stream output = Console.OpenStandardOutput())
@@ -35,8 +49,8 @@ public class Program
 
 			// Do NOT arrange to dispose of the multiplexing stream, since we're using stdio pipes for it and they don't honor cancellation,
 			// which can result in deadlocks when trying to shut it down.
-			MultiplexingStream mxStream = await MultiplexingStream.CreateAsync(stdioStream);
-			MultiplexingStream.Channel channel = await mxStream.OfferChannelAsync(string.Empty).ConfigureAwait(false);
+			MultiplexingStream mxStream = await MultiplexingStream.CreateAsync(stdioStream, cancellationToken).ConfigureAwait(false);
+			MultiplexingStream.Channel channel = await mxStream.OfferChannelAsync(string.Empty, cancellationToken).ConfigureAwait(false);
 
 			if (useNamedPipes)
 			{
@@ -45,7 +59,7 @@ public class Program
 
 				if (fireAvailabilityChanged)
 				{
-					await serviceBroker.FireAvailabilityChangedAsync();
+					await serviceBroker.FireAvailabilityChangedAsync(cancellationToken);
 				}
 			}
 			else
@@ -54,7 +68,7 @@ public class Program
 				FrameworkServices.RemoteServiceBroker.ConstructRpc(relayBroker, channel);
 				if (fireAvailabilityChanged)
 				{
-					await serviceBroker.FireAvailabilityChangedAsync();
+					await serviceBroker.FireAvailabilityChangedAsync(cancellationToken);
 				}
 			}
 
