@@ -32,7 +32,7 @@ export class GlobalBrokeredServiceContainer implements IBrokeredServiceContainer
 
 	private readonly localUserCredentials = immutable.Map<string, string>()
 
-	constructor() {}
+	constructor() { }
 
 	register(
 		services: {
@@ -118,10 +118,14 @@ export class GlobalBrokeredServiceContainer implements IBrokeredServiceContainer
 	}
 
 	getSecureServiceBroker(options?: ServiceActivationOptions): IServiceBroker {
+		const clientCredentials = options?.clientCredentials
+			? immutable.Map<string, string>(Object.entries(options.clientCredentials))
+			: immutable.Map<string, string>()
+
 		return new View(
 			this,
 			ServiceAudience.process,
-			options?.clientCredentials ? immutable.Map(options.clientCredentials) : immutable.Map(),
+			clientCredentials,
 			ClientCredentialsPolicy.requestOverridesDefault
 		)
 	}
