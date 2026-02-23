@@ -237,6 +237,8 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 	protected override ServiceRpcDescriptor DescriptorWithExceptionStrategy(ServiceRpcDescriptor descriptor, ExceptionProcessing strategy)
 		=> ((ServiceJsonRpcDescriptor)descriptor).WithExceptionStrategy(strategy);
 
+	protected override string GetDisplayName(ServiceRpcDescriptor descriptor) => throw new NotSupportedException();
+
 	private protected class SomeService : SomeNonDisposableService, IServerWithVoidMethod
 	{
 		public void NoReturnValue() => this.NoReturnValue_Invoked = true;
