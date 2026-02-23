@@ -31,7 +31,7 @@
     <PackageVersion Include="NuGet.Protocol" Version="6.13.2" />
     <PackageVersion Include="StreamJsonRpc" Version="2.25.6" />
     <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.6" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
