@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "yarn@4.5.0",
+	"packageManager": "yarn@4.12.0",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
@@ -47,20 +47,21 @@
 		"@typescript-eslint/eslint-plugin": "8.56.0",
 		"@typescript-eslint/parser": "8.56.0",
 		"@yarnpkg/sdks": "3.2.3",
-		"eslint": "10.0.0",
+		"eslint": "10.0.1",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-import": "2.32.0",
 		"eslint-plugin-jest": "29.15.0",
 		"eslint-plugin-jsx-a11y": "6.10.2",
 		"eslint-plugin-prettier": "5.5.5",
 		"jest": "29.7.0",
+		"jest-util": "29.7.0",
 		"jshint": "2.13.6",
 		"nerdbank-gitversioning": "3.9.50",
 		"nyc": "17.1.0",
 		"prettier": "3.8.1",
-		"ts-jest": "29.1.2",
+		"ts-jest": "29.4.5",
 		"ts-node": "10.9.2",
-		"typescript": "5.4.5",
+		"typescript": "5.9.3",
 		"yargs": "18.0.0"
 	}
 }

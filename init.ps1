@@ -129,7 +129,7 @@ try {
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
-        node .yarn/releases/yarn-4.5.0.cjs # yarn, but avoids network isolation violation
+        node .yarn/releases/yarn-4.12.0.cjs # yarn, but avoids network isolation violation
         Set-Location ../..
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring packages."
