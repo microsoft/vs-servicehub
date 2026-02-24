@@ -211,6 +211,16 @@ public static class ServerFactory
 					totalRetries++;
 					fileNotFoundRetryCount++;
 				}
+				else if (ex is not TimeoutException && totalRetries >= maxRetries && ex is not ObjectDisposedException)
+				{
+					// On Linux, the NamedPipeClientStream.ConnectAsync with a very short timeout can sometimes
+					// throw exceptions other than TimeoutException (e.g. SocketException) due to a race condition
+					// in the runtime. When retries are exhausted (including FailFast where maxRetries=0),
+					// wrap the exception as TimeoutException to honor the FailFast contract.
+					throw new TimeoutException(
+						$"Failed to connect to pipe. Exception types encountered: {string.Join(", ", retryExceptions.Select(kv => $"{kv.Key}({kv.Value})"))}",
+						ex);
+				}
 				else
 				{
 					throw;
