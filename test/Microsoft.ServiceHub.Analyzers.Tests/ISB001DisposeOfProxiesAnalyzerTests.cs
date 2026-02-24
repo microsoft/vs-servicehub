@@ -615,6 +615,51 @@ class Test {
 		await Verify.VerifyAnalyzerAsync(test);
 	}
 
+	[Fact]
+	public async Task GetProxyAsync_StoredInField_DisposedInOverrideDisposeBool()
+	{
+		string test = Preamble + @"
+abstract class TestBase : IDisposable {
+    public void Dispose() => Dispose(true);
+    protected virtual void Dispose(bool disposing) { }
+}
+class Test : TestBase {
+    IFoo client;
+    async Task Foo(IServiceBroker sb) {
+        (this.client as IDisposable)?.Dispose();
+        this.client = await sb.GetProxyAsync<IFoo>(Stock.Descriptor);
+    }
+
+    protected override void Dispose(bool disposing) {
+        base.Dispose(disposing);
+        (this.client as IDisposable)?.Dispose();
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_StoredInField_DisposedInExplicitInterfaceDispose()
+	{
+		string test = Preamble + @"
+class Test : IDisposable {
+    IFoo client;
+    async Task Foo(IServiceBroker sb) {
+        (this.client as IDisposable)?.Dispose();
+        this.client = await sb.GetProxyAsync<IFoo>(Stock.Descriptor);
+    }
+
+    void IDisposable.Dispose() {
+        (this.client as IDisposable)?.Dispose();
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
 	[Fact(Skip = "Not yet implemented.")]
 	public async Task GetProxyAsync_AsyncFactoryPattern()
 	{
@@ -657,5 +702,41 @@ class Test {
 ";
 
 		await Verify.VerifyAnalyzerAsync(test, ISB001DisposeOfProxiesAnalyzer.ProxyMemberMustBeDisposedInDisposeMethodDescriptor);
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_InsideLambdaAssignedToField_ShouldNotRequireFieldDisposal()
+	{
+		string test = Preamble + @"
+class Test : IDisposable {
+    Microsoft.VisualStudio.Threading.AsyncLazy<IFoo> lazyClient;
+
+    public Test(IServiceBroker sb) {
+        lazyClient = new Microsoft.VisualStudio.Threading.AsyncLazy<IFoo>(async () => await sb.GetProxyAsync<IFoo>(Stock.Descriptor));
+    }
+
+    public void Dispose() { }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task ServiceBrokerClient_InsideLambdaAssignedToField_ShouldNotRequireFieldDisposal()
+	{
+		string test = Preamble + @"
+class Test : IDisposable {
+    Microsoft.VisualStudio.Threading.AsyncLazy<ServiceBrokerClient> lazyClient;
+
+    public Test(IServiceBroker sb) {
+        lazyClient = new Microsoft.VisualStudio.Threading.AsyncLazy<ServiceBrokerClient>(async () => new ServiceBrokerClient(sb));
+    }
+
+    public void Dispose() { }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
 	}
 }
