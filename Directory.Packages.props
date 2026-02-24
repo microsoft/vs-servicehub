@@ -5,16 +5,20 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <MicrosoftTestingPlatformVersion>2.1.0</MicrosoftTestingPlatformVersion>
-
     <MicroBuildVersion>2.0.208</MicroBuildVersion>
     <CodeAnalysisVersion>4.14.0</CodeAnalysisVersion>
+    <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>4.14.0</MicrosoftCodeAnalysisAnalyzersVersion>
-    <VSThreadingVersion>18.0.37</VSThreadingVersion>
+    <VSThreadingVersion>18.0.47</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
     <PackageVersion Include="microsoft.testing.platform.msbuild" Version="2.0.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="$(CodefixTestingVersion)" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="18.3.39" />
     <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="18.5.38741" />
     <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.5.38741" />
@@ -30,9 +34,9 @@
     <PackageVersion Include="Nerdbank.Streams" Version="2.13.16" />
     <PackageVersion Include="NuGet.Protocol" Version="6.13.2" />
     <PackageVersion Include="StreamJsonRpc" Version="2.25.6" />
-    <PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
+    <PackageVersion Include="System.Collections.Immutable" Version="10.0.2" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.6" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.2" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
     <PackageVersion Include="xunit.v3.core.mtp-v2" Version="3.2.2" />

@@ -1,18 +1,13 @@
 <Project>
   <PropertyGroup>
     <CodeAnalysisVersionForAnalyzers>4.14.0</CodeAnalysisVersionForAnalyzers>
-    <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- These versions carefully chosen to support VS 2022 Update 14. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(CodeAnalysisVersion)" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic" Version="$(CodeAnalysisVersion)" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(CodeAnalysisVersionForAnalyzers)" />
     <PackageVersion Update="System.Collections.Immutable" Version="9.0.0" />
     <PackageVersion Update="System.Memory" Version="4.5.5" />
