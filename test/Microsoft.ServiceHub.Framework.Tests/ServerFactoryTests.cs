@@ -193,7 +193,7 @@ public class ServerFactoryTests : TestBase
 	[InlineData(false, true)]
 	public async Task ClientCallsBeforeServerIsReady(bool failFast, bool spinningWait)
 	{
-		string channelName = ServerFactory.PrependPipePrefix(nameof(this.ClientCallsBeforeServerIsReady));
+		string channelName = ServerFactory.PrependPipePrefix($"{nameof(this.ClientCallsBeforeServerIsReady)}_{Guid.NewGuid():N}");
 		Task<Stream> clientTask = ServerFactory.ConnectAsync(
 			channelName,
 			new ServerFactory.ClientOptions { FailFast = failFast, CpuSpinOverFirstChanceExceptions = spinningWait },
