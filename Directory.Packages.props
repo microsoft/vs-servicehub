@@ -6,7 +6,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <MicrosoftTestingPlatformVersion>2.1.0</MicrosoftTestingPlatformVersion>
     <MicroBuildVersion>2.0.208</MicroBuildVersion>
-    <CodeAnalysisVersion>4.14.0</CodeAnalysisVersion>
+    <CodeAnalysisVersion>5.0.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>4.14.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <VSThreadingVersion>18.0.47</VSThreadingVersion>
