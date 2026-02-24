@@ -16,7 +16,7 @@ internal static class ReferencesHelper
 		.WithNuGetConfigFilePath(NuGetConfigPath)
 		.WithPackages(
 		[
-			new PackageIdentity("System.ComponentModel.Composition", "8.0.0"),
+			new PackageIdentity("System.ComponentModel.Composition", "9.0.0"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
 			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.14.15"),
 			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.13.22"),
