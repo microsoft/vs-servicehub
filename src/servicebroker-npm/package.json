@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "yarn@4.5.0",
+	"packageManager": "yarn@4.12.0",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
