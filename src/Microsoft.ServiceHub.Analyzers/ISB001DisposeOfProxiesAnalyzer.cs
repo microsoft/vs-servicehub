@@ -242,23 +242,27 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		// Look for an assignment to a local variable or member.
 		// Don't cross anonymous function boundaries, as proxies created inside a lambda
 		// should not be attributed to outer assignments.
+		bool insideAnonymousFunction = false;
 		IAssignmentOperation? assignmentOperation = Utils.FindAncestors<IAssignmentOperation>(operation).FirstOrDefault();
 		if (assignmentOperation is not null && CrossesAnonymousFunctionBoundary(operation, assignmentOperation))
 		{
 			assignmentOperation = null;
+			insideAnonymousFunction = true;
 		}
 
 		IVariableInitializerOperation? varInitializerOperation = Utils.FindAncestors<IVariableInitializerOperation>(operation).FirstOrDefault();
 		if (varInitializerOperation is not null && CrossesAnonymousFunctionBoundary(operation, varInitializerOperation))
 		{
 			varInitializerOperation = null;
+			insideAnonymousFunction = true;
 		}
 
 		if (assignmentOperation is null && varInitializerOperation is null)
 		{
 			// If we're inside an anonymous function, don't report. The proxy's lifecycle
 			// is managed by the lambda's consumer (e.g. AsyncLazy, factory pattern).
-			if (Utils.FindAncestors<IAnonymousFunctionOperation>(operation).Any()
+			if (insideAnonymousFunction
+				|| Utils.FindAncestors<IAnonymousFunctionOperation>(operation).Any()
 				|| Utils.FindAncestors<ILocalFunctionOperation>(operation).Any())
 			{
 				return;
