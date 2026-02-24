@@ -38,7 +38,7 @@ import {
 import { Descriptors } from './testAssets/Descriptors'
 import { Calculator } from './testAssets/calculatorService'
 
-describe.skip/*unstable*/('Service Broker tests', function () {
+describe('Service Broker tests', function () {
 	let defaultTokenSource: {
 		token: CancellationToken
 		cancel: (reason?: any) => void
@@ -332,28 +332,18 @@ describe.skip/*unstable*/('Service Broker tests', function () {
 					const s = new MultiplexingRemoteServiceBroker(channel)
 					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
 					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
-					await assert.rejects(
-						new Promise<number[]>(async (resolve, reject) => {
-							const values: number[] = []
-							const observer = new Observer<number>(
-								value => values.push(value),
-								error => {
-									if (error) {
-										reject(error)
-									} else {
-										resolve(values)
-									}
-								}
-							)
-							let disposed = false
-							const disposableObservable = observer as unknown as IDisposable
-							disposableObservable.dispose = () => {
-								disposed = true
-							}
-							await proxy?.observeNumbers(observer, 3, true)
-							assert(disposed)
-						})
+					const collectedErrors: any[] = []
+					const collectedValues: number[] = []
+					const failObserver = new Observer<number>(
+						value => collectedValues.push(value),
+						error => { if (error) { collectedErrors.push(error) } }
 					)
+					let wasDisposed = false
+					;(failObserver as unknown as IDisposable).dispose = () => { wasDisposed = true }
+					await proxy?.observeNumbers(failObserver, 3, true)
+					assert(wasDisposed, 'The observer must be disposed after the call completes')
+					assert.strictEqual(collectedErrors.length, 1, 'Exactly one error should be received from the failed observer')
+					proxy?.dispose()
 					broker.dispose()
 					await channel.completion
 				} finally {
