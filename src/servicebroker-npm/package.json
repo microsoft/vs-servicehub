@@ -43,7 +43,7 @@
 		"@types/msgpack-lite": "0.1.12",
 		"@types/node": "20.19.33",
 		"@types/string-hash": "1.1.3",
-		"@types/uuid": "9.0.8",
+		"@types/uuid": "10.0.0",
 		"@typescript-eslint/eslint-plugin": "8.56.0",
 		"@typescript-eslint/parser": "8.56.0",
 		"@yarnpkg/sdks": "3.2.3",
