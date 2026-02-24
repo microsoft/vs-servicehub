@@ -703,40 +703,4 @@ class Test {
 
 		await Verify.VerifyAnalyzerAsync(test, ISB001DisposeOfProxiesAnalyzer.ProxyMemberMustBeDisposedInDisposeMethodDescriptor);
 	}
-
-	[Fact]
-	public async Task GetProxyAsync_InsideLambdaAssignedToField_ShouldNotRequireFieldDisposal()
-	{
-		string test = Preamble + @"
-class Test : IDisposable {
-    Microsoft.VisualStudio.Threading.AsyncLazy<IFoo> lazyClient;
-
-    public Test(IServiceBroker sb) {
-        lazyClient = new Microsoft.VisualStudio.Threading.AsyncLazy<IFoo>(async () => await sb.GetProxyAsync<IFoo>(Stock.Descriptor));
-    }
-
-    public void Dispose() { }
-}
-";
-
-		await Verify.VerifyAnalyzerAsync(test);
-	}
-
-	[Fact]
-	public async Task ServiceBrokerClient_InsideLambdaAssignedToField_ShouldNotRequireFieldDisposal()
-	{
-		string test = Preamble + @"
-class Test : IDisposable {
-    Microsoft.VisualStudio.Threading.AsyncLazy<ServiceBrokerClient> lazyClient;
-
-    public Test(IServiceBroker sb) {
-        lazyClient = new Microsoft.VisualStudio.Threading.AsyncLazy<ServiceBrokerClient>(async () => new ServiceBrokerClient(sb));
-    }
-
-    public void Dispose() { }
-}
-";
-
-		await Verify.VerifyAnalyzerAsync(test);
-	}
 }

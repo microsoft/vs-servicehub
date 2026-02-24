@@ -91,7 +91,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 						}
 
 						// Arrange to study Dispose methods.
-						if (symbol.AllInterfaces.Contains(idisposable!))
+						if (symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, idisposable)))
 						{
 							symbolStartContext.RegisterOperationAction(Utils.DebuggableWrapper(c => this.AnalyzeDisposeMethods(c, undisposedMembers, disposeMethod)), OperationKind.MethodBody);
 						}
@@ -221,53 +221,13 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		}
 	}
 
-	private static bool CrossesAnonymousFunctionBoundary(IOperation inner, IOperation outer)
-	{
-		IOperation? current = inner;
-		while (current is not null && current != outer)
-		{
-			if (current is IAnonymousFunctionOperation or ILocalFunctionOperation)
-			{
-				return true;
-			}
-
-			current = current.Parent;
-		}
-
-		return false;
-	}
-
 	private static void EnsureAssignedValueIsDisposed(OperationAnalysisContext context, HashSet<ISymbol> membersThatMustBeDisposed, IMethodSymbol disposeMethod, IOperation operation)
 	{
 		// Look for an assignment to a local variable or member.
-		// Don't cross anonymous function boundaries, as proxies created inside a lambda
-		// should not be attributed to outer assignments.
-		bool insideAnonymousFunction = false;
 		IAssignmentOperation? assignmentOperation = Utils.FindAncestors<IAssignmentOperation>(operation).FirstOrDefault();
-		if (assignmentOperation is not null && CrossesAnonymousFunctionBoundary(operation, assignmentOperation))
-		{
-			assignmentOperation = null;
-			insideAnonymousFunction = true;
-		}
-
 		IVariableInitializerOperation? varInitializerOperation = Utils.FindAncestors<IVariableInitializerOperation>(operation).FirstOrDefault();
-		if (varInitializerOperation is not null && CrossesAnonymousFunctionBoundary(operation, varInitializerOperation))
-		{
-			varInitializerOperation = null;
-			insideAnonymousFunction = true;
-		}
-
 		if (assignmentOperation is null && varInitializerOperation is null)
 		{
-			// If we're inside an anonymous function, don't report. The proxy's lifecycle
-			// is managed by the lambda's consumer (e.g. AsyncLazy, factory pattern).
-			if (insideAnonymousFunction
-				|| Utils.FindAncestors<IAnonymousFunctionOperation>(operation).Any()
-				|| Utils.FindAncestors<ILocalFunctionOperation>(operation).Any())
-			{
-				return;
-			}
-
 			context.ReportDiagnostic(Diagnostic.Create(NonDisposalDescriptor, operation.Syntax.GetLocation(), "proxy"));
 			return;
 		}
@@ -379,7 +339,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 	private void AnalyzeInvocation(OperationAnalysisContext context, ImmutableArray<ISymbol> getProxyAsyncMethods, HashSet<ISymbol> membersThatMustBeDisposed, IMethodSymbol disposeMethod)
 	{
 		var operation = (IInvocationOperation)context.Operation;
-		if (getProxyAsyncMethods.Contains(operation.TargetMethod.OriginalDefinition))
+		if (getProxyAsyncMethods.Any(m => SymbolEqualityComparer.Default.Equals(m, operation.TargetMethod.OriginalDefinition)))
 		{
 			EnsureAssignedValueIsDisposed(context, membersThatMustBeDisposed, disposeMethod, operation);
 		}
@@ -391,7 +351,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		static bool IsDisposeMethod(IMethodSymbol methodSymbol) => methodSymbol.Name == "Dispose" && methodSymbol.Parameters.Length == 0 && methodSymbol.ReturnType?.SpecialType == SpecialType.System_Void;
 
 		var operation = (IMethodBodyOperation)context.Operation;
-		if (context.ContainingSymbol is IMethodSymbol methodSymbol && (IsDisposeMethod(methodSymbol) || IsDisposeBoolMethod(methodSymbol) || methodSymbol.ExplicitInterfaceImplementations.Contains(disposeMethod)))
+		if (context.ContainingSymbol is IMethodSymbol methodSymbol && (IsDisposeMethod(methodSymbol) || IsDisposeBoolMethod(methodSymbol) || methodSymbol.ExplicitInterfaceImplementations.Any(m => SymbolEqualityComparer.Default.Equals(m, disposeMethod))))
 		{
 			foreach (IOperation? op in operation.Descendants())
 			{
