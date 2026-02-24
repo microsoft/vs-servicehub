@@ -6,7 +6,6 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
   </PropertyGroup>
-  <Import Project="$(RepoRootPath)Directory.Packages.Analyzers.props" />
 
   <ItemGroup>
     <Compile Remove="Resources\**\*.cs" />
