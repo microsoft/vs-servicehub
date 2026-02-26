@@ -323,12 +323,38 @@ public abstract partial class GlobalBrokeredServiceContainer
 
 			try
 			{
-				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, cancellationToken).ConfigureAwait(false);
+				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, cancellationToken, isRemoteRequest: true).ConfigureAwait(false);
 				if (proffered is object)
 				{
 					RemoteServiceConnectionInfo connectionInfo = proffered is ProfferedViewIntrinsicService viewIntrinsic
 						? await viewIntrinsic.RequestServiceChannelAsync(this, serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false)
 						: await proffered.RequestServiceChannelAsync(serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false);
+
+					if (connectionInfo.IsEmpty)
+					{
+						if (this.container.traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+						{
+							this.container.traceSource.TraceEvent(
+								TraceEventType.Warning,
+								(int)TraceEvents.Request,
+								"Remote request for \"{0}\" found proffered source {1} but received empty connection info.",
+								serviceMoniker,
+								proffered.Source);
+						}
+					}
+					else
+					{
+						if (this.container.traceSource.Switch.ShouldTrace(TraceEventType.Information))
+						{
+							this.container.traceSource.TraceEvent(
+								TraceEventType.Information,
+								(int)TraceEvents.Request,
+								"Remote request for \"{0}\" is fulfilled by {1}.",
+								serviceMoniker,
+								proffered.Source);
+						}
+					}
+
 					return connectionInfo;
 				}
 
@@ -438,9 +464,9 @@ public abstract partial class GlobalBrokeredServiceContainer
 			}
 		}
 
-		internal async ValueTask<(IProffered? ProfferingSource, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken)
+		internal async ValueTask<(IProffered? ProfferingSource, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken, bool isRemoteRequest = false)
 		{
-			if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode))
+			if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode, isRemoteRequest))
 			{
 				return (proffered, errorCode);
 			}
@@ -449,7 +475,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			{
 				if (await this.LoadProfferingPackageAsync(serviceMoniker, cancellationToken).ConfigureAwait(false))
 				{
-					if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out proffered, out errorCode))
+					if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out proffered, out errorCode, isRemoteRequest))
 					{
 						return (proffered, errorCode);
 					}

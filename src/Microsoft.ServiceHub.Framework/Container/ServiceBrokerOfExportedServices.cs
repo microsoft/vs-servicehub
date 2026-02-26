@@ -3,7 +3,9 @@
 
 using System.Collections.Immutable;
 using System.Composition;
+using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Linq;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.VisualStudio.Threading;
@@ -80,8 +82,9 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			ServiceRpcDescriptor.RpcConnection? connection = null;
 			GlobalBrokeredServiceContainer container = await this.GetBrokeredServiceContainerAsync(cancellationToken).ConfigureAwait(false);
 			IServiceBroker contextualServiceBroker = container.GetSecureServiceBroker(options);
+			TraceSource traceSource = container.TraceSource;
 
-			Export<ServiceBrokerForExportedBrokeredServices>? export = await this.ActivateBrokeredServiceAsync(serviceMoniker, contextualServiceBroker, options, cancellationToken).ConfigureAwait(false);
+			Export<ServiceBrokerForExportedBrokeredServices>? export = await this.ActivateBrokeredServiceAsync(serviceMoniker, contextualServiceBroker, options, traceSource, cancellationToken).ConfigureAwait(false);
 			if (export is null)
 			{
 				return null;
@@ -94,6 +97,12 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				brokeredService = export.Value.CreateBrokeredService(cancellationToken);
 				if (brokeredService is null)
 				{
+					if (traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+					{
+						string available = string.Join(", ", export.Value.ExportedServiceMetadata.SelectMany(m => m.ServiceName.Zip(m.ServiceVersion, (n, v) => $"{n}/{v}")));
+						traceSource.TraceEvent(TraceEventType.Warning, 0, "MEF-exported brokered service \"{0}\": CreateBrokeredService returned null. Available MEF exports: [{1}]", serviceMoniker, available);
+					}
+
 					export.Dispose();
 					return null;
 				}
@@ -105,6 +114,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 					// This *could* be because the service is exported with a null version,
 					// which matches on any client version, yet the client requested a version
 					// that the service doesn't support.
+					if (traceSource.Switch.ShouldTrace(TraceEventType.Information))
+					{
+						traceSource.TraceEvent(TraceEventType.Information, 0, "MEF-exported brokered service \"{0}\": IExportedBrokeredService.Descriptor was null. The service was created but did not provide a descriptor.", serviceMoniker);
+					}
+
 					export.Dispose();
 					return null;
 				}
@@ -139,7 +153,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 						(brokeredService as IDisposable)?.Dispose();
 						export.Dispose();
 
-						export = await this.ActivateBrokeredServiceAsync(serviceMoniker, contextualServiceBroker, options, cancellationToken).ConfigureAwait(false);
+						export = await this.ActivateBrokeredServiceAsync(serviceMoniker, contextualServiceBroker, options, traceSource, cancellationToken).ConfigureAwait(false);
 						Assumes.NotNull(export);
 						brokeredService = export.Value.CreateBrokeredService(cancellationToken);
 						Assumes.NotNull(brokeredService);
@@ -177,8 +191,9 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			cancellationToken.ThrowIfCancellationRequested();
 			GlobalBrokeredServiceContainer container = await this.GetBrokeredServiceContainerAsync(cancellationToken).ConfigureAwait(false);
 			IServiceBroker contextualServiceBroker = container.GetSecureServiceBroker(options);
+			TraceSource traceSource = container.TraceSource;
 
-			Export<ServiceBrokerForExportedBrokeredServices>? export = await this.ActivateBrokeredServiceAsync(serviceDescriptor.Moniker, contextualServiceBroker, options, cancellationToken).ConfigureAwait(false);
+			Export<ServiceBrokerForExportedBrokeredServices>? export = await this.ActivateBrokeredServiceAsync(serviceDescriptor.Moniker, contextualServiceBroker, options, traceSource, cancellationToken).ConfigureAwait(false);
 			if (export is null)
 			{
 				return null;
@@ -193,6 +208,12 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				brokeredService = export.Value.CreateBrokeredService(cancellationToken);
 				if (brokeredService is null || brokeredService.Descriptor is null)
 				{
+					if (traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+					{
+						string available = string.Join(", ", export.Value.ExportedServiceMetadata.SelectMany(m => m.ServiceName.Zip(m.ServiceVersion, (n, v) => $"{n}/{v}")));
+						traceSource.TraceEvent(TraceEventType.Warning, 0, "MEF-exported brokered service \"{0}\": {1} (proxy path). Available MEF exports: [{2}]", serviceDescriptor.Moniker, brokeredService is null ? "CreateBrokeredService returned null" : "IExportedBrokeredService.Descriptor was null", available);
+					}
+
 					export.Dispose();
 					return null;
 				}
@@ -244,9 +265,10 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 	/// <param name="serviceMoniker">The moniker of the required service.</param>
 	/// <param name="contextualServiceBroker">The service broker that is created specifically for this brokered service.</param>
 	/// <param name="serviceActivationOptions">The activation options to use with this service.</param>
+	/// <param name="traceSource">The trace source for diagnostic logging.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>The MEF export representing this sharing boundary.</returns>
-	private async ValueTask<Export<ServiceBrokerForExportedBrokeredServices>?> ActivateBrokeredServiceAsync(ServiceMoniker serviceMoniker, IServiceBroker contextualServiceBroker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
+	private async ValueTask<Export<ServiceBrokerForExportedBrokeredServices>?> ActivateBrokeredServiceAsync(ServiceMoniker serviceMoniker, IServiceBroker contextualServiceBroker, ServiceActivationOptions serviceActivationOptions, TraceSource traceSource, CancellationToken cancellationToken)
 	{
 		Export<ServiceBrokerForExportedBrokeredServices> sb = this.ServiceBrokerFactory.CreateExport();
 		IAuthorizationService? authorizationService = null;
@@ -261,6 +283,12 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			{
 				if (!this.serviceRegistration.TryGetValue(new ServiceMoniker(serviceMoniker.Name, null), out serviceRegistration))
 				{
+					if (traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+					{
+						string registered = string.Join(", ", this.serviceRegistration.Keys.Select(k => k.ToString()));
+						traceSource.TraceEvent(TraceEventType.Warning, 0, "MEF-exported brokered service \"{0}\" not found among {1} registered services: [{2}]", serviceMoniker, this.serviceRegistration.Count, registered);
+					}
+
 					sb.Dispose();
 					return null;
 				}
@@ -270,6 +298,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 			Assumes.Present(authorizationService);
 			if (!serviceRegistration.AllowGuestClients && !await authorizationService.CheckAuthorizationAsync(ClientIsOwnerProtectedOperation, cancellationToken).ConfigureAwait(false))
 			{
+				if (traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+				{
+					traceSource.TraceEvent(TraceEventType.Warning, 0, "MEF-exported brokered service \"{0}\" activation denied: client is not owner and AllowGuestClients is false.", serviceMoniker);
+				}
+
 				sb.Dispose();
 				return null;
 			}

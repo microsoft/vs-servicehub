@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Task = System.Threading.Tasks.Task;
@@ -31,6 +32,11 @@ public partial class GlobalBrokeredServiceContainer
 		/// All requests will be denied if they would be fulfilled by a remote connection.
 		/// </summary>
 		DenyRemote,
+
+		/// <summary>
+		/// All requests will be denied if they originate from a remote consumer.
+		/// </summary>
+		DenyFromRemote,
 	}
 
 	/// <summary>
@@ -136,6 +142,7 @@ public partial class GlobalBrokeredServiceContainer
 	private class ChaosBrokeredService
 	{
 		[DataMember]
+		[JsonConverter(typeof(StringEnumConverter), typeof(CamelCaseNamingStrategy))]
 		internal ChaosBrokeredServiceAvailability Availability { get; set; }
 	}
 }
