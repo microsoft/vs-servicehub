@@ -3,6 +3,7 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
@@ -95,6 +96,32 @@ public class ChaosMonkeyTests : TestBase
 			default,
 			this.TimeoutToken);
 		Assert.True(connectionInfo.IsEmpty, "Remote request should have been denied by DenyFromRemote chaos config.");
+	}
+
+	[Fact]
+	public async Task DenyFromRemote_RemoteConsumer_RemoteFulfillmentSource_ServiceIsDenied()
+	{
+		// Verifies DenyFromRemote blocks remote-origin requests even when the service
+		// would be fulfilled by a remote ServiceSource (OtherProcessOnSameMachine).
+		this.RegisterAndProffer(ServiceAudience.AllClientsIncludingGuests);
+		using IDisposable remoteBrokerProffer = this.container.ProfferRemoteBroker(
+			new EmptyServiceBroker(),
+			ServiceSource.OtherProcessOnSameMachine,
+			[Descriptor.Moniker]);
+		await this.ApplyChaosConfigAsync("denyFromRemote");
+
+		IRemoteServiceBroker remoteBroker = this.container.GetLimitedAccessRemoteServiceBroker(
+			ServiceAudience.LiveShareGuest,
+			ImmutableDictionary<string, string>.Empty,
+			ClientCredentialsPolicy.RequestOverridesDefault);
+		await remoteBroker.HandshakeAsync(
+			new ServiceBrokerClientMetadata { SupportedConnections = RemoteServiceConnections.IpcPipe },
+			this.TimeoutToken);
+		RemoteServiceConnectionInfo connectionInfo = await remoteBroker.RequestServiceChannelAsync(
+			Descriptor.Moniker,
+			default,
+			this.TimeoutToken);
+		Assert.True(connectionInfo.IsEmpty, "Remote request should have been denied by DenyFromRemote chaos config even with a remote fulfillment source.");
 	}
 
 	[Fact]
@@ -197,6 +224,21 @@ public class ChaosMonkeyTests : TestBase
 		public void Dispose()
 		{
 		}
+	}
+
+	/// <summary>
+	/// A minimal <see cref="IServiceBroker"/> that returns no services, used to proffer a remote service source.
+	/// </summary>
+	private class EmptyServiceBroker : IServiceBroker
+	{
+#pragma warning disable CS0067 // Event is required by IServiceBroker but never raised in this mock
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
+#pragma warning restore CS0067
+
+		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken) => default;
+
+		public ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+			where T : class => default;
 	}
 
 	/// <summary>
