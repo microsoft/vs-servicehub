@@ -124,7 +124,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				cancellationToken.ThrowIfCancellationRequested();
 				options = this.ApplyOptionsFilter(options);
 
-				(proffered, errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, cancellationToken).ConfigureAwait(false);
+				(proffered, errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, isRemoteRequest: false, cancellationToken).ConfigureAwait(false);
 
 				if (proffered is object)
 				{
@@ -221,7 +221,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				cancellationToken.ThrowIfCancellationRequested();
 				options = this.ApplyOptionsFilter(options);
 
-				(proffered, errorCode) = await this.TryGetProfferingSourceAsync(serviceDescriptor.Moniker, cancellationToken).ConfigureAwait(false);
+				(proffered, errorCode) = await this.TryGetProfferingSourceAsync(serviceDescriptor.Moniker, isRemoteRequest: false, cancellationToken).ConfigureAwait(false);
 				if (proffered is object)
 				{
 					serviceDescriptor = await this.container.ApplyDescriptorSettingsInternalAsync(serviceDescriptor, this, options, clientRole: true, cancellationToken).ConfigureAwait(false);
@@ -323,7 +323,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 
 			try
 			{
-				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, cancellationToken, isRemoteRequest: true).ConfigureAwait(false);
+				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, isRemoteRequest: true, cancellationToken).ConfigureAwait(false);
 				if (proffered is object)
 				{
 					RemoteServiceConnectionInfo connectionInfo = proffered is ProfferedViewIntrinsicService viewIntrinsic
@@ -436,8 +436,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 				// then there's no meaningful change to the service from the consumer's perspective for example.
 				foreach (ServiceMoniker moniker in impactedAndObservedServices)
 				{
-					bool oldResult = this.container.TryGetProfferingSource(oldIndex, moniker, this.Audience, out IProffered? oldProffered, out _);
-					bool newResult = this.container.TryGetProfferingSource(moniker, this.Audience, out IProffered? newProffered, out _);
+					bool oldResult = this.container.TryGetProfferingSource(oldIndex, moniker, this.Audience, isRemoteRequest: false, out IProffered? oldProffered, out _);
+					bool newResult = this.container.TryGetProfferingSource(moniker, this.Audience, isRemoteRequest: false, out IProffered? newProffered, out _);
 					if (oldResult == newResult && oldProffered == newProffered)
 					{
 						// The source of this service hasn't actually changed, so don't tell consumers that it has.
@@ -464,9 +464,9 @@ public abstract partial class GlobalBrokeredServiceContainer
 			}
 		}
 
-		internal async ValueTask<(IProffered? ProfferingSource, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken, bool isRemoteRequest = false)
+		internal async ValueTask<(IProffered? ProfferingSource, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, bool isRemoteRequest, CancellationToken cancellationToken)
 		{
-			if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode, isRemoteRequest))
+			if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, isRemoteRequest, out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode))
 			{
 				return (proffered, errorCode);
 			}
@@ -475,7 +475,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			{
 				if (await this.LoadProfferingPackageAsync(serviceMoniker, cancellationToken).ConfigureAwait(false))
 				{
-					if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, out proffered, out errorCode, isRemoteRequest))
+					if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, isRemoteRequest, out proffered, out errorCode))
 					{
 						return (proffered, errorCode);
 					}

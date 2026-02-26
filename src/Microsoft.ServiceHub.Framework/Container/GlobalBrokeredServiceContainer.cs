@@ -540,7 +540,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 		ServiceSource? GetActiveSource(ServiceMoniker serviceMoniker)
 		{
-			if (this.TryGetProfferingSource(serviceMoniker, serviceAudience, out IProffered? proffered, out _))
+			if (this.TryGetProfferingSource(serviceMoniker, serviceAudience, isRemoteRequest: false, out IProffered? proffered, out _))
 			{
 				return proffered.Source;
 			}
@@ -696,14 +696,14 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// </summary>
 	/// <param name="serviceMoniker">The sought service.</param>
 	/// <param name="consumingAudience">The audience filter that applies to the <see cref="IServiceBroker"/> that has received the request.</param>
-	/// <param name="proffered">Receives the proffering wrapper if the service was found and exposed to the <paramref name="consumingAudience"/>.</param>
-	/// <param name="errorCode">Receives the error code that describes why we failed to get a proffering source for the service, if applicable.</param>
 	/// <param name="isRemoteRequest">Indicates whether the request originates from a remote consumer via <see cref="IRemoteServiceBroker.RequestServiceChannelAsync"/>.
 	/// A request arriving from another process on the same machine can be fulfilled by a service in this process, which is considered <see cref="ServiceSource.SameProcess"/>.</param>
+	/// <param name="proffered">Receives the proffering wrapper if the service was found and exposed to the <paramref name="consumingAudience"/>.</param>
+	/// <param name="errorCode">Receives the error code that describes why we failed to get a proffering source for the service, if applicable.</param>
 	/// <returns><see langword="true"/> if the service broker wrapper was found; <see langword="false"/> otherwise.</returns>
-	private bool TryGetProfferingSource(ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode, bool isRemoteRequest = false)
+	private bool TryGetProfferingSource(ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode)
 	{
-		return this.TryGetProfferingSource(this.profferedServiceIndex, serviceMoniker, consumingAudience, out proffered, out errorCode, isRemoteRequest);
+		return this.TryGetProfferingSource(this.profferedServiceIndex, serviceMoniker, consumingAudience, isRemoteRequest, out proffered, out errorCode);
 	}
 
 	/// <summary>
@@ -712,12 +712,12 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <param name="profferedServiceIndex">The index to search for the proffering party.</param>
 	/// <param name="serviceMoniker">The sought service.</param>
 	/// <param name="consumingAudience">The audience filter that applies to the <see cref="IServiceBroker"/> that has received the request.</param>
-	/// <param name="proffered">Receives the proffering wrapper if the service was found and exposed to the <paramref name="consumingAudience"/>.</param>
-	/// <param name="errorCode">Receives the error code that describes why we failed to get a proffering source for the service, if applicable.</param>
 	/// <param name="isRemoteRequest">Indicates whether the request originates from a remote consumer via <see cref="IRemoteServiceBroker.RequestServiceChannelAsync"/>.
 	/// A request arriving from another process on the same machine can still be fulfilled by a locally proffered service (e.g. <see cref="ServiceSource.SameProcess"/>).</param>
+	/// <param name="proffered">Receives the proffering wrapper if the service was found and exposed to the <paramref name="consumingAudience"/>.</param>
+	/// <param name="errorCode">Receives the error code that describes why we failed to get a proffering source for the service, if applicable.</param>
 	/// <returns><see langword="true"/> if the service broker wrapper was found; <see langword="false"/> otherwise.</returns>
-	private bool TryGetProfferingSource(ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> profferedServiceIndex, ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode, bool isRemoteRequest = false)
+	private bool TryGetProfferingSource(ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> profferedServiceIndex, ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode)
 	{
 		ChaosBrokeredServiceAvailability availability =
 			this.chaosMonkeyConfiguration?.BrokeredServices is { } chaos && chaos.TryGetValue(serviceMoniker, out ChaosBrokeredService? chaosConfig)
