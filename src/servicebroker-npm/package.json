@@ -38,7 +38,7 @@
 	},
 	"devDependencies": {
 		"@microsoft/tsdoc": "0.16.0",
-		"@tsconfig/node20": "20.1.0",
+		"@tsconfig/node20": "20.1.9",
 		"@types/jest": "29.5.14",
 		"@types/msgpack-lite": "0.1.12",
 		"@types/node": "20.19.33",
