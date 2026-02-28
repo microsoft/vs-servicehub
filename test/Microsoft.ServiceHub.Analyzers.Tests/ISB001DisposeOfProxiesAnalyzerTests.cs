@@ -615,6 +615,51 @@ class Test {
 		await Verify.VerifyAnalyzerAsync(test);
 	}
 
+	[Fact]
+	public async Task GetProxyAsync_StoredInField_DisposedInOverrideDisposeBool()
+	{
+		string test = Preamble + @"
+abstract class TestBase : IDisposable {
+    public void Dispose() => Dispose(true);
+    protected virtual void Dispose(bool disposing) { }
+}
+class Test : TestBase {
+    IFoo client;
+    async Task Foo(IServiceBroker sb) {
+        (this.client as IDisposable)?.Dispose();
+        this.client = await sb.GetProxyAsync<IFoo>(Stock.Descriptor);
+    }
+
+    protected override void Dispose(bool disposing) {
+        base.Dispose(disposing);
+        (this.client as IDisposable)?.Dispose();
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_StoredInField_DisposedInExplicitInterfaceDispose()
+	{
+		string test = Preamble + @"
+class Test : IDisposable {
+    IFoo client;
+    async Task Foo(IServiceBroker sb) {
+        (this.client as IDisposable)?.Dispose();
+        this.client = await sb.GetProxyAsync<IFoo>(Stock.Descriptor);
+    }
+
+    void IDisposable.Dispose() {
+        (this.client as IDisposable)?.Dispose();
+    }
+}
+";
+
+		await Verify.VerifyAnalyzerAsync(test);
+	}
+
 	[Fact(Skip = "Not yet implemented.")]
 	public async Task GetProxyAsync_AsyncFactoryPattern()
 	{
