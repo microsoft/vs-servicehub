@@ -57,7 +57,7 @@
 		"jest-util": "29.7.0",
 		"jshint": "2.13.6",
 		"nerdbank-gitversioning": "3.9.50",
-		"nyc": "17.1.0",
+		"nyc": "18.0.0",
 		"prettier": "3.8.1",
 		"ts-jest": "29.4.5",
 		"ts-node": "10.9.2",
