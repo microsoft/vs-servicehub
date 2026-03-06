@@ -190,7 +190,7 @@ describe('GlobalBrokeredServiceContainer', function () {
 		})
 
 		it('rejects unregistered services', function () {
-			expect(() => container.profferServiceFactory(Descriptors.tree, () => Promise.resolve(null))).toThrowError()
+			expect(() => container.profferServiceFactory(Descriptors.tree, () => Promise.resolve(null))).toThrow()
 		})
 
 		it('returns proffer disposal', function () {
