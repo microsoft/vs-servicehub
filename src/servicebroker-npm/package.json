@@ -10,7 +10,7 @@
 		"clean": "node ./node_modules/rimraf/bin.js ./js",
 		"watch": "tsc -w",
 		"test": "jest",
-		"lint": "eslint"
+		"lint": "eslint src test"
 	},
 	"nyc": {
 		"exclude": [
