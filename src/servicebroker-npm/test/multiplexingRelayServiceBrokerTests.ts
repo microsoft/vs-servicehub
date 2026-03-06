@@ -140,7 +140,7 @@ describe('MultiplexingRelayServiceBroker', function () {
 			rpc?.dispose()
 		} finally {
 			if (IDisposable.is(serviceBroker)) {
-				; (serviceBroker as IDisposable).dispose()
+				;(serviceBroker as IDisposable).dispose()
 			}
 		}
 	}
