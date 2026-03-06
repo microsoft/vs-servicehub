@@ -33,7 +33,7 @@
 		"nerdbank-streams": "^2.13.16",
 		"strict-event-emitter-types": "^2.0.0",
 		"string-hash": "^1.1.3",
-		"uuid": "^9.0.1",
+		"uuid": "^11.1.0",
 		"vscode-jsonrpc": "^8.1.0"
 	},
 	"devDependencies": {
@@ -43,7 +43,6 @@
 		"@types/msgpack-lite": "0.1.12",
 		"@types/node": "20.19.33",
 		"@types/string-hash": "1.1.3",
-		"@types/uuid": "9.0.8",
 		"@typescript-eslint/eslint-plugin": "8.56.0",
 		"@typescript-eslint/parser": "8.56.0",
 		"@yarnpkg/sdks": "3.2.3",
