@@ -4,7 +4,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicrosoftTestingPlatformVersion>2.1.0</MicrosoftTestingPlatformVersion>
+    <MicrosoftTestingPlatformVersion>2.2.0</MicrosoftTestingPlatformVersion>
     <MicroBuildVersion>2.0.208</MicroBuildVersion>
     <CodeAnalysisVersion>5.0.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
@@ -13,7 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
-    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="2.1.0" />
+    <PackageVersion Include="microsoft.testing.platform.msbuild" Version="2.2.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="$(CodeAnalysisVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
