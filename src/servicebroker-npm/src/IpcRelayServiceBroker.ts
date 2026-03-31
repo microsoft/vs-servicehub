@@ -8,7 +8,7 @@ import { ServiceMoniker } from './ServiceMoniker'
 import { IDisposable } from './IDisposable'
 import { IRemoteServiceBroker } from './IRemoteServiceBroker'
 import { ServiceBrokerEmitter, IServiceBroker } from './IServiceBroker'
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 import { createServer, Server } from 'net'
 import { BrokeredServicesChangedArgs } from './BrokeredServicesChangedArgs'
 import { RpcEventServer } from './ServiceRpcDescriptor'
@@ -48,8 +48,8 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 			return {}
 		}
 
-		const requestId = uuid()
-		const pipeName = path.join(PIPE_NAME_PREFIX, uuid())
+		const requestId = randomUUID()
+		const pipeName = path.join(PIPE_NAME_PREFIX, randomUUID())
 
 		const server = createServer(serverPipe => {
 			// Drop the entry from our map once the connection has been made.

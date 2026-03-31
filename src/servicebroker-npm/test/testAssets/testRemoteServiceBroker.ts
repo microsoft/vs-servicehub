@@ -8,7 +8,7 @@ import { ServiceBrokerClientMetadata } from '../../src/ServiceBrokerClientMetada
 import { ServiceMoniker } from '../../src/ServiceMoniker'
 import { ServiceBrokerEmitter } from '../../src/IServiceBroker'
 import { PIPE_NAME_PREFIX } from '../../src/constants'
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 import { createServer, Server } from 'net'
 import path from 'path'
 
@@ -24,7 +24,7 @@ export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceB
 	constructor() {
 		super()
 
-		this.testPipeName = path.join(PIPE_NAME_PREFIX, 'testRemoteServiceBroker' + uuid())
+		this.testPipeName = path.join(PIPE_NAME_PREFIX, 'testRemoteServiceBroker' + randomUUID())
 
 		this.server = createServer()
 		this.server.listen(this.testPipeName)
