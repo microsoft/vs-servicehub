@@ -91,7 +91,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 						}
 
 						// Arrange to study Dispose methods.
-						if (symbol.AllInterfaces.Contains(idisposable!))
+						if (symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, idisposable)))
 						{
 							symbolStartContext.RegisterOperationAction(Utils.DebuggableWrapper(c => this.AnalyzeDisposeMethods(c, undisposedMembers, disposeMethod)), OperationKind.MethodBody);
 						}
@@ -339,7 +339,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 	private void AnalyzeInvocation(OperationAnalysisContext context, ImmutableArray<ISymbol> getProxyAsyncMethods, HashSet<ISymbol> membersThatMustBeDisposed, IMethodSymbol disposeMethod)
 	{
 		var operation = (IInvocationOperation)context.Operation;
-		if (getProxyAsyncMethods.Contains(operation.TargetMethod.OriginalDefinition))
+		if (getProxyAsyncMethods.Any(m => SymbolEqualityComparer.Default.Equals(m, operation.TargetMethod.OriginalDefinition)))
 		{
 			EnsureAssignedValueIsDisposed(context, membersThatMustBeDisposed, disposeMethod, operation);
 		}
@@ -351,7 +351,7 @@ public class ISB001DisposeOfProxiesAnalyzer : DiagnosticAnalyzer
 		static bool IsDisposeMethod(IMethodSymbol methodSymbol) => methodSymbol.Name == "Dispose" && methodSymbol.Parameters.Length == 0 && methodSymbol.ReturnType?.SpecialType == SpecialType.System_Void;
 
 		var operation = (IMethodBodyOperation)context.Operation;
-		if (context.ContainingSymbol is IMethodSymbol methodSymbol && (IsDisposeMethod(methodSymbol) || IsDisposeBoolMethod(methodSymbol) || methodSymbol.ExplicitInterfaceImplementations.Contains(disposeMethod)))
+		if (context.ContainingSymbol is IMethodSymbol methodSymbol && (IsDisposeMethod(methodSymbol) || IsDisposeBoolMethod(methodSymbol) || methodSymbol.ExplicitInterfaceImplementations.Any(m => SymbolEqualityComparer.Default.Equals(m, disposeMethod))))
 		{
 			foreach (IOperation? op in operation.Descendants())
 			{
