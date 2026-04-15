@@ -9,7 +9,7 @@
     <CodeAnalysisVersion>5.3.0</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <MicrosoftCodeAnalysisAnalyzersVersion>4.14.0</MicrosoftCodeAnalysisAnalyzersVersion>
-    <VSThreadingVersion>18.0.57</VSThreadingVersion>
+    <VSThreadingVersion>18.0.61</VSThreadingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.IO.Redist" Version="6.1.0" />
@@ -19,7 +19,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
-    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="18.3.39" />
+    <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="18.3.62" />
     <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="18.7.411" />
     <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.7.384" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="18.7.411" />
@@ -33,10 +33,10 @@
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.269" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.13.16" />
     <PackageVersion Include="NuGet.Protocol" Version="7.3.1" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.25.8" />
-    <PackageVersion Include="System.Collections.Immutable" Version="10.0.2" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.25.9" />
+    <PackageVersion Include="System.Collections.Immutable" Version="10.0.3" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
-    <PackageVersion Include="System.Text.Json" Version="10.0.2" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.3" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
     <PackageVersion Include="xunit.v3.core.mtp-v2" Version="3.2.2" />
