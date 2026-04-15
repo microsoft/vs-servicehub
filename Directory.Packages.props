@@ -20,9 +20,9 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.CodeFix.Testing.XUnit" Version="$(CodefixTestingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Composition" Version="18.3.39" />
-    <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="18.6.38153" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.6.38203" />
-    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="18.6.38303" />
+    <PackageVersion Include="Microsoft.VisualStudio.Interop" Version="18.7.411" />
+    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.7.384" />
+    <PackageVersion Include="Microsoft.VisualStudio.Utilities" Version="18.7.411" />
     <PackageVersion Include="Microsoft.VisualStudio.Utilities.Testing" Version="17.5.33428.366" />
     <PackageVersion Include="Microsoft.VisualStudio.Sdk.TestFramework.Xunit.v3" Version="17.11.66" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="17.13.40008" />
