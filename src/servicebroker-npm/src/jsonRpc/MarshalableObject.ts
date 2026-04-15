@@ -59,7 +59,7 @@ export interface RpcMarshalable {
 	readonly _jsonRpcOptionalInterfaces?: number[]
 }
 
-export module RpcMarshalable {
+export namespace RpcMarshalable {
 	export function is(value: any): value is RpcMarshalable {
 		const candidate = value as RpcMarshalable | undefined
 		return typeof candidate?._jsonRpcMarshalableLifetime === 'string'
@@ -121,7 +121,7 @@ export interface MarshaledObjectProxy extends IDisposable {
 	_jsonrpcMarshaledHandle: number
 }
 
-export module MarshaledObjectProxy {
+export namespace MarshaledObjectProxy {
 	export function is(value: any): value is MarshaledObjectProxy {
 		const valueCandidate = value as MarshaledObjectProxy | undefined
 		return typeof valueCandidate?._jsonrpcMarshaledHandle === 'number'
@@ -166,7 +166,7 @@ function getJsonConnectionMarshalingTracker(messageConnection: MessageConnection
 	return jsonConnectionWithCounter._marshaledObjectTracker
 }
 
-export module IJsonRpcMarshaledObject {
+export namespace IJsonRpcMarshaledObject {
 	/**
 	 * Tests whether a given object implements {@link IJsonRpcMarshaledObject}.
 	 * @param value the value to be tested.

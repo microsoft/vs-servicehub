@@ -3112,7 +3112,7 @@ __metadata:
     jiti:
       optional: true
   bin:
-    eslint: bin/eslint.js
+    eslint: ./bin/eslint.js
   checksum: 10/583589ed96922aad9507c94339e843c8929c297d505ae7d70579cef56b435a10d8a48d24616eb4fb53fbe75d8655adb8e44add5d5b2bca100148d31d890ab3a4
   languageName: node
   linkType: hard
@@ -3534,7 +3534,7 @@ __metadata:
     package-json-from-dist: "npm:^1.0.0"
     path-scurry: "npm:^1.11.1"
   bin:
-    glob: dist/esm/bin.mjs
+    glob: ./dist/esm/bin.mjs
   checksum: 10/ab3bccfefcc0afaedbd1f480cd0c4a2c0e322eb3f0aa7ceaa31b3f00b825069f17cf0f1fc8b6f256795074b903f37c0ade37ddda6a176aa57f1c2bbfe7240653
   languageName: node
   linkType: hard
@@ -4990,7 +4990,7 @@ __metadata:
   version: 0.3.4
   resolution: "napi-postinstall@npm:0.3.4"
   bin:
-    napi-postinstall: lib/cli.js
+    napi-postinstall: ./lib/cli.js
   checksum: 10/5541381508f9e1051ff3518701c7130ebac779abb3a1ffe9391fcc3cab4cc0569b0ba0952357db3f6b12909c3bb508359a7a60261ffd795feebbdab967175832
   languageName: node
   linkType: hard
@@ -5154,7 +5154,7 @@ __metadata:
     test-exclude: "npm:^8.0.0"
     yargs: "npm:^15.0.2"
   bin:
-    nyc: bin/nyc.js
+    nyc: ./bin/nyc.js
   checksum: 10/f1723981b9cadc574c79fa53ba9b111023c95e4634fd7c740d9a1f0c70d890c9ce129bae8aea9ec14695dde04e5332f1eb803c0a46bd2b34efebd00f7017585b
   languageName: node
   linkType: hard
@@ -5393,7 +5393,7 @@ __metadata:
   version: 3.8.2
   resolution: "prettier@npm:3.8.2"
   bin:
-    prettier: bin/prettier.cjs
+    prettier: ./bin/prettier.cjs
   checksum: 10/fd784175bc600c07eb2c44d7ec4ee7133f95f26492adad61b6a15c06f438b858181faf096ab74163d7f49500ad80cff4479c6abb084e161a2e85a9df5974ecd1
   languageName: node
   linkType: hard
@@ -5586,7 +5586,7 @@ __metadata:
     glob: "npm:^13.0.3"
     package-json-from-dist: "npm:^1.0.1"
   bin:
-    rimraf: dist/esm/bin.mjs
+    rimraf: ./dist/esm/bin.mjs
   checksum: 10/dd98ec2ad7cd2cccae1c7110754d472eac8edb2bab8a8b057dce04edfe1433dab246a889b3fd85a66c78ca81caa1429caa0e736c7647f6832b04fd5d4dfb8ab8
   languageName: node
   linkType: hard
@@ -6173,8 +6173,8 @@ __metadata:
   version: 6.0.2
   resolution: "typescript@npm:6.0.2"
   bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
+    tsc: ./bin/tsc
+    tsserver: ./bin/tsserver
   checksum: 10/b9fc2fcee7ee8e5ca6f5138181964550531e18e2d20ecb71b802d4d495881e3444e0ef94cbb6e84eb2ba41e913f6feae3ca33cc722b32e6e6dfadb32d23b80e6
   languageName: node
   linkType: hard
@@ -6183,8 +6183,8 @@ __metadata:
   version: 6.0.2
   resolution: "typescript@patch:typescript@npm%3A6.0.2#optional!builtin<compat/typescript>::version=6.0.2&hash=5786d5"
   bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
+    tsc: ./bin/tsc
+    tsserver: ./bin/tsserver
   checksum: 10/e5501dfcf8c5b6b9a61f6fa53decc40187cebe3a2b7b2bd51c615007ad4cf6d58298461fef63294f6be9d5f2f33019b2a2e2bf02d9cb7d7f6ec94372bf24ffa2
   languageName: node
   linkType: hard
