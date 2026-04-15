@@ -13,7 +13,8 @@
 		"strict": true,
 		"strictFunctionTypes": true,
 		"strictNullChecks": true,
-		"target": "ES2022"
+		"target": "ES2022",
+		"types": ["jest", "node"]
 	},
 	"exclude": [
 		"node_modules",

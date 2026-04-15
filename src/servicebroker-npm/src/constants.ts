@@ -33,7 +33,7 @@ export enum RemoteServiceConnections {
 	ClrActivation = 1 << 3, // this is represented as 0x4 in .NET, keep it like that for consistency.
 }
 
-export module RemoteServiceConnections {
+export namespace RemoteServiceConnections {
 	export function contains(connections: RemoteServiceConnections | string, subset: RemoteServiceConnections) {
 		if (typeof connections === 'string') {
 			connections = parse(connections)
