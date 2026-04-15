@@ -1188,7 +1188,6 @@ __metadata:
     ts-node: "npm:10.9.2"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.56.0"
-    uuid: "npm:^13.0.0"
     vscode-jsonrpc: "npm:^8.1.0"
     yargs: "npm:18.0.0"
   languageName: unknown
@@ -6212,15 +6211,6 @@ __metadata:
   dependencies:
     punycode: "npm:^2.1.0"
   checksum: 10/b271ca7e3d46b7160222e3afa3e531505161c9a4e097febae9664e4b59912f4cbe94861361a4175edac3a03fee99d91e44b6a58c17a634bc5a664b19fc76fbcb
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^13.0.0":
-  version: 13.0.0
-  resolution: "uuid@npm:13.0.0"
-  bin:
-    uuid: ./dist-node/bin/uuid
-  checksum: 10/2742b24d1e00257e60612572e4d28679423469998cafbaf1fe9f1482e3edf9c40754b31bfdb3d08d71b29239f227a304588f75210b3b48f2609f0673f1feccef
   languageName: node
   linkType: hard
 
