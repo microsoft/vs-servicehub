@@ -487,6 +487,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		try
 		{
 			cancellationToken.ThrowIfCancellationRequested();
+			remoteConnectionInfo.ThrowIfOutsideAllowedConnections(this.clientMetadata.SupportedConnections);
 			if (remoteConnectionInfo.IsEmpty)
 			{
 				return null;
