@@ -13,7 +13,25 @@ namespace Microsoft.ServiceHub.Framework
 	/// </summary>
 	internal static class PolyfillExtensions
 	{
-#if !NET5_0_OR_GREATER
+#if !NET
+		/// <summary>
+		/// Disposes the stream.
+		/// </summary>
+		/// <param name="stream">The stream to be disposed.</param>
+		/// <returns>A task.</returns>
+		internal static ValueTask DisposeAsync(this Stream stream)
+		{
+			stream.Dispose();
+			return default;
+		}
+#endif
+	}
+
+	/// <summary>
+	/// Enum values to add to <see cref="PipeOptions"/> because they're missing for <em>some</em> target frameworks.
+	/// </summary>
+	internal static class PipeOptionsEx
+	{
 		/// <summary>
 		/// When used to create a <see cref="NamedPipeServerStream"/> instance, indicates
 		/// that the pipe can only be connected to a client created by the same user. When
@@ -27,18 +45,10 @@ namespace Microsoft.ServiceHub.Framework
 		/// <see href="https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeServerStream.Windows.cs#L102-L113">server</see> and
 		/// <see href="https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeClientStream.Windows.cs#L141-L151">client</see>.
 		/// </remarks>
-		internal const PipeOptions PipeOptionsCurrentUserOnly = (PipeOptions)0x2000_0000;
-
-		/// <summary>
-		/// Disposes the stream.
-		/// </summary>
-		/// <param name="stream">The stream to be disposed.</param>
-		/// <returns>A task.</returns>
-		internal static ValueTask DisposeAsync(this Stream stream)
-		{
-			stream.Dispose();
-			return default;
-		}
+#if NET
+		internal const PipeOptions CurrentUserOnly = PipeOptions.CurrentUserOnly;
+#else
+		internal const PipeOptions CurrentUserOnly = (PipeOptions)0x2000_0000;
 #endif
 	}
 }

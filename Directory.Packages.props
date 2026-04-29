@@ -36,6 +36,7 @@
     <PackageVersion Include="StreamJsonRpc" Version="2.25.9" />
     <PackageVersion Include="System.Collections.Immutable" Version="10.0.3" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
+    <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     <PackageVersion Include="System.Text.Json" Version="10.0.3" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
     <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />

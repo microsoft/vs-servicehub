@@ -144,7 +144,7 @@ internal class AsyncNamedPipeClientStream : PipeStream
 			FileShare.ReadWrite | FileShare.Delete,
 			this.GetSecurityAttributes(true),
 			System.IO.FileMode.Open,
-			(int)this.pipeOptions,
+			(int)(this.pipeOptions & ~PipeOptionsEx.CurrentUserOnly),
 			IntPtr.Zero);
 
 		if (handle.IsInvalid)
@@ -162,16 +162,9 @@ internal class AsyncNamedPipeClientStream : PipeStream
 
 	private void ValidateRemotePipeUser()
 	{
-#if NETFRAMEWORK
-		var isCurrentUserOnly = (this.pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) == PolyfillExtensions.PipeOptionsCurrentUserOnly;
-#elif NET5_0_OR_GREATER
-		var isCurrentUserOnly = (this.pipeOptions & PipeOptions.CurrentUserOnly) == PipeOptions.CurrentUserOnly;
-#endif
-
-#if NETFRAMEWORK || NET5_0_OR_GREATER
-		// No validation needed - pipe is not restricted to current user
-		if (!isCurrentUserOnly)
+		if ((this.pipeOptions & PipeOptionsEx.CurrentUserOnly) != PipeOptionsEx.CurrentUserOnly)
 		{
+			// No validation needed - pipe is not restricted to current user
 			return;
 		}
 
@@ -184,7 +177,6 @@ internal class AsyncNamedPipeClientStream : PipeStream
 			this.IsConnected = false;
 			throw new UnauthorizedAccessException();
 		}
-#endif
 	}
 
 	private Windows.Win32.Security.SECURITY_ATTRIBUTES GetSecurityAttributes(bool inheritable)

@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Security.Principal;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
@@ -20,11 +19,7 @@ public static class ServerFactory
 	/// <summary>
 	/// The standard pipe options to use.
 	/// </summary>
-#if NET5_0_OR_GREATER
-	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly;
-#else
-	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PolyfillExtensions.PipeOptionsCurrentUserOnly;
-#endif
+	internal const PipeOptions StandardPipeOptions = PipeOptions.Asynchronous | PipeOptionsEx.CurrentUserOnly;
 
 	private const int ConnectRetryIntervalMs = 50;
 	private const int MaxRetryAttemptsForFileNotFoundException = 3;
@@ -90,13 +85,6 @@ public static class ServerFactory
 
 		PipeOptions fullPipeOptions = StandardPipeOptions;
 		PipeOptions pipeOptions = StandardPipeOptions;
-
-#if NETFRAMEWORK
-		// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
-		// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
-		// that were not defined in the enumeration.
-		pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
-#endif
 		var name = TrimWindowsPrefixForDotNet(pipeName);
 		var maxRetries = options.FailFast ? 0 : int.MaxValue;
 		PipeStream? pipeStream = null;
@@ -246,7 +234,7 @@ public static class ServerFactory
 	/// </remarks>
 	private static void ValidateRemotePipeUser(NamedPipeClientStream clientStream, PipeOptions pipeOptions)
 	{
-		if ((pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) != PolyfillExtensions.PipeOptionsCurrentUserOnly)
+		if ((pipeOptions & PipeOptionsEx.CurrentUserOnly) != PipeOptionsEx.CurrentUserOnly)
 		{
 			return;
 		}
