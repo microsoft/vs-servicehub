@@ -1,6 +1,9 @@
 import { FullDuplexStream } from 'nerdbank-streams'
-import { connect } from 'net'
+import { existsSync, mkdtempSync, rmSync, statSync } from 'fs'
+import { connect, Socket } from 'net'
+import { tmpdir } from 'os'
 import path from 'path'
+import { PassThrough } from 'stream'
 import { BrokeredServicesChangedArgs } from '../src/BrokeredServicesChangedArgs'
 import { RemoteServiceConnections } from '../src/constants'
 import { FrameworkServices } from '../src/FrameworkServices'
@@ -70,6 +73,94 @@ describe('IpcRelayServiceBroker', function () {
 				expect(connectionInfo.requestId).toBeTruthy()
 			} finally {
 				client.dispose()
+			}
+		})
+
+		it('[CWE-377] uses a private temp directory for relay sockets', async function () {
+			const client = await getRemoteClientProxy()
+			try {
+				const connectionInfo = await client.requestServiceChannel(calcDescriptorUtf8Http.moniker)
+				expect(connectionInfo.pipeName).toBeTruthy()
+				expect(connectionInfo.requestId).toBeTruthy()
+
+				if (process.platform !== 'win32') {
+					const pipeDirectory = path.dirname(connectionInfo.pipeName!)
+					const relativePipeDirectory = path.relative(tmpdir(), pipeDirectory)
+					expect(relativePipeDirectory).toBeTruthy()
+					expect(relativePipeDirectory.startsWith('..')).toBe(false)
+					expect(path.isAbsolute(relativePipeDirectory)).toBe(false)
+					expect(statSync(pipeDirectory).mode & 0o777).toBe(0o700)
+				}
+
+				await client.cancelServiceRequest(connectionInfo.requestId!)
+			} finally {
+				client.dispose()
+			}
+		})
+
+		it('[CWE-377] closes the relay server after the first accepted connection', async function () {
+			const pipe = new PassThrough()
+			const pipeSpy = jest.spyOn(pipe, 'pipe')
+			const serviceBroker = new MockServiceBroker()
+			jest.spyOn(serviceBroker, 'getPipe').mockResolvedValue(pipe)
+			const relay = new IpcRelayServiceBroker(serviceBroker)
+			let firstSocket: Socket | undefined
+			let secondSocket: Socket | undefined
+			try {
+				const connectionInfo = await relay.requestServiceChannel(calcDescriptorUtf8Http.moniker)
+				expect(connectionInfo.pipeName).toBeTruthy()
+
+				firstSocket = await connectToPipe(connectionInfo.pipeName!)
+				await waitFor(() => expect(pipeSpy).toHaveBeenCalledTimes(1))
+
+				try {
+					secondSocket = await connectToPipe(connectionInfo.pipeName!)
+				} catch {
+					secondSocket = undefined
+				}
+				await delay(50)
+				expect(pipeSpy).toHaveBeenCalledTimes(1)
+			} finally {
+				firstSocket?.destroy()
+				secondSocket?.destroy()
+				pipe.destroy()
+				relay.dispose()
+			}
+		})
+
+		it('[CWE-377] cleans up the temp directory when listening fails', async function () {
+			const relayType = IpcRelayServiceBroker as unknown as {
+				createPipeDirectory: () => string
+				listen: (server: unknown, pipeName: string) => Promise<void>
+			}
+			const listenError = new Error('listen failed')
+			let pipeDirectory: string | undefined
+			const createPipeDirectorySpy =
+				process.platform === 'win32'
+					? undefined
+					: jest.spyOn(relayType, 'createPipeDirectory').mockImplementation(() => {
+						pipeDirectory = mkdtempSync(path.join(tmpdir(), 'servicehub-ipc-test-'))
+						return pipeDirectory
+					})
+			const listenSpy = jest.spyOn(relayType, 'listen').mockRejectedValue(listenError)
+			const relay = new IpcRelayServiceBroker(innerServer)
+			const channelMapRelay = relay as unknown as {
+				channelsOfferedToClient: Record<string, unknown>
+			}
+
+			try {
+				await expect(relay.requestServiceChannel(calcDescriptorUtf8Http.moniker)).rejects.toBe(listenError)
+				expect(channelMapRelay.channelsOfferedToClient).toStrictEqual({})
+				if (pipeDirectory) {
+					expect(existsSync(pipeDirectory)).toBe(false)
+				}
+			} finally {
+				listenSpy.mockRestore()
+				createPipeDirectorySpy?.mockRestore()
+				if (pipeDirectory) {
+					rmSync(pipeDirectory, { recursive: true, force: true })
+				}
+				relay.dispose()
 			}
 		})
 
@@ -144,5 +235,41 @@ describe('IpcRelayServiceBroker', function () {
 	async function getServiceBroker(): Promise<IServiceBroker & IDisposable> {
 		const remoteProxy = await getRemoteClientProxy()
 		return await RemoteServiceBroker.connectToRemoteServiceBroker(remoteProxy)
+	}
+
+	function connectToPipe(pipeName: string): Promise<Socket> {
+		return new Promise((resolve, reject) => {
+			const socket = connect(pipeName)
+			const timeout = setTimeout(() => {
+				socket.destroy()
+				reject(new Error('Timed out connecting to pipe.'))
+			}, 1000)
+
+			socket.once('connect', () => {
+				clearTimeout(timeout)
+				resolve(socket)
+			})
+			socket.once('error', err => {
+				clearTimeout(timeout)
+				reject(err)
+			})
+		})
+	}
+
+	async function waitFor(assert: () => void): Promise<void> {
+		for (let attempt = 0; attempt < 10; attempt++) {
+			try {
+				assert()
+				return
+			} catch {
+				await delay(10)
+			}
+		}
+
+		assert()
+	}
+
+	function delay(milliseconds: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, milliseconds))
 	}
 })
