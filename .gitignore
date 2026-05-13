@@ -359,3 +359,6 @@ MigrationBackup/
 
 # Analysis results
 *.sarif
+
+# C# Dev Kit cache files
+*.lscache
