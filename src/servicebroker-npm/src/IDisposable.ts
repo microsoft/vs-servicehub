@@ -8,7 +8,7 @@ export interface IDisposable {
 	dispose(): void
 }
 
-export module IDisposable {
+export namespace IDisposable {
 	/**
 	 * Tests whether a given object is disposable.
 	 * @param value the value to be tested.
