@@ -116,8 +116,6 @@ export class ProfferedServiceFactory extends (EventEmitter as new () => ServiceB
 	}
 
 	private invokeFactory(serviceBroker: IServiceBroker, moniker: ServiceMoniker, options: ServiceActivationOptions, cancellationToken: CancellationToken) {
-		const allowGuests = this.container.getServiceRegistration(ServiceMonikerValue.from(moniker))?.registration.allowGuestClients === true
-
 		return this.factory(moniker, options, serviceBroker, cancellationToken)
 	}
 }

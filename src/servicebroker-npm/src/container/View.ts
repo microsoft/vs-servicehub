@@ -2,9 +2,12 @@ import CancellationToken from 'cancellationtoken'
 import { EventEmitter } from 'events'
 import { Map } from 'immutable'
 import { RemoteServiceConnections } from '../constants'
+import { FrameworkServices } from '../FrameworkServices'
 import { IDisposable } from '../IDisposable'
+import { IAuthorizationService } from '../IAuthorizationService'
 import { IRemoteServiceBroker } from '../IRemoteServiceBroker'
 import { IServiceBroker } from '../IServiceBroker'
+import { ProtectedOperation } from '../ProtectedOperation'
 import { RemoteServiceConnectionInfo } from '../RemoteServiceConnectionInfo'
 import { ServiceActivationOptions } from '../ServiceActivationOptions'
 import { ServiceBrokerClientMetadata } from '../ServiceBrokerClientMetadata'
@@ -14,11 +17,14 @@ import { ClientCredentialsPolicy } from './ClientCredentialsPolicy'
 import { GlobalBrokeredServiceContainer } from './GlobalBrokeredServiceContainer'
 import { ServiceAudience } from './ServiceAudience'
 import { ServiceBrokerEmitter } from './ServiceBrokerEmitter'
+import { ServiceMonikerValue } from './ServiceMonikerValue'
 
 /**
  * A filtered view into a brokered service container.
  */
 export class View extends (EventEmitter as new () => ServiceBrokerEmitter) implements IServiceBroker, IRemoteServiceBroker {
+	private static readonly clientIsOwnerOperation = ProtectedOperation.create('ClientIsOwnerOfHost')
+
 	constructor(
 		private readonly container: GlobalBrokeredServiceContainer,
 		private readonly audience: ServiceAudience,
@@ -37,7 +43,7 @@ export class View extends (EventEmitter as new () => ServiceBrokerEmitter) imple
 	): Promise<(T & IDisposable) | null> {
 		cancellationToken?.throwIfCancelled()
 		options = this.applyOptionsFilter(options)
-		const source = await this.container.getProfferingSource(serviceDescriptor.moniker, this.audience)
+		const source = await this.getProfferingSource(serviceDescriptor.moniker, options, cancellationToken)
 		if (source?.proffered) {
 			return await source.proffered.getProxy<T>(serviceDescriptor, options, cancellationToken)
 		}
@@ -52,7 +58,7 @@ export class View extends (EventEmitter as new () => ServiceBrokerEmitter) imple
 	): Promise<NodeJS.ReadWriteStream | null> {
 		cancellationToken?.throwIfCancelled()
 		options = this.applyOptionsFilter(options)
-		const source = await this.container.getProfferingSource(serviceMoniker, this.audience)
+		const source = await this.getProfferingSource(serviceMoniker, options, cancellationToken)
 		if (source?.proffered) {
 			return await source.proffered.getPipe(serviceMoniker, options, cancellationToken)
 		}
@@ -75,7 +81,7 @@ export class View extends (EventEmitter as new () => ServiceBrokerEmitter) imple
 	): Promise<RemoteServiceConnectionInfo> {
 		cancellationToken?.throwIfCancelled()
 		options = this.applyOptionsFilter(options)
-		const source = await this.container.getProfferingSource(serviceMoniker, this.audience)
+		const source = await this.getProfferingSource(serviceMoniker, options, cancellationToken)
 		if (source?.proffered) {
 			return source.proffered.requestServiceChannel(serviceMoniker, options, cancellationToken)
 		}
@@ -100,5 +106,33 @@ export class View extends (EventEmitter as new () => ServiceBrokerEmitter) imple
 		localOptions.clientUICulture = this.clientUICulture
 
 		return localOptions
+	}
+
+	private async getProfferingSource(serviceMoniker: ServiceMoniker, options: ServiceActivationOptions, cancellationToken?: CancellationToken) {
+		const source = await this.container.getProfferingSource(serviceMoniker, this.audience)
+		if (!source.proffered || !this.requiresOwnerAuthorization(serviceMoniker)) {
+			return source
+		}
+
+		const authorizationService = await this.container
+			.getSecureServiceBroker(options)
+			.getProxy<IAuthorizationService>(FrameworkServices.authorization, undefined, cancellationToken)
+		try {
+			if (await authorizationService?.checkAuthorization(View.clientIsOwnerOperation, cancellationToken)) {
+				return source
+			}
+		} finally {
+			authorizationService?.dispose()
+		}
+
+		return { errorCode: source.errorCode }
+	}
+
+	private requiresOwnerAuthorization(serviceMoniker: ServiceMoniker) {
+		if ((this.audience & ServiceAudience.liveShareGuest) === ServiceAudience.none) {
+			return false
+		}
+
+		return this.container.getServiceRegistration(ServiceMonikerValue.from(serviceMoniker))?.registration.allowGuestClients === false
 	}
 }

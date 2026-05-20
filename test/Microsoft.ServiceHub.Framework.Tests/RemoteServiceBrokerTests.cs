@@ -9,6 +9,8 @@ using Nerdbank.Streams;
 
 public partial class RemoteServiceBrokerTests : TestBase
 {
+	private static int remoteDirectedActivationCount;
+
 	public RemoteServiceBrokerTests(ITestOutputHelper logger)
 		: base(logger)
 	{
@@ -296,9 +298,28 @@ public partial class RemoteServiceBrokerTests : TestBase
 		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
+			await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
 			ServiceActivationFailedException ex = await Assert.ThrowsAnyAsync<ServiceActivationFailedException>(() => broker.GetProxyAsync<object>(TestServices.DoesNotExist, this.TimeoutToken).AsTask());
 			Assert.IsType<FileNotFoundException>(ex.InnerException);
 		}
+	}
+
+	[Fact]
+	[Trait("CWE", "470")]
+	public async Task GetProxyAsync_RejectsClrActivationUnlessOffered()
+	{
+		remoteDirectedActivationCount = 0;
+		(System.IO.Pipelines.IDuplexPipe, System.IO.Pipelines.IDuplexPipe) pair = FullDuplexStream.CreatePipePair();
+		var server = new RemoteDirectedActivationServiceBroker();
+		FrameworkServices.RemoteServiceBroker.ConstructRpc(server, pair.Item1);
+		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
+		{
+			this.SetupTraceListener(broker);
+			ServiceActivationFailedException ex = await Assert.ThrowsAsync<ServiceActivationFailedException>(() => broker.GetProxyAsync<IDisposable>(TestServices.Calculator, this.TimeoutToken).AsTask());
+			Assert.IsType<InvalidOperationException>(ex.InnerException);
+		}
+
+		Assert.Equal(0, remoteDirectedActivationCount);
 	}
 
 	[Fact]
@@ -331,6 +352,11 @@ public partial class RemoteServiceBrokerTests : TestBase
 		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
+			if (kind == RemoteServiceBrokerKinds.LocalActivation)
+			{
+				await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
+			}
+
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
 			Assert.NotNull(rpc);
 			Assert.Equal(8, await rpc.AddAsync(3, 5));
@@ -362,6 +388,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 		using (RemoteServiceBroker broker = await RemoteServiceBroker.ConnectToServerAsync(pair.Item2, this.TimeoutToken))
 		{
 			this.SetupTraceListener(broker);
+			await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
 			ICalculator? rpc = await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
 			Assumes.NotNull(rpc);
 			Assert.Equal(8, await rpc.AddAsync(3, 5));
@@ -404,6 +431,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
 			broker.SetAuthorizationService(authService);
+			await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
 
 			await broker.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
 			Assert.Equal(CultureInfo.CurrentCulture, server.LastReceivedOptions.ClientCulture);
@@ -431,6 +459,7 @@ public partial class RemoteServiceBrokerTests : TestBase
 			this.SetupTraceListener(broker);
 			var authService = new MockAuthorizationService(new Dictionary<string, string> { { "c", "d" } });
 			broker.SetAuthorizationService(authService);
+			await broker.OfferLocalServiceHostAsync(this.TimeoutToken);
 			var options = new ServiceActivationOptions
 			{
 				ClientCulture = new CultureInfo("es"),
@@ -670,6 +699,43 @@ public partial class RemoteServiceBrokerTests : TestBase
 		}
 
 		protected virtual void OnAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
+	}
+
+	private class RemoteDirectedActivationServiceBroker : IRemoteServiceBroker
+	{
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged;
+
+		public Task HandshakeAsync(ServiceBrokerClientMetadata clientMetadata, CancellationToken cancellationToken)
+		{
+			Assert.False(clientMetadata.SupportedConnections.HasFlag(RemoteServiceConnections.ClrActivation));
+			return Task.CompletedTask;
+		}
+
+		public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
+		{
+			RemoteServiceConnectionInfo result = default;
+			result.ClrActivation = new RemoteServiceConnectionInfo.LocalCLRServiceActivation(typeof(RemoteDirectedActivationService).Assembly.Location, typeof(RemoteDirectedActivationService).FullName!);
+			return Task.FromResult(result);
+		}
+
+		public Task CancelServiceRequestAsync(Guid serviceRequestId)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected virtual void OnAvailabilityChanged(BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
+	}
+
+	private class RemoteDirectedActivationService : IDisposable
+	{
+		public RemoteDirectedActivationService()
+		{
+			remoteDirectedActivationCount++;
+		}
+
+		public void Dispose()
+		{
+		}
 	}
 
 	private class LocalActivationRemoteServiceBroker : IRemoteServiceBroker

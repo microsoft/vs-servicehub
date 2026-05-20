@@ -28,6 +28,10 @@ export class BE32MessageReader extends AbstractMessageReader implements MessageR
 					}
 
 					const payloadLength = headerBuffer.readInt32BE(0)
+					if (payloadLength < 0) {
+						throw new Error(`Invalid message length: ${payloadLength}.`)
+					}
+
 					const payload = await getBufferFrom(this.readable, payloadLength, false, cts.token)
 					const msg = await this.decoder(payload)
 					callback(msg)
