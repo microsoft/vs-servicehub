@@ -13,6 +13,54 @@ import { NodeStreamMessageReader, NodeStreamMessageWriter } from './NodeStreamMe
 import { invokeRpc, registerInstanceMethodsAsRpcTargets } from './jsonRpc/rpcUtilities'
 
 /**
+ * A callback invoked for each outgoing JSON-RPC message, before it is encoded and sent.
+ * May mutate the message to add top-level fields (e.g. `traceparent`, `tracestate`).
+ *
+ * @remarks
+ * Only the message object is provided. Additional top-level properties set on the message
+ * will be included in the encoded envelope (JSON or MessagePack), which is valid per JSON-RPC 2.0
+ * (unknown top-level fields are ignored by receivers that don't understand them).
+ *
+ * This is compatible with StreamJsonRpc's `ActivityTracingStrategy` on the .NET side,
+ * which reads/writes `traceparent` and `tracestate` as top-level envelope fields.
+ */
+export type OutgoingMessageFilter = (msg: Message) => void
+
+/**
+ * A callback invoked for each incoming JSON-RPC message, after it has been decoded.
+ * May inspect top-level fields on the message (e.g. `traceparent`, `tracestate`).
+ *
+ * @remarks
+ * The callback receives the decoded message object, which may contain additional top-level
+ * properties beyond the standard JSON-RPC fields. This can be used to extract metadata
+ * such as W3C Trace Context for distributed tracing.
+ */
+export type IncomingMessageFilter = (msg: Message) => void
+
+/**
+ * Options for configuring a {@link ServiceJsonRpcDescriptor}.
+ */
+export interface ServiceJsonRpcDescriptorOptions {
+	/**
+	 * Options to configure a multiplexing stream, on which channel 0 becomes the RPC channel.
+	 * If undefined, no multiplexing stream will be set up.
+	 */
+	multiplexingStreamOptions?: MultiplexingStreamOptions
+
+	/**
+	 * A callback invoked for each outgoing JSON-RPC message before encoding.
+	 * May mutate the message to add top-level fields such as `traceparent` for distributed tracing.
+	 */
+	outgoingMessageFilter?: OutgoingMessageFilter
+
+	/**
+	 * A callback invoked for each incoming JSON-RPC message after decoding.
+	 * May inspect top-level fields on the message such as `traceparent` for distributed tracing.
+	 */
+	incomingMessageFilter?: IncomingMessageFilter
+}
+
+/**
  * Constructs a JSON RPC message connection to a service
  */
 export class ServiceJsonRpcDescriptor extends ServiceRpcDescriptor {
@@ -28,15 +76,31 @@ export class ServiceJsonRpcDescriptor extends ServiceRpcDescriptor {
 	 * @param moniker The moniker this descriptor describes
 	 * @param formatter The formatter to use when sending messages
 	 * @param messageDelimiter The delimiter to use in separating messages
-	 * @param multiplexingStreamOptions Options to configure a multiplexing stream, on which channel 0 becomes the RPC channel. If undefined, no multiplexing stream will be set up.
+	 * @param multiplexingStreamOptionsOrOptions Options to configure a multiplexing stream, or a {@link ServiceJsonRpcDescriptorOptions} with additional configuration.
 	 */
 	public constructor(
 		moniker: ServiceMoniker,
 		public readonly formatter: Formatters,
 		public readonly messageDelimiter: MessageDelimiters,
-		multiplexingStreamOptions?: MultiplexingStreamOptions
+		multiplexingStreamOptionsOrOptions?: MultiplexingStreamOptions | ServiceJsonRpcDescriptorOptions
 	) {
 		super(moniker)
+
+		let multiplexingStreamOptions: MultiplexingStreamOptions | undefined
+		let outgoingMessageFilter: OutgoingMessageFilter | undefined
+		let incomingMessageFilter: IncomingMessageFilter | undefined
+
+		if (
+			multiplexingStreamOptionsOrOptions &&
+			('outgoingMessageFilter' in multiplexingStreamOptionsOrOptions || 'incomingMessageFilter' in multiplexingStreamOptionsOrOptions)
+		) {
+			const opts = multiplexingStreamOptionsOrOptions as ServiceJsonRpcDescriptorOptions
+			multiplexingStreamOptions = opts.multiplexingStreamOptions
+			outgoingMessageFilter = opts.outgoingMessageFilter
+			incomingMessageFilter = opts.incomingMessageFilter
+		} else {
+			multiplexingStreamOptions = multiplexingStreamOptionsOrOptions as MultiplexingStreamOptions | undefined
+		}
 
 		let contentTypeEncoder: (msg: Message) => Promise<Uint8Array>
 		let contentTypeDecoder: (buffer: Uint8Array) => Promise<Message>
@@ -52,6 +116,26 @@ export class ServiceJsonRpcDescriptor extends ServiceRpcDescriptor {
 			default:
 				throw new Error(`Unsupported formatter: ${formatter}.`)
 		}
+
+		if (outgoingMessageFilter) {
+			const filter = outgoingMessageFilter
+			const baseEncoder = contentTypeEncoder
+			contentTypeEncoder = async (msg: Message): Promise<Uint8Array> => {
+				filter(msg)
+				return baseEncoder(msg)
+			}
+		}
+
+		if (incomingMessageFilter) {
+			const filter = incomingMessageFilter
+			const baseDecoder = contentTypeDecoder
+			contentTypeDecoder = async (buffer: Uint8Array): Promise<Message> => {
+				const msg = await baseDecoder(buffer)
+				filter(msg)
+				return msg
+			}
+		}
+
 		this.multiplexingStreamOptions = multiplexingStreamOptions === undefined ? undefined : Object.freeze(multiplexingStreamOptions)
 
 		if (messageDelimiter === MessageDelimiters.HttpLikeHeaders) {
