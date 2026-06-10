@@ -33,7 +33,7 @@
 		"nerdbank-streams": "^2.13.16",
 		"strict-event-emitter-types": "^2.0.0",
 		"string-hash": "^1.1.3",
-		"vscode-jsonrpc": "^8.1.0"
+		"vscode-jsonrpc": "^9.0.0"
 	},
 	"devDependencies": {
 		"@microsoft/tsdoc": "0.16.0",
