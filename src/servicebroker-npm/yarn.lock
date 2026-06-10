@@ -3123,7 +3123,7 @@ __metadata:
     jiti:
       optional: true
   bin:
-    eslint: bin/eslint.js
+    eslint: ./bin/eslint.js
   checksum: 10/ab20a8fd250ee7c31a162d35a71e534a4f959736a7198661e5c963069b12880a53acfb349f3dc94fa82c91c74dd0594accbd878576bf65c33fa4225342ad7df6
   languageName: node
   linkType: hard

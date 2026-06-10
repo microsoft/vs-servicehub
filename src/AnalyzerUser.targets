@@ -1,5 +1,5 @@
 <Project>
-  <ItemGroup>
+  <ItemGroup Condition="'$(SkipRepoAnalyzers)' != 'true'">
     <AnalyzerProjectReference Include="$(RepoRootPath)src\Microsoft.ServiceHub.Analyzers\Microsoft.ServiceHub.Analyzers.csproj" />
     <AnalyzerProjectReference Include="$(RepoRootPath)src\Microsoft.ServiceHub.Analyzers.CSharp\Microsoft.ServiceHub.Analyzers.CSharp.csproj" />
     <AnalyzerProjectReference Include="$(RepoRootPath)src\Microsoft.ServiceHub.Analyzers.CodeFixes\Microsoft.ServiceHub.Analyzers.CodeFixes.csproj" />
