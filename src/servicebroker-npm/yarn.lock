@@ -1237,7 +1237,7 @@ __metadata:
     ts-node: "npm:10.9.2"
     typescript: "npm:6.0.2"
     typescript-eslint: "npm:8.59.3"
-    vscode-jsonrpc: "npm:^8.1.0"
+    vscode-jsonrpc: "npm:^9.0.0"
     yargs: "npm:18.0.0"
   languageName: unknown
   linkType: soft
@@ -6388,10 +6388,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vscode-jsonrpc@npm:^8.1.0":
-  version: 8.2.1
-  resolution: "vscode-jsonrpc@npm:8.2.1"
-  checksum: 10/5a30c837abc7a1e45aeca69bc95e9679f43808b56b01830c3b1616d7088782babe8d6ae03276640ff2ba704ddf18305cc68926629bfb0fd8bafff195decb3aad
+"vscode-jsonrpc@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "vscode-jsonrpc@npm:9.0.0"
+  checksum: 10/1adbfaef62c20af82415ad0f1ebd0764c2315e60a66e399712c271087e2551dfd3b03fb9ecd0a2621755d0a1316c7e79b45238a4a36d3d08c133cbda83a5471f
   languageName: node
   linkType: hard
 
