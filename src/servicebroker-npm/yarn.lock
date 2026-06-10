@@ -1213,7 +1213,7 @@ __metadata:
     "@tsconfig/node20": "npm:20.1.9"
     "@types/jest": "npm:30.0.0"
     "@types/msgpack-lite": "npm:0.1.12"
-    "@types/node": "npm:20.19.41"
+    "@types/node": "npm:20.19.42"
     "@types/string-hash": "npm:1.1.3"
     "@yarnpkg/sdks": "npm:3.3.0"
     await-semaphore: "npm:^0.1.3"
@@ -1565,12 +1565,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:20.19.41":
-  version: 20.19.41
-  resolution: "@types/node@npm:20.19.41"
+"@types/node@npm:20.19.42":
+  version: 20.19.42
+  resolution: "@types/node@npm:20.19.42"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10/5eb38cabe687130093681fe35e2ee2230c0717ee44a784881229c8ea9ecfb3626be87edb3940c9b60886dc93b5cb5c66a58a4ff44f1de3936e6af92b65a029b2
+  checksum: 10/8a8665740dd536ba286804f1b064b3de0d12ac2dd771a0f4d160e72000a2cdb9303dc4e3f76fcc655c5d4ff1f3408c85c27bb1d816ea897132a5d2f208d9f8cc
   languageName: node
   linkType: hard
 
