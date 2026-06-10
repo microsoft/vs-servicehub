@@ -37,6 +37,7 @@ try {
     if ($lastexitcode -ne 0) { throw }
 
     node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion --reset
+    if ($lastexitcode -ne 0) { throw }
 }
 finally {
     Pop-Location
