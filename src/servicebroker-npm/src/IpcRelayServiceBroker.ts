@@ -13,6 +13,8 @@ import { createServer, Server } from 'net'
 import { BrokeredServicesChangedArgs } from './BrokeredServicesChangedArgs'
 import { RpcEventServer } from './ServiceRpcDescriptor'
 import path = require('path')
+import { chmodSync, mkdtempSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
 
 /**
  * An IRemoteServiceBroker which proffers all services from another IServiceBroker
@@ -49,17 +51,36 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 		}
 
 		const requestId = randomUUID()
-		const pipeName = path.join(PIPE_NAME_PREFIX, randomUUID())
+		const pipeDirectory = process.platform === 'win32' ? undefined : IpcRelayServiceBroker.createPipeDirectory()
+		const pipeName = pipeDirectory ? path.join(pipeDirectory, randomUUID()) : path.join(PIPE_NAME_PREFIX, randomUUID())
 
-		const server = createServer(serverPipe => {
+		const server = createServer()
+		server.once('connection', serverPipe => {
 			// Drop the entry from our map once the connection has been made.
 			delete this.channelsOfferedToClient[requestId]
+			server.close()
 
 			serverPipe.pipe(pipe)
 			pipe.pipe(serverPipe)
 		})
-		server.listen(pipeName)
+		if (pipeDirectory) {
+			server.once('close', () => rmSync(pipeDirectory, { recursive: true, force: true }))
+		}
 		this.channelsOfferedToClient[requestId] = server
+
+		try {
+			await IpcRelayServiceBroker.listen(server, pipeName)
+		} catch (error) {
+			delete this.channelsOfferedToClient[requestId]
+			if (server.listening) {
+				server.close()
+			}
+			if (pipeDirectory) {
+				rmSync(pipeDirectory, { recursive: true, force: true })
+			}
+
+			throw error
+		}
 
 		return {
 			requestId,
@@ -91,5 +112,28 @@ export class IpcRelayServiceBroker extends (EventEmitter as new () => ServiceBro
 
 	private onAvailabilityChanged(args: BrokeredServicesChangedArgs) {
 		this.emit('availabilityChanged', args)
+	}
+
+	private static createPipeDirectory(): string {
+		const pipeDirectory = mkdtempSync(path.join(tmpdir(), 'servicehub-ipc-'))
+		chmodSync(pipeDirectory, 0o700)
+		return pipeDirectory
+	}
+
+	private static listen(server: Server, pipeName: string): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			const onError = (error: Error) => {
+				server.off('listening', onListening)
+				reject(error)
+			}
+			const onListening = () => {
+				server.off('error', onError)
+				resolve()
+			}
+
+			server.once('error', onError)
+			server.once('listening', onListening)
+			server.listen(pipeName)
+		})
 	}
 }

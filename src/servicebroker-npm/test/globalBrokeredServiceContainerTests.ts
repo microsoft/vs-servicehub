@@ -10,6 +10,9 @@ import {
 	IServiceBroker,
 	ServiceRpcDescriptor,
 	ClientCredentialsPolicy,
+	IAuthorizationService,
+	AuthorizationServiceEvents,
+	ProtectedOperation,
 } from '../src'
 import { Calculator } from './testAssets/calculatorService'
 import { EmptyRemoteServiceBroker } from './testAssets/emptyRemoteServiceBroker'
@@ -19,6 +22,9 @@ import { nextTick } from 'process'
 import immutable from 'immutable'
 import assert from 'assert'
 import { Descriptors } from './testAssets/Descriptors'
+import { EventEmitter } from 'events'
+import CancellationToken from 'cancellationtoken'
+import StrictEventEmitter from 'strict-event-emitter-types'
 
 describe('GlobalBrokeredServiceContainer', function () {
 	let container: GlobalBrokeredServiceContainer
@@ -57,7 +63,15 @@ describe('GlobalBrokeredServiceContainer', function () {
 
 			for (const name in offerings) {
 				const offering = offerings[name]
-				container.register([{ moniker: offering.descriptor.moniker, registration: new ServiceRegistration(offering.audience, false) }])
+				container.register([
+					{
+						moniker: offering.descriptor.moniker,
+						registration: new ServiceRegistration(
+							offering.audience,
+							(offering.audience & ServiceAudience.liveShareGuest) === ServiceAudience.liveShareGuest
+						),
+					},
+				])
 				container.profferServiceFactory(offering.descriptor, () => new Calculator())
 			}
 
@@ -86,6 +100,47 @@ describe('GlobalBrokeredServiceContainer', function () {
 			expect(guestBroker.getProxy(offerings.local.descriptor)).resolves.toBeNull()
 			expect(guestBroker.getProxy(offerings.everyone.descriptor)).resolves.toBeTruthy()
 			expect(guestBroker.getProxy(offerings.guest.descriptor)).resolves.toBeTruthy()
+		})
+
+		it('[CWE-1164] denies non-owner guest clients when guests are not allowed', async function () {
+			let serviceCreated = false
+			registerAuthorizationService(container, false)
+			container.register([
+				{ moniker: Descriptors.calculator.moniker, registration: new ServiceRegistration(ServiceAudience.allClientsIncludingGuests, false) },
+			])
+			container.profferServiceFactory(Descriptors.calculator, () => {
+				serviceCreated = true
+				return new Calculator()
+			})
+
+			const guestBroker = container.getLimitedAccessServiceBroker(
+				ServiceAudience.liveShareGuest,
+				immutable.Map(),
+				ClientCredentialsPolicy.filterOverridesRequest
+			)
+			const calc = await guestBroker.getProxy<ICalculatorService>(Descriptors.calculator)
+
+			expect(calc).toBeNull()
+			expect(serviceCreated).toBe(false)
+		})
+
+		it('[CWE-1164] allows owner guest clients when guests are not allowed', async function () {
+			registerAuthorizationService(container, true)
+			container.register([
+				{ moniker: Descriptors.calculator.moniker, registration: new ServiceRegistration(ServiceAudience.allClientsIncludingGuests, false) },
+			])
+			container.profferServiceFactory(Descriptors.calculator, () => new Calculator())
+
+			const guestBroker = container.getLimitedAccessServiceBroker(
+				ServiceAudience.liveShareGuest,
+				immutable.Map(),
+				ClientCredentialsPolicy.filterOverridesRequest
+			)
+			const calc = await guestBroker.getProxy<ICalculatorService>(Descriptors.calculator)
+
+			expect(calc).toBeTruthy()
+			await expect(calc?.add(3, 2)).resolves.toStrictEqual(5)
+			calc?.dispose()
 		})
 	})
 
@@ -443,4 +498,33 @@ function registerCommonServices(container: GlobalBrokeredServiceContainer) {
 			registration: new ServiceRegistration(ServiceAudience.local, false),
 		},
 	])
+}
+
+class TestAuthorizationService
+	extends (EventEmitter as new () => StrictEventEmitter<EventEmitter, AuthorizationServiceEvents>)
+	implements IAuthorizationService
+{
+	public checkCount = 0
+
+	public constructor(private readonly clientIsOwner: boolean) {
+		super()
+	}
+
+	public getCredentials(cancellationToken?: CancellationToken): Promise<{ [key: string]: string }> {
+		return Promise.resolve({})
+	}
+
+	public checkAuthorization(operation: ProtectedOperation, cancellationToken?: CancellationToken): Promise<boolean> {
+		this.checkCount++
+		return Promise.resolve(this.clientIsOwner)
+	}
+
+	public dispose() {}
+}
+
+function registerAuthorizationService(container: GlobalBrokeredServiceContainer, clientIsOwner: boolean) {
+	container.register([
+		{ moniker: FrameworkServices.authorization.moniker, registration: new ServiceRegistration(ServiceAudience.allClientsIncludingGuests, true) },
+	])
+	container.profferServiceFactory(FrameworkServices.authorization, () => new TestAuthorizationService(clientIsOwner))
 }

@@ -116,4 +116,42 @@ public class RemoteServiceConnectionInfoTests
 		Assert.True(info.IsOneOf(RemoteServiceConnections.IpcPipe | RemoteServiceConnections.Multiplexing));
 		Assert.False(info.IsOneOf(RemoteServiceConnections.None));
 	}
+
+	[Fact]
+	[Trait("CWE", "1289")]
+	public void ThrowIfOutsideAllowedConnections_RejectsDisallowedConnectionAmongAllowedConnections()
+	{
+		var info = new RemoteServiceConnectionInfo
+		{
+			MultiplexingChannelId = 5,
+			PipeName = "some pipe",
+		};
+
+		Assert.Throws<InvalidOperationException>(() => ThrowIfOutsideAllowedConnections(info, RemoteServiceConnections.Multiplexing));
+	}
+
+	[Fact]
+	[Trait("CWE", "1289")]
+	public void ThrowIfOutsideAllowedConnections_AllowsRequestIdWithoutConnectionMechanism()
+	{
+		var info = new RemoteServiceConnectionInfo
+		{
+			RequestId = Guid.NewGuid(),
+		};
+
+		ThrowIfOutsideAllowedConnections(info, RemoteServiceConnections.None);
+	}
+
+	private static void ThrowIfOutsideAllowedConnections(RemoteServiceConnectionInfo info, RemoteServiceConnections allowedConnections)
+	{
+		try
+		{
+			typeof(RemoteServiceConnectionInfo).GetMethod(nameof(ThrowIfOutsideAllowedConnections), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(info, [allowedConnections]);
+		}
+		catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException is object)
+		{
+			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+			throw;
+		}
+	}
 }

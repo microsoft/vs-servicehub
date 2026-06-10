@@ -204,25 +204,8 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <remarks>
 	/// The <see cref="FrameworkServices.RemoteServiceBroker"/> is used as the wire protocol.
 	/// </remarks>
-	public static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(IRemoteServiceBroker serviceBroker, MultiplexingStream multiplexingStream, CancellationToken cancellationToken = default)
-	{
-		Requires.NotNull(serviceBroker, nameof(serviceBroker));
-		Requires.NotNull(multiplexingStream, nameof(multiplexingStream));
-
-		try
-		{
-			ServiceBrokerClientMetadata clientMetadata = ClientMetadata;
-			await serviceBroker.HandshakeAsync(clientMetadata, cancellationToken).ConfigureAwait(false);
-			var result = new RemoteServiceBroker(serviceBroker, multiplexingStream, clientMetadata);
-			multiplexingStream.Completion.ApplyResultTo(result.completionSource);
-			return result;
-		}
-		catch
-		{
-			(serviceBroker as IDisposable)?.Dispose();
-			throw;
-		}
-	}
+	public static Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(IRemoteServiceBroker serviceBroker, MultiplexingStream multiplexingStream, CancellationToken cancellationToken = default)
+		=> ConnectToMultiplexingServerAsync(serviceBroker, multiplexingStream, ClientMetadata.SupportedConnections, cancellationToken);
 
 	/// <inheritdoc cref="ConnectToServerAsync(IDuplexPipe, TraceSource?, CancellationToken)"/>
 	public static Task<RemoteServiceBroker> ConnectToServerAsync(IDuplexPipe pipe, CancellationToken cancellationToken = default) => ConnectToServerAsync(pipe, traceSource: null, cancellationToken);
@@ -487,6 +470,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		try
 		{
 			cancellationToken.ThrowIfCancellationRequested();
+			remoteConnectionInfo.ThrowIfOutsideAllowedConnections(this.clientMetadata.SupportedConnections);
 			if (remoteConnectionInfo.IsEmpty)
 			{
 				return null;
@@ -596,6 +580,39 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	public void Dispose()
 	{
 		this.Dispose(true);
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="RemoteServiceBroker"/> class with a caller-specified subset of supported connection types.
+	/// </summary>
+	/// <param name="serviceBroker">
+	/// An existing proxy established to acquire remote services.
+	/// This object is considered "owned" by the returned <see cref="RemoteServiceBroker"/> and will be disposed when the returned value is disposed,
+	/// or disposed before this method throws.
+	/// </param>
+	/// <param name="multiplexingStream">A multiplexing stream that underlies the <paramref name="serviceBroker"/> proxy.</param>
+	/// <param name="supportedConnections">The supported connection types to advertise to the remote broker.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>An <see cref="IServiceBroker"/> that provides access to remote services.</returns>
+	internal static async Task<RemoteServiceBroker> ConnectToMultiplexingServerAsync(IRemoteServiceBroker serviceBroker, MultiplexingStream multiplexingStream, RemoteServiceConnections supportedConnections, CancellationToken cancellationToken)
+	{
+		Requires.NotNull(serviceBroker, nameof(serviceBroker));
+		Requires.NotNull(multiplexingStream, nameof(multiplexingStream));
+
+		try
+		{
+			ServiceBrokerClientMetadata clientMetadata = ClientMetadata;
+			clientMetadata.SupportedConnections &= supportedConnections;
+			await serviceBroker.HandshakeAsync(clientMetadata, cancellationToken).ConfigureAwait(false);
+			var result = new RemoteServiceBroker(serviceBroker, multiplexingStream, clientMetadata);
+			multiplexingStream.Completion.ApplyResultTo(result.completionSource);
+			return result;
+		}
+		catch
+		{
+			(serviceBroker as IDisposable)?.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>
