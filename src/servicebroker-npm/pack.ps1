@@ -15,6 +15,7 @@ Push-Location $PSScriptRoot
 try {
     if ($Restore) {
         node .yarn/releases/yarn-4.16.0.cjs
+        if ($lastexitcode -ne 0) { throw }
     }
 
     node .yarn/releases/yarn-4.16.0.cjs build # tsc
