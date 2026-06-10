@@ -20,7 +20,7 @@ try {
     node .yarn/releases/yarn-4.16.0.cjs build # tsc
     if ($lastexitcode -ne 0) { throw }
 
-    dotnet build # sign
+    dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw }
 
     node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion
