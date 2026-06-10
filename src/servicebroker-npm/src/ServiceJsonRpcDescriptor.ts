@@ -311,11 +311,15 @@ export class JsonRpcConnection extends RpcConnection {
 			messageConnection: this.messageConnection,
 			eventEmitter: new EventEmitter(),
 		}
-		this.messageConnection.onNotification((method: string, args: any[] | object | undefined) =>
+		this.messageConnection.onNotification((method: string, args: any[] | object | undefined): void => {
 			// Javascript really only supports receiving JSON-RPC messages with positional arguments,
 			// but in the case of named arguments, just pass the args object itself as the only argument and let the receiver sort it out.
-			Array.isArray(args) ? target.eventEmitter.emit(method, ...args) : target.eventEmitter.emit(method, args)
-		)
+			if (Array.isArray(args)) {
+				target.eventEmitter.emit(method, ...args)
+			} else {
+				target.eventEmitter.emit(method, args)
+			}
+		})
 		return new Proxy<IProxyTarget>(target, rpcProxy) as unknown as T & IDisposable
 	}
 
