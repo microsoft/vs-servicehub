@@ -14,16 +14,17 @@ Param(
 Push-Location $PSScriptRoot
 try {
     if ($Restore) {
-        node .yarn/releases/yarn-4.12.0.cjs
+        node .yarn/releases/yarn-4.16.0.cjs
+        if ($lastexitcode -ne 0) { throw }
     }
 
-    node .yarn/releases/yarn-4.12.0.cjs build # tsc
+    node .yarn/releases/yarn-4.16.0.cjs build # tsc
     if ($lastexitcode -ne 0) { throw }
 
-    dotnet build # sign
+    dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw }
 
-    node .yarn/releases/yarn-4.12.0.cjs nbgv-setversion
+    node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion
     if ($lastexitcode -ne 0) { throw }
 
     $Configuration = 'Debug'
@@ -32,10 +33,10 @@ try {
     }
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
-    node .yarn/releases/yarn-4.12.0.cjs pack --out $OutDir/%s-%v.tgz
+    node .yarn/releases/yarn-4.16.0.cjs pack --out $OutDir/%s-%v.tgz
     if ($lastexitcode -ne 0) { throw }
 
-    node .yarn/releases/yarn-4.12.0.cjs nbgv-setversion --reset
+    node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion --reset
 }
 finally {
     Pop-Location
