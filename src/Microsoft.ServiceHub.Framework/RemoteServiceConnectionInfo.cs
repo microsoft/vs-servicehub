@@ -83,9 +83,14 @@ public struct RemoteServiceConnectionInfo
 	/// <param name="allowedConnections">The set of supported activation details.</param>
 	internal void ThrowIfOutsideAllowedConnections(RemoteServiceConnections allowedConnections)
 	{
-		if (!this.IsEmpty && !this.IsOneOf(allowedConnections))
+		RemoteServiceConnections populatedConnections = RemoteServiceConnections.None;
+		populatedConnections |= this.ClrActivation is object ? RemoteServiceConnections.ClrActivation : RemoteServiceConnections.None;
+		populatedConnections |= !string.IsNullOrWhiteSpace(this.PipeName) ? RemoteServiceConnections.IpcPipe : RemoteServiceConnections.None;
+		populatedConnections |= this.MultiplexingChannelId.HasValue ? RemoteServiceConnections.Multiplexing : RemoteServiceConnections.None;
+
+		if ((populatedConnections & ~allowedConnections) != RemoteServiceConnections.None)
 		{
-			throw new Exception("Remote service broker responded with an unsupported connection type.");
+			throw new InvalidOperationException("Remote service broker responded with an unsupported connection type.");
 		}
 	}
 

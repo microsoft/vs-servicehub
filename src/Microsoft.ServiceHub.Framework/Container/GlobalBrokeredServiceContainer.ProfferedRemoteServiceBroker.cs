@@ -36,7 +36,7 @@ public partial class GlobalBrokeredServiceContainer
 				async () =>
 				{
 					return multiplexingStream is not null
-						? await Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(remoteServiceBroker, multiplexingStream).ConfigureAwait(false)
+						? await Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToMultiplexingServerAsync(remoteServiceBroker, multiplexingStream, GetSupportedConnections(source), CancellationToken.None).ConfigureAwait(false)
 						: await Microsoft.ServiceHub.Framework.RemoteServiceBroker.ConnectToServerAsync(remoteServiceBroker).ConfigureAwait(false);
 				},
 				this.container.joinableTaskFactory);
@@ -99,6 +99,17 @@ public partial class GlobalBrokeredServiceContainer
 		Task IRemoteServiceBroker.CancelServiceRequestAsync(Guid serviceRequestId)
 		{
 			return this.RemoteServiceBroker.CancelServiceRequestAsync(serviceRequestId);
+		}
+
+		private static RemoteServiceConnections GetSupportedConnections(ServiceSource source)
+		{
+			RemoteServiceConnections supportedConnections = RemoteServiceConnections.IpcPipe | RemoteServiceConnections.Multiplexing;
+			if (source == ServiceSource.UntrustedServer)
+			{
+				supportedConnections &= ~RemoteServiceConnections.IpcPipe;
+			}
+
+			return supportedConnections;
 		}
 
 		private void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args)

@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Microsoft.VisualStudio.Utilities.ServiceBroker;
+using Nerdbank.Streams;
 using Xunit;
 
 public class BrokeredServiceContainerTests : TestBase
@@ -132,6 +134,34 @@ public class BrokeredServiceContainerTests : TestBase
 	}
 
 	[Fact]
+	[Trait("CWE", "610")]
+	public async Task UntrustedRemoteBrokerWithMultiplexingDoesNotAdvertiseIpcPipe()
+	{
+		ServiceBrokerClientMetadata? receivedMetadata = null;
+		var remoteBroker = new MockRemoteServiceBroker
+		{
+			HandshakeCallback = metadata => receivedMetadata = metadata,
+		};
+
+		this.container.RegisterServices(new Dictionary<ServiceMoniker, ServiceRegistration>
+		{
+			{ Descriptor.Moniker, new ServiceRegistration(ServiceAudience.LiveShareGuest, null, allowGuestClients: true) },
+		});
+
+		(MultiplexingStream localMultiplexingStream, MultiplexingStream remoteMultiplexingStream) = await this.CreateMultiplexingStreamPairAsync();
+		using (localMultiplexingStream)
+		using (remoteMultiplexingStream)
+		using (this.container.ProfferRemoteBroker(remoteBroker, localMultiplexingStream, ServiceSource.UntrustedServer, [Descriptor.Moniker]))
+		{
+			Assert.Null(await this.serviceBroker.GetPipeAsync(Descriptor.Moniker, this.TimeoutToken));
+		}
+
+		Assert.NotNull(receivedMetadata);
+		RemoteServiceConnections advertisedRemoteConnections = receivedMetadata.Value.SupportedConnections & (RemoteServiceConnections.IpcPipe | RemoteServiceConnections.Multiplexing);
+		Assert.Equal(RemoteServiceConnections.Multiplexing, advertisedRemoteConnections);
+	}
+
+	[Fact]
 	public async Task ServiceRegistrationSpecifiesAdditionalProxyInterfaces()
 	{
 		this.container.RegisterServices(new Dictionary<ServiceMoniker, ServiceRegistration>
@@ -230,6 +260,14 @@ public class BrokeredServiceContainerTests : TestBase
 			this.lastRequestedMoniker = mk;
 			return new(new MockService());
 		});
+	}
+
+	private async Task<(MultiplexingStream Local, MultiplexingStream Remote)> CreateMultiplexingStreamPairAsync()
+	{
+		(Stream, Stream) pair = FullDuplexStream.CreatePair();
+		Task<MultiplexingStream> localMultiplexingStream = MultiplexingStream.CreateAsync(pair.Item1, this.CreateTestMXStreamOptions(), this.TimeoutToken);
+		Task<MultiplexingStream> remoteMultiplexingStream = MultiplexingStream.CreateAsync(pair.Item2, this.CreateTestMXStreamOptions(isServer: true), this.TimeoutToken);
+		return (await localMultiplexingStream, await remoteMultiplexingStream);
 	}
 
 	private class MockService : IMockService, IMockService2, IMockService3
