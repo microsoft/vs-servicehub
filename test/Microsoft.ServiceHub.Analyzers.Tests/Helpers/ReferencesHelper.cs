@@ -18,8 +18,8 @@ internal static class ReferencesHelper
 		[
 			new PackageIdentity("System.ComponentModel.Composition", "10.0.1"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "17.14.15"),
-			new PackageIdentity("Microsoft.VisualStudio.Validation", "17.13.22"),
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.16"),
+			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.1"),
 		]);
 
 	internal static IEnumerable<MetadataReference> GetReferences()
