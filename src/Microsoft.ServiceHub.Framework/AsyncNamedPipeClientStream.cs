@@ -132,12 +132,6 @@ internal class AsyncNamedPipeClientStream : PipeStream
 
 	private bool TryConnect()
 	{
-		// Immediately return if the pipe is not available
-		if (!WaitNamedPipe(this.pipePath, 1))
-		{
-			return false;
-		}
-
 		SafePipeHandle handle = CreateNamedPipeClient(
 			this.pipePath,
 			(int)this.access,
