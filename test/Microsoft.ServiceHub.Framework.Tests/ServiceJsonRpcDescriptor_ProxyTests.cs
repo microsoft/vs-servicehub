@@ -225,6 +225,33 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 		this.Logger.WriteLine(ex.ToString());
 	}
 
+	/// <summary>
+	/// Verifies that <see cref="ServiceJsonRpcDescriptor"/> uses the source-generated proxy
+	/// (a <see cref="Microsoft.ServiceHub.Framework.Reflection.ProxyBase"/>-derived class) when one is registered
+	/// for the contract via <see cref="JsonRpcContractAttribute"/>, instead of emitting a dynamic proxy.
+	/// </summary>
+	[Fact]
+	public void UsesSourceGeneratedProxyWhenAvailable()
+	{
+		ISomeService? proxy = this.CreateProxy<ISomeService>(new SomeNonDisposableService());
+		Assumes.NotNull(proxy);
+		Assert.IsAssignableFrom<Microsoft.ServiceHub.Framework.Reflection.ProxyBase>(proxy);
+		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
+	}
+
+	/// <summary>
+	/// Verifies that contracts without <see cref="JsonRpcContractAttribute"/> still get a dynamically-emitted proxy,
+	/// since no source-generated proxy class is registered for them.
+	/// </summary>
+	[Fact]
+	public void FallsBackToDynamicProxyForUnannotatedContract()
+	{
+		IServerWithVoidMethod? proxy = this.CreateProxy<IServerWithVoidMethod>(new SomeService());
+		Assumes.NotNull(proxy);
+		Assert.IsNotAssignableFrom<Microsoft.ServiceHub.Framework.Reflection.ProxyBase>(proxy);
+		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
+	}
+
 	protected override T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class
 	{

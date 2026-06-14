@@ -194,12 +194,48 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public override T? ConstructLocalProxy<T>(T? target)
 		where T : class
 	{
+		if (target is null)
+		{
+			return null;
+		}
+
 		ImmutableArray<Type> additionalServiceInterfaces = this.AdditionalServiceInterfaces is { Length: > 0 } addl
 			? (addl.Contains(typeof(T)) ? addl.Remove(typeof(T)) : addl)
 			: [];
-		return target != null
-			? LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces.AsSpan(), this.ExceptionStrategy)
-			: null;
+
+		// Prefer a source-generated proxy when one is available for T (and any additional interfaces).
+		// This avoids JIT'ing methods on the dynamic 'localRpcProxies_*' assembly emitted by LocalProxyGeneration
+		// and is also AOT-safe.
+		// If the target lacks any of the additional service interfaces, skip source-gen and let LocalProxyGeneration
+		// produce its standard ServiceCompositionException-wrapped failure (preserving existing public behavior).
+		if (typeof(T).IsInterface && IsTargetCompatibleWithAdditionalInterfaces(target, additionalServiceInterfaces))
+		{
+			Reflection.ProxyInputs sourceGenInputs = new()
+			{
+				ContractInterface = typeof(T),
+				AdditionalContractInterfaces = additionalServiceInterfaces.AsMemory(),
+				ExceptionStrategy = this.ExceptionStrategy,
+			};
+			if (Reflection.ProxyBase.TryCreateProxy(target, sourceGenInputs, out IClientProxy? sourceGenProxy))
+			{
+				return (T)sourceGenProxy;
+			}
+		}
+
+		return LocalProxyGeneration.CreateProxy<T>(target, additionalServiceInterfaces.AsSpan(), this.ExceptionStrategy);
+
+		static bool IsTargetCompatibleWithAdditionalInterfaces(object target, ImmutableArray<Type> additionalInterfaces)
+		{
+			foreach (Type addl in additionalInterfaces)
+			{
+				if (!addl.IsInstanceOfType(target))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
 	}
 
 	/// <inheritdoc />
