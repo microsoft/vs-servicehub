@@ -14,8 +14,14 @@ namespace Microsoft.ServiceHub.Framework.Reflection;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, IClientProxy, IJsonRpcLocalProxy
 {
+	// Sentinel value stored in <see cref="disposedHandlers"/> after disposal so that
+	// add/remove of <see cref="INotifyDisposable.Disposed"/> can detect the disposed state
+	// and invoke the handler immediately rather than rooting it in a backing field.
+	private static readonly object DisposedSentinel = new();
+
 	private readonly ProxyInputs proxyInputs;
 	private object? target;
+	private object? disposedHandlers;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ProxyBase"/> class.
@@ -31,7 +37,51 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	}
 
 	/// <inheritdoc/>
-	public event EventHandler? Disposed;
+	public event EventHandler? Disposed
+	{
+		add
+		{
+			object? oldValue = this.disposedHandlers;
+			while (true)
+			{
+				if (oldValue == DisposedSentinel)
+				{
+					value?.Invoke(this, EventArgs.Empty);
+					return;
+				}
+
+				object? newValue = Delegate.Combine((EventHandler?)oldValue, value);
+				object? prevValue = Interlocked.CompareExchange(ref this.disposedHandlers, newValue, oldValue);
+				if (prevValue == oldValue)
+				{
+					return;
+				}
+
+				oldValue = prevValue;
+			}
+		}
+
+		remove
+		{
+			object? oldValue = this.disposedHandlers;
+			while (true)
+			{
+				if (oldValue == DisposedSentinel)
+				{
+					return;
+				}
+
+				object? newValue = Delegate.Remove((EventHandler?)oldValue, value);
+				object? prevValue = Interlocked.CompareExchange(ref this.disposedHandlers, newValue, oldValue);
+				if (prevValue == oldValue)
+				{
+					return;
+				}
+
+				oldValue = prevValue;
+			}
+		}
+	}
 
 	/// <inheritdoc/>
 	public bool IsDisposed => this.target is null;
@@ -133,7 +183,14 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			return (T)(object)this;
 		}
 
-		return (T)CreateProxy(this.Target, this.proxyInputs with { AdditionalContractInterfaces = default, ContractInterface = typeof(T) }, startOrFail: false);
+		// If the wrapped target itself doesn't implement T, no proxy can satisfy the request.
+		// Match the IL-emit proxy semantics by returning null rather than throwing.
+		if (this.target is not T innerTarget)
+		{
+			return null;
+		}
+
+		return (T)CreateProxy(innerTarget, this.proxyInputs with { AdditionalContractInterfaces = default, ContractInterface = typeof(T) }, startOrFail: false);
 	}
 
 	/// <inheritdoc/>
@@ -148,7 +205,9 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 
 		(inner as IDisposable)?.Dispose();
 		inner = null;
-		this.Disposed?.Invoke(this, EventArgs.Empty);
+
+		object? handlers = Interlocked.Exchange(ref this.disposedHandlers, DisposedSentinel);
+		((EventHandler?)handlers)?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <inheritdoc/>
