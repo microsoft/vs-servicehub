@@ -26,7 +26,11 @@ steps:
       $feedUrl = [Uri]'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
       $feedSkipScheme = "//$($feedUrl.Host)$($feedUrl.PathAndQuery)"
       $password = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PAT))
-      "registry=$($feedUrl.AbsoluteUri)`nalways-auth=true`n$($feedSkipScheme):username=devdiv`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=$password" | Tee-Object -FilePath $HOME/.npmrc
+      $userConfigPath = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.npmrc'
+      $npmConfigContent = "registry=$($feedUrl.AbsoluteUri)`nalways-auth=true`n$($feedSkipScheme):username=devdiv`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=$password"
+      Set-Content -Path $userConfigPath -Value $npmConfigContent -Encoding utf8NoBOM
+      $env:NPM_CONFIG_USERCONFIG = $userConfigPath
+      Write-Host "##vso[task.setvariable variable=NPM_CONFIG_USERCONFIG]$userConfigPath"
     displayName: 🔏 Authenticate NPM registry
 
 - task: NodeTool@0
