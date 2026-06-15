@@ -6,4 +6,4 @@ if (!$registryLine) {
     throw "Could not find a registry entry in '$npmrcPath'."
 }
 
-($registryLine -replace '^\s*registry\s*=\s*', '').Trim()
+($registryLine -replace '^\s*registry\s*=\s*', '').Trim().TrimEnd('/')
