@@ -142,12 +142,19 @@ try {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-        corepack prepare $packageManager --activate
-        if ($lastexitcode -ne 0) {
-            throw "Failure while preparing package manager."
+        $npmRegistry = & ./Get-NpmRegistry.ps1
+        & ./Install-ArtifactsNpmCredProvider.ps1
+        try {
+            $env:COREPACK_NPM_REGISTRY = $npmRegistry
+            corepack prepare $packageManager --activate
+            if ($lastexitcode -ne 0) {
+                throw "Failure while preparing package manager."
+            }
+        }
+        finally {
+            Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
         }
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
-        & ./Install-ArtifactsNpmCredProvider.ps1
         corepack pnpm run auth-install
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring packages."

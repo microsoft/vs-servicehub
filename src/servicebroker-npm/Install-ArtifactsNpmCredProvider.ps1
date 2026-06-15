@@ -5,3 +5,8 @@ npm install --global @microsoft/artifacts-npm-credprovider --registry $credProvi
 if ($LASTEXITCODE -ne 0) {
     throw 'Failure while installing the Azure Artifacts npm credential provider.'
 }
+
+artifacts-npm-credprovider
+if ($LASTEXITCODE -ne 0) {
+    throw 'Failure while authenticating with the Azure Artifacts npm credential provider.'
+}
