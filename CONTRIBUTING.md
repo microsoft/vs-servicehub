@@ -37,8 +37,22 @@ to the feeds that packages for this repo come from, if any.
 
 ### NPM install
 
-The NPM package built from this repo restores its public dependencies from npmjs.org.
+The NPM package built from this repo restores its public dependencies from the Azure Artifacts public feed.
 `init.ps1` will install these dependencies automatically.
+
+If you need to install dependencies manually, first ensure the Azure Artifacts npm auth tool is installed:
+
+```ps1
+npm install --global @microsoft/artifacts-npm-credprovider --registry https://pkgs.dev.azure.com/artifacts-public/23934c1b-a3b5-4b70-9dd3-d1bef4cc72a0/_packaging/AzureArtifacts/npm/registry/
+```
+
+Then use the checked-in authenticated install script from `src/servicebroker-npm/package.json`:
+
+```ps1
+corepack pnpm run auth-install
+```
+
+The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm run auth-install` works too.
 
 #### NPM/pnpm Maintenance
 
