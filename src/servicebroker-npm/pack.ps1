@@ -14,10 +14,14 @@ Param(
 Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-    $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
-    corepack prepare $packageManager --activate
-    if ($lastexitcode -ne 0) { throw }
-    Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
+    try {
+        $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
+        corepack prepare $packageManager --activate
+        if ($lastexitcode -ne 0) { throw }
+    }
+    finally {
+        Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
+    }
 
     if ($Restore) {
         corepack pnpm install --frozen-lockfile
@@ -42,7 +46,7 @@ try {
     corepack pnpm pack --pack-destination $OutDir
     if ($lastexitcode -ne 0) { throw }
 
-    $Package = Get-Content package.json | ConvertFrom-Json
+    $Package = Get-Content package.json -Raw | ConvertFrom-Json
     $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
     $ExpectedTarballName = "$($Package.name.Replace('/', '-'))-$($Package.version).tgz"
     if ($PackedTarball -and $PackedTarball.Name -ne $ExpectedTarballName) {
