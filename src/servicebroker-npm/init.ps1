@@ -10,3 +10,4 @@ finally {
     Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
 }
 corepack pnpm install --dir "$PSScriptRoot" --frozen-lockfile
+if ($lastexitcode -ne 0) { throw "Failure while restoring packages." }

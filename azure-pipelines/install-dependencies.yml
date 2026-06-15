@@ -41,8 +41,15 @@ steps:
 - pwsh: |
     $packageManager = (Get-Content 'src/servicebroker-npm/package.json' -Raw | ConvertFrom-Json).packageManager
     $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
-    corepack enable
-    corepack prepare $packageManager --activate
+    try {
+      corepack enable
+      if ($LASTEXITCODE -ne 0) { throw "Failure while enabling Corepack." }
+      corepack prepare $packageManager --activate
+      if ($LASTEXITCODE -ne 0) { throw "Failure while preparing package manager." }
+    }
+    finally {
+      Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
+    }
   displayName: ⚙️ Enable Corepack
 
 - powershell: |
