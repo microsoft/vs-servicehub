@@ -7,7 +7,7 @@ parameters:
   default: true # If nuget.config pulls from the azure-public account, we need to authenticate when building on the devdiv account.
 
 steps:
-- ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
+- ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
   - template: WIFtoPATauth.yml
     parameters:
       wifServiceConnectionName: azure-public/vside package pull
@@ -16,27 +16,73 @@ steps:
 - task: NuGetAuthenticate@1
   displayName: 🔏 Authenticate NuGet feeds
   inputs:
-    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
+    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
       nuGetServiceConnections: azure-public/msft_consumption_public
-
-# Authenticate if we're running on the azure-public account, and not from a fork.
-- ${{ if and(eq(variables['system.collectionId'], '63b6279a-d2f1-4bc3-a21c-db7614e92831'),ne(variables['System.PullRequest.IsFork'], 'true')) }}:
-  - pwsh: |
-      $PAT = '$(System.AccessToken)'
-      "npmRegistries:`n  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:`n    npmAuthIdent: devdiv:$PAT`n    npmAlwaysAuth: true" | Tee-Object -FilePath $HOME/.yarnrc.yml
-    displayName: 🔏 Authenticate NPM registry
 
 - task: NodeTool@0
   inputs:
-    versionSpec: 18.x
+    versionSpec: 22.x
   displayName: ⚙️ Install Node.js
 
-- script: corepack enable
-  displayName: ⚙️ Install yarn
+- task: npmAuthenticate@0
+  displayName: 🔏 Authenticate NPM feeds
+  inputs:
+    workingFile: src/servicebroker-npm/.npmrc
+    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
+      customEndpoint: azure-public/msft_consumption_public
+
+- pwsh: |
+    function Save-CorepackEnvironment {
+      $result = @{}
+      foreach ($name in 'COREPACK_NPM_REGISTRY', 'COREPACK_NPM_TOKEN', 'COREPACK_NPM_USERNAME', 'COREPACK_NPM_PASSWORD') {
+        $result[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+      }
+
+      return $result
+    }
+
+    function Restore-CorepackEnvironment($savedEnvironment) {
+      foreach ($name in $savedEnvironment.Keys) {
+        if ($null -eq $savedEnvironment[$name]) {
+          Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+        } else {
+          [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')
+        }
+      }
+    }
+
+    $savedEnvironment = Save-CorepackEnvironment
+    $packageManager = (Get-Content 'src/servicebroker-npm/package.json' -Raw | ConvertFrom-Json).packageManager
+    $packageManagerName, $packageManagerVersion = $packageManager -split '@', 2
+    try {
+      . 'src/servicebroker-npm/Set-CorepackEnvironment.ps1'
+      if (!$env:COREPACK_NPM_TOKEN -and !$env:COREPACK_NPM_USERNAME -and $env:AZURE_ARTIFACTS_ACCESS_TOKEN) {
+        $env:COREPACK_NPM_TOKEN = $env:AZURE_ARTIFACTS_ACCESS_TOKEN
+      }
+      npm install --global "$packageManagerName@$packageManagerVersion" --registry $env:COREPACK_NPM_REGISTRY --userconfig src/servicebroker-npm/.npmrc
+      if ($LASTEXITCODE -ne 0) { throw "Failure while installing package manager." }
+      pnpm --version
+      if ($LASTEXITCODE -ne 0) { throw "Failure while verifying package manager." }
+    }
+    finally {
+      Restore-CorepackEnvironment $savedEnvironment
+    }
+  displayName: ⚙️ Install pnpm
+  env:
+    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
+      AZURE_ARTIFACTS_ACCESS_TOKEN: $(AzureArtifactsAccessToken)
 
 - powershell: |
     $AccessToken = '$(System.AccessToken)' # Avoid specifying the access token directly on the init.ps1 command line to avoid it showing up in errors
-    .\init.ps1 -AccessToken $AccessToken ${{ parameters['initArgs'] }} -UpgradePrerequisites -NoNuGetCredProvider
+    .\init.ps1 -AccessToken $AccessToken ${{ parameters['initArgs'] }} -UpgradePrerequisites -NoNuGetCredProvider -NoNpmRestore
+    Push-Location src/servicebroker-npm
+    try {
+      pnpm install --frozen-lockfile
+      if ($LASTEXITCODE -ne 0) { throw "Failure while restoring npm packages." }
+    }
+    finally {
+      Pop-Location
+    }
     dotnet --info
 
     # Print mono version if it is present.

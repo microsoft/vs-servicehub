@@ -37,28 +37,26 @@ to the feeds that packages for this repo come from, if any.
 
 ### NPM install
 
-The NPM packages built from this repo also require dependency installation.
+The NPM package built from this repo restores its public dependencies from the Azure Artifacts public feed.
 `init.ps1` will install these dependencies automatically.
 
-When a new package that is not already ingested by the NPM registry we use is required, authentication is required.
-Create a `$HOME/.yarnrc.yml` file with the following content, substituting your actual personal access token from the `azure-public` AzDO account for the `PAT` placeholder in the file.
-Note that this should be the original PAT, without any base64 encoding.
-
-```yml
-npmRegistries:
-  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:
-    npmAuthIdent: devdiv:PAT
-    npmAlwaysAuth: true
-```
-
-#### NPM/Yarn Maintenance
-
-Keeping yarn itself and its SDKs current while in Zero Install mode requires certain steps to be taken periodically.
-The following two commands update these:
+Then use the checked-in install script from the repo root:
 
 ```ps1
-yarn set version berry
-yarn dlx @yarnpkg/sdks vscode
+corepack pnpm --dir src/servicebroker-npm run auth-install
+```
+
+The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm --dir src/servicebroker-npm run auth-install` works too.
+
+#### NPM/pnpm Maintenance
+
+To update the pinned pnpm version and regenerate the lockfile, run:
+
+```ps1
+Push-Location src/servicebroker-npm
+corepack use pnpm@latest
+corepack pnpm install
+Pop-Location
 ```
 
 ## Building
@@ -71,12 +69,11 @@ Building, testing, and packing the .NET code in this repository can be done by u
 
 ### Typescript code
 
-* Build: `yarn build`
-* Test: `yarn test`
+* Build: `corepack pnpm --dir src/servicebroker-npm build`
+* Test: `corepack pnpm --dir src/servicebroker-npm test`
 * Pack: `pack.ps1`
 
-For a good language service experience in VS Code, follow [these instructions](https://yarnpkg.com/getting-started/editor-sdks#vscode).
-In particular, the part about selecting the "Workspace Version" of TypeScript.
+For a good language service experience in VS Code, select the workspace TypeScript version from `node_modules`.
 
 ## Testing
 

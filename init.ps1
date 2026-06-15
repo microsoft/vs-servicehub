@@ -28,6 +28,8 @@
     No effect if -NoPrerequisites is specified.
 .PARAMETER NoRestore
     Skips the package restore step.
+.PARAMETER NoNpmRestore
+    Skips the NPM package restore step.
 .PARAMETER NoToolRestore
     Skips the dotnet tool restore step.
 .PARAMETER Signing
@@ -60,6 +62,8 @@ Param (
     [switch]$UpgradePrerequisites,
     [Parameter()]
     [switch]$NoRestore,
+    [Parameter()]
+    [switch]$NoNpmRestore,
     [Parameter()]
     [switch]$NoToolRestore,
     [Parameter()]
@@ -120,20 +124,69 @@ try {
     }
 
     if (!$NoToolRestore -and $PSCmdlet.ShouldProcess("dotnet tool", "restore")) {
-        dotnet tool restore @RestoreArguments
+        $toolRestoreAttempts = 2
+        for ($attempt = 1; $attempt -le $toolRestoreAttempts; $attempt++) {
+            dotnet tool restore @RestoreArguments
+            if ($lastexitcode -eq 0) {
+                break
+            }
+
+            if ($attempt -lt $toolRestoreAttempts) {
+                Write-Warning "dotnet tool restore failed on attempt $attempt of $toolRestoreAttempts. Retrying in 5 seconds..."
+                Start-Sleep -Seconds 5
+            }
+        }
+
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring dotnet CLI tools."
         }
     }
 
-    if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
+    if (!$NoRestore -and !$NoNpmRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
-        node .yarn/releases/yarn-4.16.0.cjs # yarn, but avoids network isolation violation
-        Set-Location ../..
+        $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+        $corepackEnvironment = @{}
+        foreach ($corepackEnvironmentVariable in 'COREPACK_NPM_REGISTRY', 'COREPACK_NPM_TOKEN', 'COREPACK_NPM_USERNAME', 'COREPACK_NPM_PASSWORD') {
+            $corepackEnvironment[$corepackEnvironmentVariable] = [Environment]::GetEnvironmentVariable($corepackEnvironmentVariable, 'Process')
+        }
+
+        try {
+            if ($env:GITHUB_ACTIONS -ne 'true') {
+                . ./Set-CorepackEnvironment.ps1
+            }
+            corepack prepare $packageManager --activate
+            if ($lastexitcode -ne 0) {
+                throw "Failure while preparing package manager."
+            }
+        }
+        finally {
+            foreach ($corepackEnvironmentVariable in $corepackEnvironment.Keys) {
+                if ($null -eq $corepackEnvironment[$corepackEnvironmentVariable]) {
+                    Remove-Item "Env:$corepackEnvironmentVariable" -ErrorAction SilentlyContinue
+                } else {
+                    [Environment]::SetEnvironmentVariable($corepackEnvironmentVariable, $corepackEnvironment[$corepackEnvironmentVariable], 'Process')
+                }
+            }
+        }
+        Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
+        $npmRestoreAttempts = 2
+        for ($attempt = 1; $attempt -le $npmRestoreAttempts; $attempt++) {
+            corepack pnpm run auth-install
+            if ($lastexitcode -eq 0) {
+                break
+            }
+
+            if ($attempt -lt $npmRestoreAttempts) {
+                Write-Warning "pnpm package restore failed on attempt $attempt of $npmRestoreAttempts. Retrying in 5 seconds..."
+                Start-Sleep -Seconds 5
+            }
+        }
+
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring packages."
         }
+        Set-Location ../..
     }
 
     $InstallNuGetPkgScriptPath = "$PSScriptRoot\tools\Install-NuGetPackage.ps1"
