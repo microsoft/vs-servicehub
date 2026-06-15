@@ -23,7 +23,10 @@ steps:
 - ${{ if and(eq(variables['system.collectionId'], '63b6279a-d2f1-4bc3-a21c-db7614e92831'),ne(variables['System.PullRequest.IsFork'], 'true')) }}:
   - pwsh: |
       $PAT = '$(System.AccessToken)'
-      "npmRegistries:`n  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:`n    npmAuthIdent: devdiv:$PAT`n    npmAlwaysAuth: true" | Tee-Object -FilePath $HOME/.yarnrc.yml
+      $feedUrl = [Uri]'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
+      $feedSkipScheme = "//$($feedUrl.Host)$($feedUrl.PathAndQuery)"
+      $password = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PAT))
+      "registry=$($feedUrl.AbsoluteUri)`nalways-auth=true`n$($feedSkipScheme):username=devdiv`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=$password" | Tee-Object -FilePath $HOME/.npmrc
     displayName: 🔏 Authenticate NPM registry
 
 - task: NodeTool@0
@@ -32,7 +35,7 @@ steps:
   displayName: ⚙️ Install Node.js
 
 - script: corepack enable
-  displayName: ⚙️ Install yarn
+  displayName: ⚙️ Enable Corepack
 
 - powershell: |
     $AccessToken = '$(System.AccessToken)' # Avoid specifying the access token directly on the init.ps1 command line to avoid it showing up in errors

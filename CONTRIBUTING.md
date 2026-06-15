@@ -41,24 +41,22 @@ The NPM packages built from this repo also require dependency installation.
 `init.ps1` will install these dependencies automatically.
 
 When a new package that is not already ingested by the NPM registry we use is required, authentication is required.
-Create a `$HOME/.yarnrc.yml` file with the following content, substituting your actual personal access token from the `azure-public` AzDO account for the `PAT` placeholder in the file.
-Note that this should be the original PAT, without any base64 encoding.
+Create a `$HOME/.npmrc` file with the following content, substituting your actual personal access token from the `azure-public` AzDO account for the `BASE64_PAT` placeholder in the file.
+Note that `_password` must be the base64-encoded PAT.
 
-```yml
-npmRegistries:
-  //pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:
-    npmAuthIdent: devdiv:PAT
-    npmAlwaysAuth: true
+```ini
+//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:username=devdiv
+//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:email=not-used@example.com
+//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:_password=BASE64_PAT
 ```
 
-#### NPM/Yarn Maintenance
+#### NPM/pnpm Maintenance
 
-Keeping yarn itself and its SDKs current while in Zero Install mode requires certain steps to be taken periodically.
-The following two commands update these:
+To update the pinned pnpm version and regenerate the lockfile, run:
 
 ```ps1
-yarn set version berry
-yarn dlx @yarnpkg/sdks vscode
+corepack use pnpm@latest
+pnpm install
 ```
 
 ## Building
@@ -71,12 +69,11 @@ Building, testing, and packing the .NET code in this repository can be done by u
 
 ### Typescript code
 
-* Build: `yarn build`
-* Test: `yarn test`
+* Build: `pnpm build`
+* Test: `pnpm test`
 * Pack: `pack.ps1`
 
-For a good language service experience in VS Code, follow [these instructions](https://yarnpkg.com/getting-started/editor-sdks#vscode).
-In particular, the part about selecting the "Workspace Version" of TypeScript.
+For a good language service experience in VS Code, select the workspace TypeScript version from `node_modules`.
 
 ## Testing
 

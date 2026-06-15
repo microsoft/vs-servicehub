@@ -14,17 +14,17 @@ Param(
 Push-Location $PSScriptRoot
 try {
     if ($Restore) {
-        node .yarn/releases/yarn-4.16.0.cjs
+        corepack pnpm install --frozen-lockfile
         if ($lastexitcode -ne 0) { throw }
     }
 
-    node .yarn/releases/yarn-4.16.0.cjs build # tsc
+    corepack pnpm build # tsc
     if ($lastexitcode -ne 0) { throw }
 
     dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw }
 
-    node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion
+    corepack pnpm nbgv-setversion
     if ($lastexitcode -ne 0) { throw }
 
     $Configuration = 'Debug'
@@ -33,10 +33,17 @@ try {
     }
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
-    node .yarn/releases/yarn-4.16.0.cjs pack --out $OutDir/%s-%v.tgz
+    corepack pnpm pack --pack-destination $OutDir
     if ($lastexitcode -ne 0) { throw }
 
-    node .yarn/releases/yarn-4.16.0.cjs nbgv-setversion --reset
+    $Package = Get-Content package.json | ConvertFrom-Json
+    $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    $ExpectedTarballName = "$($Package.name.Replace('/', '-'))-$($Package.version).tgz"
+    if ($PackedTarball -and $PackedTarball.Name -ne $ExpectedTarballName) {
+        Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
+    }
+
+    corepack pnpm nbgv-setversion --reset
     if ($lastexitcode -ne 0) { throw }
 }
 finally {

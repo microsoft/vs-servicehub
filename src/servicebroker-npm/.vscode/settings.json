@@ -7,11 +7,7 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "jest.jestCommandLine": "yarn jest",
-  "search.exclude": {
-    "**/.yarn": true,
-    "**/.pnp.*": true
-  },
+  "jest.jestCommandLine": "pnpm jest",
   "typescript.tsc.autoDetect": "off",
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "[javascript]": {
@@ -20,9 +16,9 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.nodePath": ".yarn/sdks",
-  "prettier.prettierPath": ".yarn/sdks/prettier/index.cjs",
+  "eslint.nodePath": "node_modules",
+  "prettier.prettierPath": "node_modules/prettier",
   "json.format.enable": true,
-  "typescript.tsdk": ".yarn/sdks/typescript/lib",
+  "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }

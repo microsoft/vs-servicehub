@@ -11,7 +11,10 @@ pack.cmd
 *.binlog
 *.log
 *.tgz
+.pnp.*
+.npmrc
 .yarn/
+pnpm-lock.yaml
 coverage/
 jest.config.ts
 .eslintrc.json

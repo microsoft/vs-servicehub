@@ -3,10 +3,10 @@ parameters:
 
 steps:
 
-- script: node .yarn/releases/yarn-4.16.0.cjs test # yarn, but avoids network isolation violation
-  displayName: 🧪 yarn test
+- script: corepack pnpm test
+  displayName: 🧪 pnpm test
   workingDirectory: src/servicebroker-npm
   condition: and(succeeded(), ${{ parameters.RunTests }})
 
 - powershell: src/servicebroker-npm/pack.ps1
-  displayName: 📦 yarn pack
+  displayName: 📦 pnpm pack
