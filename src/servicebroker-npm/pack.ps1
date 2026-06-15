@@ -15,7 +15,6 @@ Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
     $npmRegistry = & "$PSScriptRoot/Get-NpmRegistry.ps1"
-    & "$PSScriptRoot/Install-ArtifactsNpmCredProvider.ps1"
     try {
         $env:COREPACK_NPM_REGISTRY = $npmRegistry
         corepack prepare $packageManager --activate

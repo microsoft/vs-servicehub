@@ -143,7 +143,6 @@ try {
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
         $npmRegistry = & ./Get-NpmRegistry.ps1
-        & ./Install-ArtifactsNpmCredProvider.ps1
         try {
             $env:COREPACK_NPM_REGISTRY = $npmRegistry
             corepack prepare $packageManager --activate

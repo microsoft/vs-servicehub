@@ -3,7 +3,6 @@ dotnet build "$PSScriptRoot/../../test/ServiceBrokerTest"
 if ($lastexitcode -ne 0) { throw "Failure while building ServiceBrokerTest." }
 $packageManager = (Get-Content "$PSScriptRoot/package.json" -Raw | ConvertFrom-Json).packageManager
 $npmRegistry = & "$PSScriptRoot/Get-NpmRegistry.ps1"
-& "$PSScriptRoot/Install-ArtifactsNpmCredProvider.ps1"
 try {
     $env:COREPACK_NPM_REGISTRY = $npmRegistry
     corepack prepare $packageManager --activate

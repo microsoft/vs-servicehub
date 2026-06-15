@@ -40,12 +40,6 @@ to the feeds that packages for this repo come from, if any.
 The NPM package built from this repo restores its public dependencies from the Azure Artifacts public feed.
 `init.ps1` will install these dependencies automatically.
 
-If you need to install dependencies manually, first ensure the Azure Artifacts npm auth tool is installed:
-
-```ps1
-npm install --global @microsoft/artifacts-npm-credprovider --registry https://pkgs.dev.azure.com/artifacts-public/23934c1b-a3b5-4b70-9dd3-d1bef4cc72a0/_packaging/AzureArtifacts/npm/registry/
-```
-
 Then use the checked-in authenticated install script from `src/servicebroker-npm/package.json`:
 
 ```ps1
