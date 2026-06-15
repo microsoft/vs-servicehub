@@ -142,9 +142,11 @@ try {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-        $npmRegistry = & ./Get-NpmRegistry.ps1
-        try {
+        if ($env:GITHUB_ACTIONS -ne 'true') {
+            $npmRegistry = & ./Get-NpmRegistry.ps1
             $env:COREPACK_NPM_REGISTRY = $npmRegistry
+        }
+        try {
             corepack prepare $packageManager --activate
             if ($lastexitcode -ne 0) {
                 throw "Failure while preparing package manager."

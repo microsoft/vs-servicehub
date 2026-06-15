@@ -14,9 +14,11 @@ Param(
 Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-    $npmRegistry = & "$PSScriptRoot/Get-NpmRegistry.ps1"
-    try {
+    if ($env:GITHUB_ACTIONS -ne 'true') {
+        $npmRegistry = & "$PSScriptRoot/Get-NpmRegistry.ps1"
         $env:COREPACK_NPM_REGISTRY = $npmRegistry
+    }
+    try {
         corepack prepare $packageManager --activate
         if ($lastexitcode -ne 0) { throw "Failure while preparing package manager." }
     }
