@@ -7,7 +7,7 @@ overrides:
   '@babel/code-frame': 7.29.0
   '@babel/compat-data': 7.29.0
   '@babel/core': 7.29.0
-  '@babel/generator': 7.29.0
+  '@babel/generator': 7.28.6
   '@babel/helper-compilation-targets': 7.28.6
   '@babel/helper-globals': 7.28.0
   '@babel/helper-module-imports': 7.28.6
@@ -33,18 +33,18 @@ overrides:
   '@humanfs/node': 0.16.7
   acorn: 8.16.0
   ajv: 6.14.0
-  baseline-browser-mapping: 2.10.35
+  baseline-browser-mapping: 2.10.34
   'brace-expansion@1': 1.1.14
   'brace-expansion@2': 2.1.0
   'brace-expansion@5': 5.0.5
   browserslist: 4.28.1
-  caniuse-lite: 1.0.30001793
-  electron-to-chromium: 1.5.370
+  caniuse-lite: 1.0.30001792
+  electron-to-chromium: 1.5.369
   get-east-asian-width: 1.5.0
   immutable: 5.1.4
   istanbul-lib-processinfo: 3.0.0
-  'lru-cache@11': 11.4.0
-  node-releases: 2.0.45
+  'lru-cache@11': 11.3.6
+  node-releases: 2.0.44
   'picomatch@4': 4.0.3
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6

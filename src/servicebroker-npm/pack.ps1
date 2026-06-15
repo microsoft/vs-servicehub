@@ -17,7 +17,7 @@ try {
     try {
         $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
         corepack prepare $packageManager --activate
-        if ($lastexitcode -ne 0) { throw }
+        if ($lastexitcode -ne 0) { throw "Failure while preparing package manager." }
     }
     finally {
         Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
@@ -48,8 +48,12 @@ try {
 
     $Package = Get-Content package.json -Raw | ConvertFrom-Json
     $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    if (!$PackedTarball) {
+        throw "pnpm pack did not produce a tarball in '$OutDir'."
+    }
+
     $ExpectedTarballName = "$($Package.name.Replace('/', '-'))-$($Package.version).tgz"
-    if ($PackedTarball -and $PackedTarball.Name -ne $ExpectedTarballName) {
+    if ($PackedTarball.Name -ne $ExpectedTarballName) {
         Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
     }
 
