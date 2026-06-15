@@ -3,7 +3,7 @@ parameters:
 
 steps:
 
-- script: corepack pnpm test
+- script: pnpm test
   displayName: 🧪 pnpm test
   workingDirectory: src/servicebroker-npm
   condition: and(succeeded(), ${{ parameters.RunTests }})
