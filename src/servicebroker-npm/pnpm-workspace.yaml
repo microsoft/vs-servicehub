@@ -33,17 +33,17 @@ overrides:
   '@humanfs/node': 0.16.7
   acorn: 8.16.0
   ajv: 6.14.0
-  baseline-browser-mapping: 2.10.29
+  baseline-browser-mapping: 2.9.0
   'brace-expansion@1': 1.1.14
   'brace-expansion@2': 2.1.0
   'brace-expansion@5': 5.0.5
   browserslist: 4.28.1
-  caniuse-lite: 1.0.30001786
-  electron-to-chromium: 1.5.364
+  caniuse-lite: 1.0.30001759
+  electron-to-chromium: 1.5.263
   get-east-asian-width: 1.5.0
   immutable: 5.1.4
   istanbul-lib-processinfo: 3.0.0
-  'lru-cache@11': 11.3.1
+  'lru-cache@11': 11.0.0
   node-releases: 2.0.27
   'picomatch@4': 4.0.3
   react-is: 19.2.6
