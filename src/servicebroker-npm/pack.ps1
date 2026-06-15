@@ -36,7 +36,7 @@ try {
     dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw "Failure while building sign.proj." }
 
-    corepack pnpm nbgv-setversion
+    corepack pnpm exec nbgv-setversion
     if ($lastexitcode -ne 0) { throw "Failure while stamping the npm package version." }
 
     $Configuration = 'Debug'
@@ -59,7 +59,7 @@ try {
         Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
     }
 
-    corepack pnpm nbgv-setversion --reset
+    corepack pnpm exec nbgv-setversion --reset
     if ($lastexitcode -ne 0) { throw "Failure while resetting the stamped npm package version." }
 }
 finally {

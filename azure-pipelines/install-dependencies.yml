@@ -13,11 +13,15 @@ steps:
       wifServiceConnectionName: azure-public/vside package pull
       deadPATServiceConnectionId: 46f0d4d4-9fff-4c58-a1ab-3b8f97e3b78a # azure-public/msft_consumption_public
 
-- task: NuGetAuthenticate@1
-  displayName: 🔏 Authenticate NuGet feeds
-  inputs:
-    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
+- ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
+  - task: NuGetAuthenticate@1
+    displayName: 🔏 Authenticate NuGet feeds
+    condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
+    inputs:
       nuGetServiceConnections: azure-public/msft_consumption_public
+- ${{ else }}:
+  - task: NuGetAuthenticate@1
+    displayName: 🔏 Authenticate NuGet feeds
 
 - task: NodeTool@0
   inputs:
