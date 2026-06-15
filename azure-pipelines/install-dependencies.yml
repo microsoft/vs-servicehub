@@ -19,20 +19,6 @@ steps:
     ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
       nuGetServiceConnections: azure-public/msft_consumption_public
 
-# Authenticate if we're running on the azure-public account, and not from a fork.
-- ${{ if and(eq(variables['system.collectionId'], '63b6279a-d2f1-4bc3-a21c-db7614e92831'),ne(variables['System.PullRequest.IsFork'], 'true')) }}:
-  - pwsh: |
-      $PAT = '$(System.AccessToken)'
-      $feedUrl = [Uri]'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
-      $feedSkipScheme = "//$($feedUrl.Host)$($feedUrl.PathAndQuery)"
-      $password = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PAT))
-      $userConfigPath = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)) '.npmrc'
-      $npmConfigContent = "registry=$($feedUrl.AbsoluteUri)`nalways-auth=true`n$($feedSkipScheme):username=devdiv`n$($feedSkipScheme):email=not-used@example.com`n$($feedSkipScheme):_password=$password"
-      Set-Content -Path $userConfigPath -Value $npmConfigContent -Encoding utf8NoBOM
-      $env:NPM_CONFIG_USERCONFIG = $userConfigPath
-      Write-Host "##vso[task.setvariable variable=NPM_CONFIG_USERCONFIG]$userConfigPath"
-    displayName: 🔏 Authenticate NPM registry
-
 - task: NodeTool@0
   inputs:
     versionSpec: 22.x

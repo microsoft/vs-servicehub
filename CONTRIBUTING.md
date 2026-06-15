@@ -37,18 +37,8 @@ to the feeds that packages for this repo come from, if any.
 
 ### NPM install
 
-The NPM packages built from this repo also require dependency installation.
+The NPM package built from this repo restores its public dependencies from npmjs.org.
 `init.ps1` will install these dependencies automatically.
-
-When a new package that is not already ingested by the NPM registry we use is required, authentication is required.
-Create a `$HOME/.npmrc` file with the following content, substituting your actual personal access token from the `azure-public` AzDO account for the `BASE64_PAT` placeholder in the file.
-Note that `_password` must be the base64-encoded PAT.
-
-```ini
-//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:username=devdiv
-//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:email=not-used@example.com
-//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:_password=BASE64_PAT
-```
 
 #### NPM/pnpm Maintenance
 
