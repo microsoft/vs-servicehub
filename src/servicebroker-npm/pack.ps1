@@ -14,6 +14,11 @@ Param(
 Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+    $corepackEnvironment = @{}
+    foreach ($corepackEnvironmentVariable in 'COREPACK_NPM_REGISTRY', 'COREPACK_NPM_TOKEN', 'COREPACK_NPM_USERNAME', 'COREPACK_NPM_PASSWORD') {
+        $corepackEnvironment[$corepackEnvironmentVariable] = [Environment]::GetEnvironmentVariable($corepackEnvironmentVariable, 'Process')
+    }
+
     try {
         if ($env:GITHUB_ACTIONS -ne 'true') {
             . "$PSScriptRoot/Set-CorepackEnvironment.ps1"
@@ -22,10 +27,13 @@ try {
         if ($lastexitcode -ne 0) { throw "Failure while preparing package manager." }
     }
     finally {
-        Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
-        Remove-Item Env:COREPACK_NPM_TOKEN -ErrorAction SilentlyContinue
-        Remove-Item Env:COREPACK_NPM_USERNAME -ErrorAction SilentlyContinue
-        Remove-Item Env:COREPACK_NPM_PASSWORD -ErrorAction SilentlyContinue
+        foreach ($corepackEnvironmentVariable in $corepackEnvironment.Keys) {
+            if ($null -eq $corepackEnvironment[$corepackEnvironmentVariable]) {
+                Remove-Item "Env:$corepackEnvironmentVariable" -ErrorAction SilentlyContinue
+            } else {
+                [Environment]::SetEnvironmentVariable($corepackEnvironmentVariable, $corepackEnvironment[$corepackEnvironmentVariable], 'Process')
+            }
+        }
     }
 
     if ($Restore) {

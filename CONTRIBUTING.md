@@ -53,8 +53,10 @@ The `corepack` prefix is useful when `pnpm` is not already installed globally, b
 To update the pinned pnpm version and regenerate the lockfile, run:
 
 ```ps1
+Push-Location src/servicebroker-npm
 corepack use pnpm@latest
 corepack pnpm install
+Pop-Location
 ```
 
 ## Building
@@ -67,8 +69,8 @@ Building, testing, and packing the .NET code in this repository can be done by u
 
 ### Typescript code
 
-* Build: `corepack pnpm build`
-* Test: `corepack pnpm test`
+* Build: `corepack pnpm --dir src/servicebroker-npm build`
+* Test: `corepack pnpm --dir src/servicebroker-npm test`
 * Pack: `pack.ps1`
 
 For a good language service experience in VS Code, select the workspace TypeScript version from `node_modules`.
