@@ -46,7 +46,7 @@ overrides:
   istanbul-lib-processinfo: 3.0.0
   lru-cache@11: 11.3.4
   node-releases: 2.0.38
-  picomatch@4: 4.0.3
+  picomatch@4: 4.0.4
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6
   synckit: 0.11.12
@@ -1173,7 +1173,7 @@ packages:
     resolution: {integrity: sha1-7Sq5Z6MxreYvGNB32uGSaE1Q01A=}
     engines: {node: '>=12.0.0'}
     peerDependencies:
-      picomatch: 4.0.3
+      picomatch: 4.0.4
     peerDependenciesMeta:
       picomatch:
         optional: true
@@ -1757,8 +1757,8 @@ packages:
     resolution: {integrity: sha1-WpQpFeJrNy3A8OZ1MUmhbmscVgE=}
     engines: {node: '>=8.6'}
 
-  picomatch@4.0.3:
-    resolution: {integrity: sha1-eWx2E20e6tcV2x57rXhd7daVoEI=}
+  picomatch@4.0.4:
+    resolution: {integrity: sha1-/W9eAKFDCG4HTf/kySS4+yk7BYk=}
     engines: {node: '>=12'}
 
   pirates@4.0.7:
@@ -3305,9 +3305,9 @@ snapshots:
     dependencies:
       bser: 2.1.1
 
-  fdir@6.5.0(picomatch@4.0.3):
+  fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -3651,7 +3651,7 @@ snapshots:
       jest-regex-util: 30.4.0
       jest-util: 30.4.1
       jest-worker: 30.4.1
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       walker: 1.0.8
     optionalDependencies:
       fsevents: 2.3.3
@@ -3676,7 +3676,7 @@ snapshots:
       chalk: 4.1.2
       graceful-fs: 4.2.11
       jest-util: 30.4.1
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       pretty-format: 30.4.1
       slash: 3.0.0
       stack-utils: 2.0.6
@@ -3798,7 +3798,7 @@ snapshots:
       chalk: 4.1.2
       ci-info: 4.4.0
       graceful-fs: 4.2.11
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   jest-validate@30.4.1:
     dependencies:
@@ -4088,7 +4088,7 @@ snapshots:
 
   picomatch@2.3.2: {}
 
-  picomatch@4.0.3: {}
+  picomatch@4.0.4: {}
 
   pirates@4.0.7: {}
 
@@ -4261,8 +4261,8 @@ snapshots:
 
   tinyglobby@0.2.15:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   tmpl@1.0.5: {}
 
