@@ -56,7 +56,7 @@ To update the pinned pnpm version and regenerate the lockfile, run:
 
 ```ps1
 corepack use pnpm@latest
-pnpm install
+corepack pnpm install
 ```
 
 ## Building
@@ -69,8 +69,8 @@ Building, testing, and packing the .NET code in this repository can be done by u
 
 ### Typescript code
 
-* Build: `pnpm build`
-* Test: `pnpm test`
+* Build: `corepack pnpm build`
+* Test: `corepack pnpm test`
 * Pack: `pack.ps1`
 
 For a good language service experience in VS Code, select the workspace TypeScript version from `node_modules`.

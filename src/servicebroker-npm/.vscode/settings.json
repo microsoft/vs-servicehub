@@ -7,7 +7,7 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "jest.jestCommandLine": "pnpm jest",
+  "jest.jestCommandLine": "corepack pnpm exec jest",
   "typescript.tsc.autoDetect": "off",
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "[javascript]": {
