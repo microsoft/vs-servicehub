@@ -40,13 +40,13 @@ to the feeds that packages for this repo come from, if any.
 The NPM package built from this repo restores its public dependencies from the Azure Artifacts public feed.
 `init.ps1` will install these dependencies automatically.
 
-Then use the checked-in authenticated install script from `src/servicebroker-npm/package.json`:
+Then use the checked-in install script from the repo root:
 
 ```ps1
-corepack pnpm run auth-install
+corepack pnpm --dir src/servicebroker-npm run auth-install
 ```
 
-The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm run auth-install` works too.
+The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm --dir src/servicebroker-npm run auth-install` works too.
 
 #### NPM/pnpm Maintenance
 

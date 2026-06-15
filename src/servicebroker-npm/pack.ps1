@@ -44,11 +44,12 @@ try {
     }
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
+    $ExistingTarballs = @(Get-ChildItem -Path $OutDir -Filter *.tgz -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
     corepack pnpm pack --pack-destination $OutDir
     if ($lastexitcode -ne 0) { throw "Failure while packing the npm package." }
 
     $Package = Get-Content package.json -Raw | ConvertFrom-Json
-    $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Where-Object { $_.FullName -notin $ExistingTarballs } | Select-Object -First 1
     if (!$PackedTarball) {
         throw "pnpm pack did not produce a tarball in '$OutDir'."
     }
