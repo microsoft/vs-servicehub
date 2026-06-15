@@ -120,7 +120,19 @@ try {
     }
 
     if (!$NoToolRestore -and $PSCmdlet.ShouldProcess("dotnet tool", "restore")) {
-        dotnet tool restore @RestoreArguments
+        $toolRestoreAttempts = 2
+        for ($attempt = 1; $attempt -le $toolRestoreAttempts; $attempt++) {
+            dotnet tool restore @RestoreArguments
+            if ($lastexitcode -eq 0) {
+                break
+            }
+
+            if ($attempt -lt $toolRestoreAttempts) {
+                Write-Warning "dotnet tool restore failed on attempt $attempt of $toolRestoreAttempts. Retrying in 5 seconds..."
+                Start-Sleep -Seconds 5
+            }
+        }
+
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring dotnet CLI tools."
         }
