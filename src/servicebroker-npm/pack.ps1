@@ -14,40 +14,29 @@ Param(
 Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-    $corepackEnvironment = @{}
-    foreach ($corepackEnvironmentVariable in 'COREPACK_NPM_REGISTRY', 'COREPACK_NPM_TOKEN', 'COREPACK_NPM_USERNAME', 'COREPACK_NPM_PASSWORD') {
-        $corepackEnvironment[$corepackEnvironmentVariable] = [Environment]::GetEnvironmentVariable($corepackEnvironmentVariable, 'Process')
+    $packageManagerName, $packageManagerVersion = $packageManager -split '@', 2
+    if ($packageManagerName -ne 'pnpm' -or !$packageManagerVersion) {
+        throw "Unsupported package manager '$packageManager'."
     }
 
-    try {
-        if ($env:GITHUB_ACTIONS -ne 'true') {
-            . "$PSScriptRoot/Set-CorepackEnvironment.ps1"
-        }
-        corepack prepare $packageManager --activate
-        if ($lastexitcode -ne 0) { throw "Failure while preparing package manager." }
-    }
-    finally {
-        foreach ($corepackEnvironmentVariable in $corepackEnvironment.Keys) {
-            if ($null -eq $corepackEnvironment[$corepackEnvironmentVariable]) {
-                Remove-Item "Env:$corepackEnvironmentVariable" -ErrorAction SilentlyContinue
-            } else {
-                [Environment]::SetEnvironmentVariable($corepackEnvironmentVariable, $corepackEnvironment[$corepackEnvironmentVariable], 'Process')
-            }
-        }
+    $actualPnpmVersion = (pnpm --version)
+    if ($lastexitcode -ne 0) { throw "Failure while verifying package manager." }
+    if ($actualPnpmVersion.Trim() -ne $packageManagerVersion) {
+        throw "Expected pnpm $packageManagerVersion but found $($actualPnpmVersion.Trim())."
     }
 
     if ($Restore) {
-        corepack pnpm run auth-install
+        pnpm install --frozen-lockfile
         if ($lastexitcode -ne 0) { throw "Failure while restoring packages." }
     }
 
-    corepack pnpm build # tsc
+    pnpm build # tsc
     if ($lastexitcode -ne 0) { throw "Failure while building the npm package." }
 
     dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw "Failure while building sign.proj." }
 
-    corepack pnpm exec nbgv-setversion
+    pnpm exec nbgv-setversion
     if ($lastexitcode -ne 0) { throw "Failure while stamping the npm package version." }
 
     $Configuration = 'Debug'
@@ -57,7 +46,7 @@ try {
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
     $ExistingTarballs = @(Get-ChildItem -Path $OutDir -Filter *.tgz -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
-    corepack pnpm pack --pack-destination $OutDir
+    pnpm pack --pack-destination $OutDir
     if ($lastexitcode -ne 0) { throw "Failure while packing the npm package." }
 
     $Package = Get-Content package.json -Raw | ConvertFrom-Json
@@ -71,7 +60,7 @@ try {
         Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
     }
 
-    corepack pnpm exec nbgv-setversion --reset
+    pnpm exec nbgv-setversion --reset
     if ($lastexitcode -ne 0) { throw "Failure while resetting the stamped npm package version." }
 }
 finally {
