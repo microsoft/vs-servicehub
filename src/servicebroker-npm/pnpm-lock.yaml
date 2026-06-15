@@ -34,18 +34,18 @@ overrides:
   '@humanfs/node': 0.16.7
   acorn: 8.16.0
   ajv: 6.14.0
-  baseline-browser-mapping: 2.10.30
+  baseline-browser-mapping: 2.10.29
   brace-expansion@1: 1.1.14
   brace-expansion@2: 2.1.0
   brace-expansion@5: 5.0.5
   browserslist: 4.28.1
-  caniuse-lite: 1.0.30001787
-  electron-to-chromium: 1.5.365
+  caniuse-lite: 1.0.30001786
+  electron-to-chromium: 1.5.364
   get-east-asian-width: 1.5.0
   immutable: 5.1.4
   istanbul-lib-processinfo: 3.0.0
-  lru-cache@11: 11.3.2
-  node-releases: 2.0.36
+  lru-cache@11: 11.3.1
+  node-releases: 2.0.27
   picomatch@4: 4.0.3
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6
@@ -839,8 +839,8 @@ packages:
     resolution: {integrity: sha1-v7EGYv7tgZaixi58aOF3IMJ0F5o=}
     engines: {node: 18 || 20 || >=22}
 
-  baseline-browser-mapping@2.10.30:
-    resolution: {integrity: sha1-WJFcdDiLBfOzUEAmGU6p+pj25rY=}
+  baseline-browser-mapping@2.10.29:
+    resolution: {integrity: sha1-R73BMCevKNNB82ek81oHzocuJ7Q=}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -888,8 +888,8 @@ packages:
   cancellationtoken@2.2.0:
     resolution: {integrity: sha1-o9k8uGdfKd0VdKNYtyrb3j2omus=}
 
-  caniuse-lite@1.0.30001787:
-    resolution: {integrity: sha1-/SXF5C4tNd9cde3doA0V2cDGj4E=}
+  caniuse-lite@1.0.30001786:
+    resolution: {integrity: sha1-WGEg/HPzx+6CFS92rNDDfgSs77s=}
 
   caught@0.1.3:
     resolution: {integrity: sha1-9j2w1l8brOp8tIUs2PHXIWaiyL8=}
@@ -1028,8 +1028,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha1-aWzi7Aqg5uqTo5f/zySqeEDIJ8s=}
 
-  electron-to-chromium@1.5.365:
-    resolution: {integrity: sha1-ZczHJK9jEtNMW36PqgtXpi1dMR0=}
+  electron-to-chromium@1.5.364:
+    resolution: {integrity: sha1-OK+VC3JLIrk3w0LAxLNhvS+1Bmk=}
 
   emittery@0.13.1:
     resolution: {integrity: sha1-wEuMNFdJDghHrlH87Tr1LTOOPa0=}
@@ -1587,8 +1587,8 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha1-QQ/IoXtw5ZgBPfJXwkRrfzOD8Rk=}
 
-  lru-cache@11.3.2:
-    resolution: {integrity: sha1-NJZp0qnusQzHBqntsQ2TvHCAqJI=}
+  lru-cache@11.3.1:
+    resolution: {integrity: sha1-7S42kAPR750Xj+TRkYvBo38GgAg=}
     engines: {node: 20 || >=22}
 
   lru-cache@5.1.1:
@@ -1668,8 +1668,8 @@ packages:
     resolution: {integrity: sha1-wDBDuzJ/QXoY/uerfuV7QIoUQwE=}
     engines: {node: '>=8'}
 
-  node-releases@2.0.36:
-    resolution: {integrity: sha1-mf1lUqrtqeF8RxO1emOWSi4yXp0=}
+  node-releases@2.0.27:
+    resolution: {integrity: sha1-7tylGSBc8g9lD2HVawcNsREjHk4=}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha1-Dc1p/yOhybEf0JeDFmRKA4ghamU=}
@@ -2999,7 +2999,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  baseline-browser-mapping@2.10.30: {}
+  baseline-browser-mapping@2.10.29: {}
 
   brace-expansion@1.1.14:
     dependencies:
@@ -3016,10 +3016,10 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.10.30
-      caniuse-lite: 1.0.30001787
-      electron-to-chromium: 1.5.365
-      node-releases: 2.0.36
+      baseline-browser-mapping: 2.10.29
+      caniuse-lite: 1.0.30001786
+      electron-to-chromium: 1.5.364
+      node-releases: 2.0.27
       update-browserslist-db: 1.2.3(browserslist@4.28.1)
 
   bs-logger@0.2.6:
@@ -3047,7 +3047,7 @@ snapshots:
 
   cancellationtoken@2.2.0: {}
 
-  caniuse-lite@1.0.30001787: {}
+  caniuse-lite@1.0.30001786: {}
 
   caught@0.1.3: {}
 
@@ -3161,7 +3161,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  electron-to-chromium@1.5.365: {}
+  electron-to-chromium@1.5.364: {}
 
   emittery@0.13.1: {}
 
@@ -3899,7 +3899,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lru-cache@11.3.2: {}
+  lru-cache@11.3.1: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -3973,7 +3973,7 @@ snapshots:
     dependencies:
       process-on-spawn: 1.1.0
 
-  node-releases@2.0.36: {}
+  node-releases@2.0.27: {}
 
   normalize-path@3.0.0: {}
 
@@ -4081,7 +4081,7 @@ snapshots:
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.3.2
+      lru-cache: 11.3.1
       minipass: 7.1.3
 
   picocolors@1.1.1: {}
