@@ -153,11 +153,17 @@ try {
             Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
         }
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
-        corepack pnpm install --frozen-lockfile
-        Set-Location ../..
-        if ($lastexitcode -ne 0) {
-            throw "Failure while restoring packages."
+        try {
+            $env:NPM_CONFIG_REGISTRY = 'https://registry.npmjs.org/'
+            corepack pnpm install --frozen-lockfile
+            if ($lastexitcode -ne 0) {
+                throw "Failure while restoring packages."
+            }
         }
+        finally {
+            Remove-Item Env:NPM_CONFIG_REGISTRY -ErrorAction SilentlyContinue
+        }
+        Set-Location ../..
     }
 
     $InstallNuGetPkgScriptPath = "$PSScriptRoot\tools\Install-NuGetPackage.ps1"
