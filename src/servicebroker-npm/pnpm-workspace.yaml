@@ -12,7 +12,7 @@ minimumReleaseAgeExclude:
 overrides:
   '@babel/code-frame': 7.29.0
   '@babel/compat-data': 7.29.0
-  '@babel/core': 7.29.6
+  '@babel/core': 7.29.0
   '@babel/generator': 7.29.1
   '@babel/helper-compilation-targets': 7.28.6
   '@babel/helper-globals': 7.28.0
@@ -47,11 +47,11 @@ overrides:
   caniuse-lite: 1.0.30001790
   electron-to-chromium: 1.5.367
   get-east-asian-width: 1.5.0
-  immutable: 5.1.5
+  immutable: 5.1.4
   istanbul-lib-processinfo: 3.0.0
   'lru-cache@11': 11.3.4
   node-releases: 2.0.38
-  'picomatch@4': 4.0.4
+  'picomatch@4': 4.0.3
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6
   synckit: 0.11.12
