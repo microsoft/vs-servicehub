@@ -4,4 +4,4 @@ overrides:
   '@humanfs/core': 0.19.1
   '@humanfs/node': 0.16.7
   synckit: 0.11.12
-  unrs-resolver: 1.12.1
+  unrs-resolver: 1.12.0
