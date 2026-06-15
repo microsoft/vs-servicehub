@@ -8,7 +8,7 @@
 	"scripts": {
 		"build": "tsc",
 		"clean": "node -e \"require('fs').rmSync('js', { recursive: true, force: true })\"",
-		"auth-install": "pnpm install --frozen-lockfile",
+		"auth-install": "corepack pnpm install --frozen-lockfile",
 		"watch": "tsc -w",
 		"test": "jest",
 		"lint": "eslint src test"
