@@ -83,7 +83,7 @@ if (!$SdkOnly) {
     $projFiles = Get-MsBuildInputFiles -Path "$PSScriptRoot\..\src", "$PSScriptRoot\..\test"
     $projFiles += Get-Item -LiteralPath "$PSScriptRoot\..\Directory.Build.props"
     $projFiles | % {
-        $projXml = [xml](Get-Content -LiteralPath $_)
+        $projXml = [xml](Get-Content -LiteralPath $_.FullName)
         $pg = $projXml.Project.PropertyGroup
         if ($pg) {
             $targetFrameworks = @()
