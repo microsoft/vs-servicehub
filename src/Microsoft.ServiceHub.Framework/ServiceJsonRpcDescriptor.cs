@@ -71,6 +71,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		this.ExceptionStrategy = copyFrom.ExceptionStrategy;
 		this.AdditionalServiceInterfaces = copyFrom.AdditionalServiceInterfaces;
 		this.DisplayName = copyFrom.DisplayName;
+		this.AcceptProxyWithExtraInterfaces = copyFrom.AcceptProxyWithExtraInterfaces;
 	}
 
 	/// <summary>
@@ -163,6 +164,11 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	public string DisplayName { get; private set; }
 
 	/// <summary>
+	/// Gets a value indicating whether a source-generated local proxy that implements extra interfaces may be used.
+	/// </summary>
+	public bool AcceptProxyWithExtraInterfaces { get; private set; }
+
+	/// <summary>
 	/// Gets the default display name based on this descriptor's type.
 	/// </summary>
 	private protected string DefaultDisplayName => this.GetType().FullName!;
@@ -214,6 +220,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 			{
 				ContractInterface = typeof(T),
 				AdditionalContractInterfaces = additionalServiceInterfaces.AsMemory(),
+				AcceptProxyWithExtraInterfaces = this.AcceptProxyWithExtraInterfaces,
 				ExceptionStrategy = this.ExceptionStrategy,
 			};
 			if (Reflection.ProxyBase.TryCreateProxy(target, sourceGenInputs, out IClientProxy? sourceGenProxy))
@@ -311,6 +318,24 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 
 	/// <summary>
 	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
+	/// but with the <see cref="AcceptProxyWithExtraInterfaces"/> property set to a new value.
+	/// </summary>
+	/// <param name="value">The new value for the <see cref="AcceptProxyWithExtraInterfaces"/> property.</param>
+	/// <returns>A clone of this instance, with the property changed. Or this same instance if the property already matches.</returns>
+	public ServiceJsonRpcDescriptor WithAcceptProxyWithExtraInterfaces(bool value)
+	{
+		if (this.AcceptProxyWithExtraInterfaces == value)
+		{
+			return this;
+		}
+
+		var result = (ServiceJsonRpcDescriptor)this.Clone();
+		result.AcceptProxyWithExtraInterfaces = value;
+		return result;
+	}
+
+	/// <summary>
+	/// Returns an instance of <see cref="ServiceJsonRpcDescriptor"/> that resembles this one,
 	/// but with the <see cref="AdditionalServiceInterfaces" /> property set to a new value.
 	/// </summary>
 	/// <param name="value">The new value for the <see cref="AdditionalServiceInterfaces"/> property.</param>
@@ -403,6 +428,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 	internal ServiceJsonRpcDescriptor WithSettingsFrom(ServiceJsonRpcDescriptor copyFrom)
 	{
 		if (this.ExceptionStrategy == copyFrom.ExceptionStrategy &&
+			this.AcceptProxyWithExtraInterfaces == copyFrom.AcceptProxyWithExtraInterfaces &&
 			this.MultiplexingStreamOptions == copyFrom.MultiplexingStreamOptions &&
 			this.MultiplexingStream == copyFrom.MultiplexingStream &&
 			this.JoinableTaskFactory == copyFrom.JoinableTaskFactory &&
@@ -413,6 +439,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 
 		var result = (ServiceJsonRpcDescriptor)this.Clone();
 		result.ExceptionStrategy = copyFrom.ExceptionStrategy;
+		result.AcceptProxyWithExtraInterfaces = copyFrom.AcceptProxyWithExtraInterfaces;
 
 		if (copyFrom.MultiplexingStreamOptions is not null)
 		{
@@ -590,7 +617,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// <devremarks>
 		/// Create a new instance of <see cref="JsonRpcProxyOptions"/> every time because it's mutable.
 		/// </devremarks>
-		private JsonRpcProxyOptions localRpcProxyOptions = new JsonRpcProxyOptions { };
+		private JsonRpcProxyOptions localRpcProxyOptions;
 
 		/// <inheritdoc cref="JsonRpcConnection(JsonRpc, ServiceJsonRpcDescriptor)"/>
 		public JsonRpcConnection(JsonRpc jsonRpc)
@@ -607,6 +634,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			this.JsonRpc = jsonRpc ?? throw new ArgumentNullException(nameof(jsonRpc));
 			this.owner = owner;
+			this.localRpcProxyOptions = new JsonRpcProxyOptions { AcceptProxyWithExtraInterfaces = owner?.AcceptProxyWithExtraInterfaces ?? false };
 		}
 
 		/// <inheritdoc/>
@@ -635,6 +663,7 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		/// <summary>
 		/// Gets or sets the options to pass to <see cref="JsonRpc.Attach{T}(JsonRpcProxyOptions?)"/> in the default implementation of <see cref="ConstructRpcClient{T}()"/>.
 		/// </summary>
+		/// <value>The default value mirrors <see cref="ServiceJsonRpcDescriptor.AcceptProxyWithExtraInterfaces"/> on the owning descriptor.</value>
 		public JsonRpcProxyOptions LocalRpcProxyOptions
 		{
 			get => this.localRpcProxyOptions;

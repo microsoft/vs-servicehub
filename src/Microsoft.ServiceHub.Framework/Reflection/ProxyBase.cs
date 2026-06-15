@@ -18,6 +18,7 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	// add/remove of <see cref="INotifyDisposable.Disposed"/> can detect the disposed state
 	// and invoke the handler immediately rather than rooting it in a backing field.
 	private static readonly object DisposedSentinel = new();
+	private static readonly HashSet<Type> BuiltInProxyInterfaces = [.. typeof(ProxyBase).GetInterfaces()];
 
 	private readonly ProxyInputs proxyInputs;
 	private object? target;
@@ -130,7 +131,8 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			if (ProxyImplementsCompatibleSetOfInterfaces(
 				attribute.ProxyClass,
 				proxyInputs.ContractInterface,
-				proxyInputs.AdditionalContractInterfaces.Span))
+				proxyInputs.AdditionalContractInterfaces.Span,
+				proxyInputs.AcceptProxyWithExtraInterfaces))
 			{
 				proxy = (IClientProxy?)Activator.CreateInstance(attribute.ProxyClass, target, proxyInputs);
 				return proxy is not null;
@@ -253,12 +255,14 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	/// <param name="proxyClass">The type of the proxy class to be evaluated. This type must implement the specified interfaces.</param>
 	/// <param name="contractInterface">The primary contract interface that the proxy class must implement.</param>
 	/// <param name="additionalContractInterfaces">A span of additional contract interfaces that the proxy class must also implement.</param>
+	/// <param name="acceptProxyWithExtraInterfaces">A value indicating whether extra interfaces are acceptable on a source-generated proxy.</param>
 	/// <returns><see langword="true"/> if the proxy class implements the specified contract interface and additional interfaces,
 	/// (and potentially extra interfaces); otherwise, <see langword="false"/>.</returns>
 	private static bool ProxyImplementsCompatibleSetOfInterfaces(
 		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type proxyClass,
 		Type contractInterface,
-		ReadOnlySpan<Type> additionalContractInterfaces)
+		ReadOnlySpan<Type> additionalContractInterfaces,
+		bool acceptProxyWithExtraInterfaces)
 	{
 		HashSet<Type> proxyInterfaces = [.. proxyClass.GetInterfaces()];
 		if (!proxyInterfaces.Contains(contractInterface))
@@ -271,6 +275,32 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			if (!proxyInterfaces.Contains(addl))
 			{
 				return false;
+			}
+		}
+
+		if (!acceptProxyWithExtraInterfaces)
+		{
+			foreach (Type proxyInterface in proxyInterfaces)
+			{
+				if (BuiltInProxyInterfaces.Contains(proxyInterface) || proxyInterface.IsAssignableFrom(contractInterface))
+				{
+					continue;
+				}
+
+				bool impliedByAdditionalInterface = false;
+				foreach (Type addl in additionalContractInterfaces)
+				{
+					if (proxyInterface.IsAssignableFrom(addl))
+					{
+						impliedByAdditionalInterface = true;
+						break;
+					}
+				}
+
+				if (!impliedByAdditionalInterface)
+				{
+					return false;
+				}
 			}
 		}
 

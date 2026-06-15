@@ -73,6 +73,7 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		var descriptor = new TestServiceJsonRpcDescriptor(SomeMoniker, null, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader, MultiplexingStreamOptions);
 		descriptor = (TestServiceJsonRpcDescriptor)descriptor
 			.WithExceptionStrategy(descriptor.ExceptionStrategy == ExceptionProcessing.ISerializable ? ExceptionProcessing.CommonErrorData : ExceptionProcessing.ISerializable)
+			.WithAcceptProxyWithExtraInterfaces(true)
 			.WithAdditionalServiceInterfaces(additionalServiceInterfaces);
 
 		TestServiceJsonRpcDescriptor descriptorCopied = descriptor.CopyWithClone();
@@ -85,7 +86,25 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 		Assert.Equal(MultiplexingStreamOptions.SeededChannels, descriptorCopied.MultiplexingStreamOptions?.SeededChannels);
 		Assert.True(descriptorCopied.MultiplexingStreamOptions?.IsFrozen);
 		Assert.Equal(descriptor.ExceptionStrategy, descriptorCopied.ExceptionStrategy);
+		Assert.Equal(descriptor.AcceptProxyWithExtraInterfaces, descriptorCopied.AcceptProxyWithExtraInterfaces);
 		Assert.Equal(additionalServiceInterfaces, descriptor.AdditionalServiceInterfaces);
+	}
+
+	[Fact]
+	public void WithAcceptProxyWithExtraInterfaces()
+	{
+		ServiceJsonRpcDescriptor descriptor = CreateDefault();
+		Assert.False(descriptor.AcceptProxyWithExtraInterfaces);
+
+		Assert.Same(descriptor, descriptor.WithAcceptProxyWithExtraInterfaces(false));
+
+		ServiceJsonRpcDescriptor modified = descriptor.WithAcceptProxyWithExtraInterfaces(true);
+		Assert.NotSame(descriptor, modified);
+		Assert.True(modified.AcceptProxyWithExtraInterfaces);
+		Assert.False(descriptor.AcceptProxyWithExtraInterfaces);
+
+		TestServiceJsonRpcDescriptor cloned = ((TestServiceJsonRpcDescriptor)new TestServiceJsonRpcDescriptor(SomeMoniker, null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, null).WithAcceptProxyWithExtraInterfaces(true)).CopyWithClone();
+		Assert.True(cloned.AcceptProxyWithExtraInterfaces);
 	}
 
 	[Fact]
@@ -93,6 +112,19 @@ public partial class ServiceJsonRpcDescriptorTests : TestBase
 	{
 		var descriptor = new ServiceJsonRpcDescriptor(SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader, multiplexingStreamOptions: null);
 		Assert.Equal("json-rpc", descriptor.Protocol);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void ConstructRpcConnection_DefaultProxyOptionsMirrorDescriptorSetting(bool acceptProxyWithExtraInterfaces)
+	{
+		ServiceJsonRpcDescriptor descriptor = new ServiceJsonRpcDescriptor(SomeMoniker, clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null)
+			.WithAcceptProxyWithExtraInterfaces(acceptProxyWithExtraInterfaces);
+		(Stream, Stream) pair = FullDuplexStream.CreatePair();
+
+		ServiceJsonRpcDescriptor.JsonRpcConnection connection = Assert.IsType<ServiceJsonRpcDescriptor.JsonRpcConnection>(descriptor.ConstructRpcConnection(pair.Item1.UsePipe(cancellationToken: this.TimeoutToken)));
+		Assert.Equal(acceptProxyWithExtraInterfaces, connection.LocalRpcProxyOptions.AcceptProxyWithExtraInterfaces);
 	}
 
 	[Fact]

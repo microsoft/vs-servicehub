@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
@@ -233,9 +234,37 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 	[Fact]
 	public void UsesSourceGeneratedProxyWhenAvailable()
 	{
-		ISomeService? proxy = this.CreateProxy<ISomeService>(new SomeNonDisposableService());
+		ISomeService2? proxy = this.CreateProxy<ISomeService2>(new SomeNonDisposableService());
 		Assumes.NotNull(proxy);
 		Assert.IsAssignableFrom<Microsoft.ServiceHub.Framework.Reflection.ProxyBase>(proxy);
+		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
+	}
+
+	/// <summary>
+	/// Verifies that a grouped source-generated proxy is not used when the target lacks one of the grouped interfaces,
+	/// since the source-generated proxy type would otherwise expose interfaces that fail when invoked.
+	/// </summary>
+	[Fact]
+	public void GroupedSourceGeneratedProxyIsRejectedWhenTargetLacksGroupedInterface()
+	{
+		ISomeService? proxy = this.CreateProxy<ISomeService>(new SomePrimaryOnlyService());
+		Assumes.NotNull(proxy);
+		Assert.IsNotAssignableFrom<Microsoft.ServiceHub.Framework.Reflection.ProxyBase>(proxy);
+		Assert.False(proxy is ISomeService2);
+		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
+	}
+
+	[Fact]
+	public void GroupedSourceGeneratedProxyCanBeOptedIntoWhenTargetLacksGroupedInterface()
+	{
+		ServiceJsonRpcDescriptor descriptor = new ServiceJsonRpcDescriptor(new ServiceMoniker("SomeMoniker"), clientInterface: null, ServiceJsonRpcDescriptor.Formatters.UTF8, ServiceJsonRpcDescriptor.MessageDelimiters.HttpLikeHeaders, multiplexingStreamOptions: null)
+			.WithAcceptProxyWithExtraInterfaces(true);
+
+		ISomeService? proxy = this.CreateProxy<ISomeService>(new SomePrimaryOnlyService(), descriptor);
+		Assumes.NotNull(proxy);
+		Assert.IsAssignableFrom<Microsoft.ServiceHub.Framework.Reflection.ProxyBase>(proxy);
+		Assert.True(proxy is ISomeService2);
+		Assert.False(((IClientProxy)proxy).Is(typeof(ISomeService2)));
 		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
 	}
 
@@ -269,5 +298,40 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 	private protected class SomeService : SomeNonDisposableService, IServerWithVoidMethod
 	{
 		public void NoReturnValue() => this.NoReturnValue_Invoked = true;
+	}
+
+	private sealed class SomePrimaryOnlyService : ISomeService
+	{
+		private readonly Guid identifier = Guid.NewGuid();
+
+		public event EventHandler<PropertyChangedEventArgs>? PropertyChanged;
+
+		public Task<int> AddAsync(int a, int b) => Task.FromResult(a + b);
+
+		public ValueTask<int> AddValueAsync(int a, int b) => new(a + b);
+
+		public Task Throws() => Task.FromException(new InvalidOperationException());
+
+		public Task NoOp(CancellationToken cancellationToken) => Task.CompletedTask;
+
+		public Task GetFaultedTask(bool yieldFirst, CancellationToken cancellationToken) => Task.FromException(new InvalidOperationException());
+
+		public Task<int> GetFaultedTaskOfT(bool yieldFirst, CancellationToken cancellationToken) => Task.FromException<int>(new InvalidOperationException());
+
+		public ValueTask GetFaultedValueTask(bool yieldFirst, CancellationToken cancellationToken) => new(Task.FromException(new InvalidOperationException()));
+
+		public ValueTask<int> GetFaultedValueTaskOfT(bool yieldFirst, CancellationToken cancellationToken) => new(Task.FromException<int>(new InvalidOperationException()));
+
+		public Task<ExternalTestAssembly.InternalType> MethodReturnsInternalTypeFromOtherAssemblyAsync(CancellationToken cancellationToken)
+			=> Task.FromException<ExternalTestAssembly.InternalType>(new InvalidOperationException());
+
+		public Task FaultWithErrorCodeAsync(string topLevelMessage, int errorCode, string secondaryMessage, int hresult)
+			=> Task.FromException(new InvalidOperationException());
+
+		public Task YieldThenThrow() => Task.FromException(new InvalidOperationException());
+
+		public Task<Guid> GetIdentifier() => Task.FromResult(this.identifier);
+
+		internal void OnPropertyChanged(string propertyName) => this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}
 }
