@@ -170,7 +170,19 @@ try {
             }
         }
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
-        corepack pnpm run auth-install
+        $npmRestoreAttempts = 2
+        for ($attempt = 1; $attempt -le $npmRestoreAttempts; $attempt++) {
+            corepack pnpm run auth-install
+            if ($lastexitcode -eq 0) {
+                break
+            }
+
+            if ($attempt -lt $npmRestoreAttempts) {
+                Write-Warning "pnpm package restore failed on attempt $attempt of $npmRestoreAttempts. Retrying in 5 seconds..."
+                Start-Sleep -Seconds 5
+            }
+        }
+
         if ($lastexitcode -ne 0) {
             throw "Failure while restoring packages."
         }

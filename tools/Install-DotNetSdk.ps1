@@ -58,9 +58,29 @@ if (!$arch) { # Windows Powershell leaves this blank
 $runtimeVersions = @()
 $windowsDesktopRuntimeVersions = @()
 $aspnetRuntimeVersions = @()
+function Get-MsBuildInputFiles {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string[]]$Path
+    )
+
+    foreach ($item in Get-ChildItem -LiteralPath $Path -File -Force) {
+        if ($item.Name -like '*.*proj' -or $item.Name -eq 'Directory.Build.props') {
+            $item
+        }
+    }
+
+    foreach ($directory in Get-ChildItem -LiteralPath $Path -Directory -Force) {
+        if ($directory.Name -eq 'node_modules' -or ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+            continue
+        }
+
+        Get-MsBuildInputFiles -Path $directory.FullName
+    }
+}
+
 if (!$SdkOnly) {
-    $projFiles = Get-ChildItem "$PSScriptRoot\..\src\*.*proj", "$PSScriptRoot\..\test\*.*proj" -Recurse
-    $projFiles += Get-ChildItem "$PSScriptRoot\..\src\Directory.Build.props", "$PSScriptRoot\..\test\Directory.Build.props" -Recurse
+    $projFiles = Get-MsBuildInputFiles -Path "$PSScriptRoot\..\src", "$PSScriptRoot\..\test"
     $projFiles += Get-Item -LiteralPath "$PSScriptRoot\..\Directory.Build.props"
     $projFiles | % {
         $projXml = [xml](Get-Content -LiteralPath $_)
