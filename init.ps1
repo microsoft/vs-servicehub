@@ -129,12 +129,13 @@ try {
     if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
-        $env:COREPACK_NPM_REGISTRY = 'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+        $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
         corepack prepare $packageManager --activate
         if ($lastexitcode -ne 0) {
             throw "Failure while preparing package manager."
         }
+        Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
         corepack pnpm install --frozen-lockfile
         Set-Location ../..

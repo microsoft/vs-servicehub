@@ -35,8 +35,8 @@ steps:
   displayName: ⚙️ Install Node.js
 
 - pwsh: |
-    $env:COREPACK_NPM_REGISTRY = 'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
     $packageManager = (Get-Content 'src/servicebroker-npm/package.json' -Raw | ConvertFrom-Json).packageManager
+    $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
     corepack enable
     corepack prepare $packageManager --activate
   displayName: ⚙️ Enable Corepack

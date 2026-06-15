@@ -13,10 +13,11 @@ Param(
 
 Push-Location $PSScriptRoot
 try {
-    $env:COREPACK_NPM_REGISTRY = 'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+    $env:COREPACK_NPM_REGISTRY = 'https://registry.npmjs.org'
     corepack prepare $packageManager --activate
     if ($lastexitcode -ne 0) { throw }
+    Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
 
     if ($Restore) {
         corepack pnpm install --frozen-lockfile
