@@ -142,11 +142,10 @@ try {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
-        if ($env:GITHUB_ACTIONS -ne 'true') {
-            $npmRegistry = & ./Get-NpmRegistry.ps1
-            $env:COREPACK_NPM_REGISTRY = $npmRegistry
-        }
         try {
+            if ($env:GITHUB_ACTIONS -ne 'true') {
+                . ./Set-CorepackEnvironment.ps1
+            }
             corepack prepare $packageManager --activate
             if ($lastexitcode -ne 0) {
                 throw "Failure while preparing package manager."
@@ -154,6 +153,9 @@ try {
         }
         finally {
             Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
+            Remove-Item Env:COREPACK_NPM_TOKEN -ErrorAction SilentlyContinue
+            Remove-Item Env:COREPACK_NPM_USERNAME -ErrorAction SilentlyContinue
+            Remove-Item Env:COREPACK_NPM_PASSWORD -ErrorAction SilentlyContinue
         }
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
         corepack pnpm run auth-install

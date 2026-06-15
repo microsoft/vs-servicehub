@@ -33,8 +33,8 @@ steps:
 
 - pwsh: |
     $packageManager = (Get-Content 'src/servicebroker-npm/package.json' -Raw | ConvertFrom-Json).packageManager
-    $env:COREPACK_NPM_REGISTRY = & 'src/servicebroker-npm/Get-NpmRegistry.ps1'
     try {
+      . 'src/servicebroker-npm/Set-CorepackEnvironment.ps1'
       corepack enable
       if ($LASTEXITCODE -ne 0) { throw "Failure while enabling Corepack." }
       corepack prepare $packageManager --activate
@@ -42,6 +42,9 @@ steps:
     }
     finally {
       Remove-Item Env:COREPACK_NPM_REGISTRY -ErrorAction SilentlyContinue
+      Remove-Item Env:COREPACK_NPM_TOKEN -ErrorAction SilentlyContinue
+      Remove-Item Env:COREPACK_NPM_USERNAME -ErrorAction SilentlyContinue
+      Remove-Item Env:COREPACK_NPM_PASSWORD -ErrorAction SilentlyContinue
     }
   displayName: ⚙️ Enable Corepack
 
