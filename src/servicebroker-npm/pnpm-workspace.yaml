@@ -1,6 +1,5 @@
 packages:
   - .
-virtualStoreDir: ../../obj/servicebroker-npm-pnpm
 
 allowBuilds:
   unrs-resolver: true
