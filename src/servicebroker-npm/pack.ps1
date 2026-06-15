@@ -25,17 +25,17 @@ try {
 
     if ($Restore) {
         corepack pnpm install --frozen-lockfile
-        if ($lastexitcode -ne 0) { throw }
+        if ($lastexitcode -ne 0) { throw "Failure while restoring packages." }
     }
 
     corepack pnpm build # tsc
-    if ($lastexitcode -ne 0) { throw }
+    if ($lastexitcode -ne 0) { throw "Failure while building the npm package." }
 
     dotnet build sign.proj
-    if ($lastexitcode -ne 0) { throw }
+    if ($lastexitcode -ne 0) { throw "Failure while building sign.proj." }
 
     corepack pnpm nbgv-setversion
-    if ($lastexitcode -ne 0) { throw }
+    if ($lastexitcode -ne 0) { throw "Failure while stamping the npm package version." }
 
     $Configuration = 'Debug'
     if ($env:BUILDCONFIGURATION) {
@@ -44,7 +44,7 @@ try {
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
     corepack pnpm pack --pack-destination $OutDir
-    if ($lastexitcode -ne 0) { throw }
+    if ($lastexitcode -ne 0) { throw "Failure while packing the npm package." }
 
     $Package = Get-Content package.json -Raw | ConvertFrom-Json
     $PackedTarball = Get-ChildItem -Path $OutDir -Filter *.tgz | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
@@ -58,7 +58,7 @@ try {
     }
 
     corepack pnpm nbgv-setversion --reset
-    if ($lastexitcode -ne 0) { throw }
+    if ($lastexitcode -ne 0) { throw "Failure while resetting the stamped npm package version." }
 }
 finally {
     Pop-Location
