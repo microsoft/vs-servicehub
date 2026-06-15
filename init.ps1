@@ -28,6 +28,8 @@
     No effect if -NoPrerequisites is specified.
 .PARAMETER NoRestore
     Skips the package restore step.
+.PARAMETER NoNpmRestore
+    Skips the NPM package restore step.
 .PARAMETER NoToolRestore
     Skips the dotnet tool restore step.
 .PARAMETER Signing
@@ -60,6 +62,8 @@ Param (
     [switch]$UpgradePrerequisites,
     [Parameter()]
     [switch]$NoRestore,
+    [Parameter()]
+    [switch]$NoNpmRestore,
     [Parameter()]
     [switch]$NoToolRestore,
     [Parameter()]
@@ -138,7 +142,7 @@ try {
         }
     }
 
-    if (!$NoRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
+    if (!$NoRestore -and !$NoNpmRestore -and $PSCmdlet.ShouldProcess("NPM package", "Install")) {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
