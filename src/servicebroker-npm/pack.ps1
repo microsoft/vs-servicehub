@@ -53,7 +53,7 @@ try {
         throw "pnpm pack did not produce a tarball in '$OutDir'."
     }
 
-    $ExpectedTarballName = "$($Package.name.Replace('/', '-'))-$($Package.version).tgz"
+    $ExpectedTarballName = "$($Package.name.TrimStart('@').Replace('/', '-'))-$($Package.version).tgz"
     if ($PackedTarball.Name -ne $ExpectedTarballName) {
         Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
     }
