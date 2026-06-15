@@ -11,6 +11,15 @@ Param(
     [switch]$Restore
 )
 
+function Invoke-Pnpm {
+    Param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Arguments
+    )
+
+    & $script:PnpmExecutable @script:PnpmPrefixArguments @Arguments
+}
+
 Push-Location $PSScriptRoot
 try {
     $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
@@ -19,24 +28,31 @@ try {
         throw "Unsupported package manager '$packageManager'."
     }
 
-    $actualPnpmVersion = (pnpm --version)
+    $script:PnpmExecutable = 'pnpm'
+    $script:PnpmPrefixArguments = @()
+    if (!(Get-Command $script:PnpmExecutable -ErrorAction SilentlyContinue)) {
+        $script:PnpmExecutable = 'corepack'
+        $script:PnpmPrefixArguments = @('pnpm')
+    }
+
+    $actualPnpmVersion = (Invoke-Pnpm --version)
     if ($lastexitcode -ne 0) { throw "Failure while verifying package manager." }
     if ($actualPnpmVersion.Trim() -ne $packageManagerVersion) {
         throw "Expected pnpm $packageManagerVersion but found $($actualPnpmVersion.Trim())."
     }
 
     if ($Restore) {
-        pnpm install --frozen-lockfile
+        Invoke-Pnpm install --frozen-lockfile
         if ($lastexitcode -ne 0) { throw "Failure while restoring packages." }
     }
 
-    pnpm build # tsc
+    Invoke-Pnpm build # tsc
     if ($lastexitcode -ne 0) { throw "Failure while building the npm package." }
 
     dotnet build sign.proj
     if ($lastexitcode -ne 0) { throw "Failure while building sign.proj." }
 
-    pnpm exec nbgv-setversion
+    Invoke-Pnpm exec nbgv-setversion
     if ($lastexitcode -ne 0) { throw "Failure while stamping the npm package version." }
 
     $Configuration = 'Debug'
@@ -46,7 +62,7 @@ try {
     $OutDir = "../../bin/Packages/$Configuration/npm"
     if (!(Test-Path $OutDir)) { New-Item $OutDir -ItemType Directory }
     $ExistingTarballs = @(Get-ChildItem -Path $OutDir -Filter *.tgz -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
-    pnpm pack --pack-destination $OutDir
+    Invoke-Pnpm pack --pack-destination $OutDir
     if ($lastexitcode -ne 0) { throw "Failure while packing the npm package." }
 
     $Package = Get-Content package.json -Raw | ConvertFrom-Json
@@ -60,7 +76,7 @@ try {
         Move-Item -Path $PackedTarball.FullName -Destination (Join-Path $OutDir $ExpectedTarballName) -Force
     }
 
-    pnpm exec nbgv-setversion --reset
+    Invoke-Pnpm exec nbgv-setversion --reset
     if ($lastexitcode -ne 0) { throw "Failure while resetting the stamped npm package version." }
 }
 finally {
