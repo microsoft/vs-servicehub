@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "pnpm@10.30.0",
+	"packageManager": "pnpm@11.6.0",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
@@ -16,11 +16,6 @@
 		"exclude": [
 			"*/test"
 		]
-	},
-	"pnpm": {
-		"overrides": {
-			"synckit": "0.11.12"
-		}
 	},
 	"author": "Microsoft",
 	"license": "LICENSE.txt",

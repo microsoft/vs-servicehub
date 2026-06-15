@@ -14,6 +14,7 @@ pack.cmd
 .pnp.*
 .npmrc
 .yarn/
+pnpm-workspace.yaml
 pnpm-lock.yaml
 coverage/
 jest.config.ts
