@@ -9,5 +9,6 @@ ID | Title
 [ISB002](ISB002.md) | Avoid storing rentals in fields
 [ISB003](ISB003.md) | Exported brokered services are valid
 [ISB004](ISB004.md) | Optional interfaces on exported brokered services are implemented
+[ISB005](ISB005.md) | Configure RpcTargetMetadata immediately
 
 [1]: https://www.nuget.org/packages/microsoft.servicehub.analyzers

@@ -21,8 +21,11 @@ public static partial class VisualBasicCodeFixVerifier<TAnalyzer, TCodeFix>
 			this.SolutionTransforms.Add((solution, projectId) =>
 			{
 				var parseOptions = (VisualBasicParseOptions?)solution.GetProject(projectId)?.ParseOptions;
-				solution = solution.WithProjectParseOptions(projectId, parseOptions!.WithLanguageVersion(LanguageVersion.Latest))
-					.AddMetadataReference(projectId, MetadataReference.CreateFromFile(typeof(IServiceBroker).Assembly.Location));
+				solution = solution.WithProjectParseOptions(projectId, parseOptions!.WithLanguageVersion(LanguageVersion.Latest));
+				if (this.IncludeServiceHubFrameworkReferences)
+				{
+					solution = solution.AddMetadataReference(projectId, MetadataReference.CreateFromFile(typeof(IServiceBroker).Assembly.Location));
+				}
 
 				return solution;
 			});
@@ -37,7 +40,19 @@ public static partial class VisualBasicCodeFixVerifier<TAnalyzer, TCodeFix>
 			});
 		}
 
+		public bool IncludeServiceHubFrameworkReferences { get; set; } = true;
+
 		internal DiagnosticDescriptor? ExpectedDescriptor { get; set; }
+
+		protected override Task RunImplAsync(CancellationToken cancellationToken)
+		{
+			if (this.IncludeServiceHubFrameworkReferences)
+			{
+				this.TestState.AdditionalReferences.AddRange(ReferencesHelper.GetReferences());
+			}
+
+			return base.RunImplAsync(cancellationToken);
+		}
 
 		protected override DiagnosticDescriptor? GetDefaultDiagnostic(DiagnosticAnalyzer[] analyzers)
 		{

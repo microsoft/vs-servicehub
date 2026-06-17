@@ -53,4 +53,11 @@ public static class Types
 
 		public const string FullName = $"StreamJsonRpc.{Name}";
 	}
+
+	public static class ServiceJsonRpcPolyTypeDescriptor
+	{
+		public const string FullName = "Microsoft.ServiceHub.Framework.ServiceJsonRpcPolyTypeDescriptor";
+
+		public const string WithRpcTargetMetadata = "WithRpcTargetMetadata";
+	}
 }
