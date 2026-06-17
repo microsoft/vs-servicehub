@@ -166,4 +166,13 @@
   <data name="ISB004_MessageFormat" xml:space="preserve">
     <value>The brokered service must implement the '{0}' interface or remove it from its list of supported optional interfaces</value>
   </data>
+  <data name="ISB005_Title" xml:space="preserve">
+    <value>Configure RpcTargetMetadata on creation</value>
+  </data>
+  <data name="ISB005_Description" xml:space="preserve">
+    <value>Invoke WithRpcTargetMetadata somewhere in the overall expression that creates a ServiceJsonRpcPolyTypeDescriptor. Otherwise, if the descriptor is used on the service side to attach RPC to a target object, it will fail at runtime because no RpcTargetMetadata was configured.</value>
+  </data>
+  <data name="ISB005_MessageFormat" xml:space="preserve">
+    <value>Invoke WithRpcTargetMetadata in the expression that creates a ServiceJsonRpcPolyTypeDescriptor; otherwise service-side RPC attachment to a target object can fail at runtime because no RpcTargetMetadata was configured</value>
+  </data>
 </root>

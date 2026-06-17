@@ -4,3 +4,4 @@
 ### New Rules
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
+ISB005  | Usage    | Warning  | ServiceJsonRpcPolyTypeDescriptor must configure RpcTargetMetadata immediately
