@@ -35,7 +35,7 @@ overrides:
   '@sinclair/typebox': 0.34.48
   '@types/estree': 1.0.8
   '@ungap/structured-clone': 1.3.0
-  '@humanfs/core': 0.19.1
+  '@humanfs/core': 0.19.2
   '@humanfs/node': 0.16.7
   acorn: 8.16.0
   ajv: 6.14.0
