@@ -24,12 +24,26 @@ steps:
     versionSpec: 22.x
   displayName: ⚙️ Install Node.js
 
-- task: npmAuthenticate@0
-  displayName: 🔏 Authenticate NPM feeds
-  inputs:
-    workingFile: src/servicebroker-npm/.npmrc
-    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
-      customEndpoint: azure-public/msft_consumption_public
+- ${{ if ne(variables['System.PullRequest.IsFork'], 'True') }}:
+  # The .npmrc registry is a private Azure Artifacts feed hosted in the azure-public account.
+  # npmAuthenticate can't be used because the feed only has a NuGet-typed service connection,
+  # so inject an access token into the .npmrc directly. When building on devdiv the feed is
+  # cross-account and requires the WIF-derived token; when building on the azure-public account
+  # that hosts the feed, the build's own System.AccessToken can reach it.
+  - pwsh: |
+      $npmrcPath = 'src/servicebroker-npm/.npmrc'
+      if (-not $env:NPM_AUTH_TOKEN) {
+        throw "No access token is available to authenticate to the npm registry."
+      }
+      $registry = & src/servicebroker-npm/Get-NpmRegistry.ps1 -NpmrcPath $npmrcPath
+      $scope = "$registry/" -replace '^https?:', ''
+      Add-Content -Path $npmrcPath -Value "${scope}:_authToken=$env:NPM_AUTH_TOKEN"
+    displayName: 🔏 Authenticate NPM feeds
+    env:
+      ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9')) }}:
+        NPM_AUTH_TOKEN: $(AzureArtifactsAccessToken)
+      ${{ else }}:
+        NPM_AUTH_TOKEN: $(System.AccessToken)
 
 - pwsh: |
     function Save-CorepackEnvironment {
