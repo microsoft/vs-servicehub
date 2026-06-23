@@ -14,8 +14,17 @@ param (
 (& "$PSScriptRoot\_all.ps1").GetEnumerator() |% {
     # Always use ALL CAPS for env var names since Azure Pipelines converts variable names to all caps and on non-Windows OS, env vars are case sensitive.
     $keyCaps = $_.Key.ToUpper()
-    if ((Test-Path "env:$keyCaps") -and (Get-Content "env:$keyCaps")) {
-        Write-Host "Skipping setting $keyCaps because variable is already set to '$(Get-Content env:$keyCaps)'." -ForegroundColor Cyan
+    $existingValue = if (Test-Path "env:$keyCaps") { Get-Content "env:$keyCaps" } else { $null }
+    # On Azure Pipelines, treat any pre-set env var slot as authoritative -- even when empty -- because
+    # queue-time variables are exposed as env vars and are read-only on the run. Emitting task.setvariable
+    # against an empty queue-time variable used to be silently overwritten; under the readonly-variables
+    # rollout it now hard-fails with "Overwriting readonly variable".
+    # Off Azure Pipelines (local, GitHub Actions, etc.), keep requiring a non-empty value: on Linux,
+    # env vars can be inherited as empty for unrelated reasons and shouldn't suppress the computed value.
+    $isAlreadySet = if ($env:TF_BUILD) { $null -ne $existingValue } else { [bool]$existingValue }
+    if ($isAlreadySet) {
+        $displayValue = if ($existingValue) { "'$existingValue'" } else { "(empty)" }
+        Write-Host "Skipping setting $keyCaps because variable is already set to $displayValue." -ForegroundColor Cyan
     } else {
         Write-Host "$keyCaps=$($_.Value)" -ForegroundColor Yellow
         if ($env:TF_BUILD) {
