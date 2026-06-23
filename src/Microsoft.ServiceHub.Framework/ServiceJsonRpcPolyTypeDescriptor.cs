@@ -315,6 +315,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			ContractInterface = typeof(T),
 			AdditionalContractInterfaces = additionalServiceInterfaces.AsMemory(),
+			AcceptProxyWithExtraInterfaces = true,
 			ExceptionStrategy = this.ExceptionStrategy,
 		};
 

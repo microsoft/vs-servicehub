@@ -23,6 +23,11 @@ public readonly struct ProxyInputs
 	public ReadOnlyMemory<Type> AdditionalContractInterfaces { get; init; }
 
 	/// <summary>
+	/// Gets a value indicating whether a source-generated proxy that implements extra interfaces may be used.
+	/// </summary>
+	public bool AcceptProxyWithExtraInterfaces { get; init; }
+
+	/// <summary>
 	/// Gets the exception strategy for the proxy.
 	/// </summary>
 	internal ExceptionProcessing ExceptionStrategy { get; init; }
