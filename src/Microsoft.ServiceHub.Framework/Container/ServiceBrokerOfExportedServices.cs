@@ -5,7 +5,6 @@ using System.Collections.Immutable;
 using System.Composition;
 using System.Diagnostics;
 using System.IO.Pipelines;
-using System.Linq;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
 using Microsoft.VisualStudio.Threading;
@@ -129,11 +128,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 
 				using (options.ApplyCultureToCurrentContext())
 				{
-					if (descriptor is ServiceJsonRpcDescriptor { MultiplexingStreamOptions: null } oldJsonRpcDescriptor)
+					if (descriptor is not (ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null } or ServiceJsonRpcPolyTypeDescriptor { MultiplexingStreamOptions: not null }))
 					{
 						// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
 #pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
-						descriptor = oldJsonRpcDescriptor.WithMultiplexingStream(options.MultiplexingStream);
+						descriptor = descriptor.WithMultiplexingStream(options.MultiplexingStream);
 #pragma warning restore CS0618 // Type or member is obsolete
 					}
 

@@ -1,19 +1,22 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Immutable;
 using System.Diagnostics;
-using Microsoft;
+using System.IO.Pipelines;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
 using Microsoft.VisualStudio.Utilities.ServiceBroker;
 using Nerdbank.Streams;
-using Xunit;
+using StreamJsonRpc;
 
 public class BrokeredServiceContainerTests : TestBase
 {
 	private static readonly ServiceRpcDescriptor Descriptor = new ServiceJsonRpcDescriptor(new ServiceMoniker("TestService"), ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
+	private static readonly ServiceRpcDescriptor PolyTypeDescriptorWithMultiplexing = new ServiceJsonRpcPolyTypeDescriptor(new ServiceMoniker("TestPolyTypeService"), ServiceJsonRpcPolyTypeDescriptor.Formatters.NerdbankMessagePack, ServiceJsonRpcPolyTypeDescriptor.MessageDelimiters.BigEndianInt32LengthHeader, PolyType.SourceGenerator.TypeShapeProvider_Microsoft_ServiceHub_Framework_Tests.Default)
+		.WithRpcTargetMetadata(RpcTargetMetadata.FromShape<ITestRpcContract>())
+		.WithMultiplexingStream(new() { ProtocolMajorVersion = 3 });
+
 #pragma warning disable SA1310 // Field names should not contain underscore
 	private static readonly ServiceRpcDescriptor Descriptor1_0 = new ServiceJsonRpcDescriptor(new ServiceMoniker("TestService", new(1, 0)), ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
 	private static readonly ServiceRpcDescriptor Descriptor1_1 = new ServiceJsonRpcDescriptor(new ServiceMoniker("TestService", new(1, 1)), ServiceJsonRpcDescriptor.Formatters.MessagePack, ServiceJsonRpcDescriptor.MessageDelimiters.BigEndianInt32LengthHeader);
@@ -242,6 +245,24 @@ public class BrokeredServiceContainerTests : TestBase
 		this.ProfferUnversionedService();
 		IMockService? proxy = await this.serviceBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken);
 		Assert.NotNull(proxy);
+	}
+
+	[Fact]
+	public async Task ProfferedPolyTypeDescriptorPreservesMultiplexingOptions()
+	{
+		this.container.Proffer(PolyTypeDescriptorWithMultiplexing, (mk, options, sb, ct) => new(new TestRpcService()));
+
+		IDuplexPipe? pipe = await this.serviceBroker.GetPipeAsync(PolyTypeDescriptorWithMultiplexing.Moniker, this.TimeoutToken);
+		Assert.NotNull(pipe);
+
+		ITestRpcContract proxy = PolyTypeDescriptorWithMultiplexing.ConstructRpc<ITestRpcContract>(pipe);
+		using (proxy as IDisposable)
+		{
+			MemoryStream stream = new([1, 2, 3]);
+			byte[] result = await proxy.ReadStreamAsync(stream, this.TimeoutToken);
+
+			Assert.Equal(stream.ToArray(), result);
+		}
 	}
 
 	private void ProfferUnversionedService()
