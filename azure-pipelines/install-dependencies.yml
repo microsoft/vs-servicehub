@@ -24,12 +24,18 @@ steps:
     versionSpec: 22.x
   displayName: ⚙️ Install Node.js
 
-- task: npmAuthenticate@0
-  displayName: 🔏 Authenticate NPM feeds
-  inputs:
-    workingFile: src/servicebroker-npm/.npmrc
-    ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
-      customEndpoint: azure-public/msft_consumption_public
+- ${{ if and(parameters.needsAzurePublicFeeds, eq(variables['system.collectionId'], '011b8bdf-6d56-4f87-be0d-0092136884d9'), ne(variables['System.PullRequest.IsFork'], 'True')) }}:
+  # The npm registry lives in the azure-public account, so the build account's own token can't reach it.
+  # npmAuthenticate cannot be used because only a NuGet-typed service connection exists for this feed,
+  # so inject the WIF-provided access token into the .npmrc directly instead.
+  - pwsh: |
+      $npmrcPath = 'src/servicebroker-npm/.npmrc'
+      $registry = & src/servicebroker-npm/Get-NpmRegistry.ps1 -NpmrcPath $npmrcPath
+      $scope = "$registry/" -replace '^https?:', ''
+      Add-Content -Path $npmrcPath -Value "${scope}:_authToken=$env:AZURE_ARTIFACTS_ACCESS_TOKEN"
+    displayName: 🔏 Authenticate NPM feeds
+    env:
+      AZURE_ARTIFACTS_ACCESS_TOKEN: $(AzureArtifactsAccessToken)
 
 - pwsh: |
     function Save-CorepackEnvironment {
