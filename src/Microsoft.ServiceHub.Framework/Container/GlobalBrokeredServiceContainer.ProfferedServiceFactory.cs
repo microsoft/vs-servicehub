@@ -97,7 +97,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			(IDuplexPipe, IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
 
 			// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
-			ServiceRpcDescriptor descriptor = this.Descriptor is not ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null }
+			ServiceRpcDescriptor descriptor = this.Descriptor is not (ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null } or ServiceJsonRpcPolyTypeDescriptor { MultiplexingStreamOptions: not null })
 #pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
 				 ? this.Descriptor.WithMultiplexingStream(options.MultiplexingStream)
 #pragma warning restore CS0618 // Type or member is obsolete

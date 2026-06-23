@@ -515,12 +515,12 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 
 			if (this.multiplexingStream is object)
 			{
-				// Stream can be setup only for ServiceJsonRpcDescriptor.
-				// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
-				if (serviceDescriptor is ServiceJsonRpcDescriptor serviceJsonRpcDescriptor && serviceJsonRpcDescriptor.MultiplexingStreamOptions is null)
+				// Stream can be setup only for ServiceJsonRpcDescriptor and ServiceJsonRpcPolyTypeDescriptor.
+				// We encourage users to migrate to descriptors configured with WithMultiplexingStream(MultiplexingStream.Options).
+				if (serviceDescriptor is not (ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null } or ServiceJsonRpcPolyTypeDescriptor { MultiplexingStreamOptions: not null }))
 				{
 #pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
-					serviceDescriptor = serviceJsonRpcDescriptor.WithMultiplexingStream(this.multiplexingStream);
+					serviceDescriptor = serviceDescriptor.WithMultiplexingStream(this.multiplexingStream);
 #pragma warning restore CS0618 // Type or member is obsolete
 				}
 			}
