@@ -321,6 +321,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 			Requires.NotNull(serviceMoniker, nameof(serviceMoniker));
 			serviceActivationOptions = this.ApplyOptionsFilter(serviceActivationOptions);
 
+			using StartActivityExtension.TraceActivity activity = this.container.traceSource.StartActivity("Requesting service channel to \"{0}\"", serviceMoniker);
+
 			try
 			{
 				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, isRemoteRequest: true, cancellationToken).ConfigureAwait(false);
