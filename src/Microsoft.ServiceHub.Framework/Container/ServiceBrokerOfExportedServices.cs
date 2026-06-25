@@ -176,8 +176,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				throw;
 			}
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (!(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
 		{
+			// A cancellation requested via the caller's own token is an expected outcome, not an activation
+			// failure. Let it propagate as OperationCanceledException -- matching GlobalBrokeredServiceContainer.View.GetProxyAsync --
+			// so callers that observe their own cancellation don't see (and report) a ServiceActivationFailedException.
 			throw new ServiceActivationFailedException(serviceMoniker, ex);
 		}
 	}
@@ -240,8 +243,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				throw;
 			}
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (!(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
 		{
+			// A cancellation requested via the caller's own token is an expected outcome, not an activation
+			// failure. Let it propagate as OperationCanceledException -- matching GlobalBrokeredServiceContainer.View.GetProxyAsync --
+			// so callers that observe their own cancellation don't see (and report) a ServiceActivationFailedException.
 			throw new ServiceActivationFailedException(serviceDescriptor.Moniker, ex);
 		}
 	}
