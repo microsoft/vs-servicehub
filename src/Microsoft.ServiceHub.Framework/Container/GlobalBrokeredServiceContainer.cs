@@ -3,6 +3,7 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Services;
@@ -25,6 +26,16 @@ namespace Microsoft.VisualStudio.Utilities.ServiceBroker;
 public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceContainer, IBrokeredServiceContainerInternal, IBrokeredServiceContainerDiagnostics
 {
 	/// <summary>
+	/// The maximum number of negative-cache entries to retain for lazily looked up service registrations.
+	/// </summary>
+	private const int MaxNilMarkedMonikers = 1000;
+
+	/// <summary>
+	/// The maximum <see cref="ServiceMoniker.Name"/> length to store in the negative cache.
+	/// </summary>
+	private const int MaxNilMarkedMonikerNameLength = 250;
+
+	/// <summary>
 	/// Defines the order of sources to check for remote services.
 	/// </summary>
 	private static readonly ServiceSource[] PreferredSourceOrderForRemoteServices = new ServiceSource[] { ServiceSource.TrustedExclusiveClient, ServiceSource.TrustedExclusiveServer, ServiceSource.TrustedServer, ServiceSource.UntrustedServer };
@@ -41,6 +52,21 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	private readonly TraceSource traceSource;
 
 	private readonly JoinableTaskFactory? joinableTaskFactory;
+
+	/// <summary>
+	/// Lazily-executed synchronous loading of all registrations.
+	/// </summary>
+	private readonly object loadAllRegistrationsLock = new();
+
+	/// <summary>
+	/// Lazily-executed asynchronous loading of all registrations.
+	/// </summary>
+	private readonly AsyncLazyInitializer loadAllRegistrationsAsync;
+
+	/// <summary>
+	/// Flag indicating whether we have already successfully invoked <see cref="LoadAllRegistrationsCore"/>.
+	/// </summary>
+	private bool allSyncRegistrationsLoaded;
 
 	/// <summary>
 	/// A dictionary of registered services, keyed by their monikers.
@@ -66,6 +92,11 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	private ImmutableDictionary<ServiceSource, IProffered> remoteSources = ImmutableDictionary<ServiceSource, IProffered>.Empty;
 
 	/// <summary>
+	/// Tracks service monikers that have been checked for lazy-load but not found (nil-sentinel).
+	/// </summary>
+	private ImmutableHashSet<ServiceMoniker> nilMarkedMonikers = ImmutableHashSet<ServiceMoniker>.Empty;
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="GlobalBrokeredServiceContainer"/> class.
 	/// </summary>
 	/// <param name="services">
@@ -81,6 +112,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 		this.isClientOfExclusiveServer = isClientOfExclusiveServer;
 		this.joinableTaskFactory = joinableTaskFactory;
 		this.traceSource = traceSource;
+		this.loadAllRegistrationsAsync = new AsyncLazyInitializer(() => this.LoadAllRegistrationsCoreAsync().AsTask(), joinableTaskFactory);
 
 		// Add built-in services.
 		this.ProfferIntrinsicService(
@@ -248,8 +280,11 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// </summary>
 	/// <param name="remoteSource">The source of services.</param>
 	/// <returns>A sequence of registered services that we may expect from the source.</returns>
+	[Obsolete($"Use {nameof(GetServicesThatMayBeExpectedAsync)} instead for results guaranteed to include all registered services.")]
 	public IEnumerable<ServiceMoniker> GetServicesThatMayBeExpected(ServiceSource remoteSource)
 	{
+		this.LoadAllRegistrations();
+
 		foreach (KeyValuePair<ServiceMoniker, ServiceRegistration> tuple in this.registeredServices)
 		{
 			if (tuple.Value.IsExposedTo(ConvertRemoteSourceToLocalAudience(remoteSource)))
@@ -257,6 +292,19 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 				yield return tuple.Key;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Returns the services that are registered locally that *may* be proffered by a particular remote source.
+	/// </summary>
+	/// <param name="remoteSource">The source of services.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>A sequence of registered services that we may expect from the source.</returns>
+	public async ValueTask<ImmutableArray<ServiceMoniker>> GetServicesThatMayBeExpectedAsync(ServiceSource remoteSource, CancellationToken cancellationToken = default)
+	{
+		await this.LoadAllRegistrationsAsync(cancellationToken).ConfigureAwait(false);
+
+		return [.. this.registeredServices.Where(tuple => tuple.Value.IsExposedTo(ConvertRemoteSourceToLocalAudience(remoteSource))).Select(tuple => tuple.Key)];
 	}
 
 	/// <summary>
@@ -307,10 +355,21 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 	/// <summary>
 	/// Registers a set of services with the global broker. This is separate from proffering a service. A service should be registered before it is proffered.
-	/// An <see cref="IServiceBroker.AvailabilityChanged"/> event is never
-	/// fired as a result of calling this method, but instead will be fired once the service is proffered.
 	/// </summary>
 	/// <param name="services">The set of services to be registered.</param>
+	/// <remarks>
+	/// <para>
+	/// When <paramref name="services"/> contains services that have already been registered,
+	/// they will not be registered again.
+	/// An error is traced if the service is already registered with conflicting data.
+	/// </para>
+	/// <para>
+	/// An <see cref="IServiceBroker.AvailabilityChanged"/> event may be raised as a result of calling this method,
+	/// because although service proffering hasn't changed, some of these registrations may include a
+	/// <see cref="ServiceRegistration.ProfferingPackageId"/> such that now can load the package that proffers the service,
+	/// and clients that previously asked for one of these services and got a nil result may now be able to get a valid service.
+	/// </para>
+	/// </remarks>
 	protected internal void RegisterServices(IReadOnlyDictionary<ServiceMoniker, ServiceRegistration> services)
 	{
 		Requires.NotNull(services);
@@ -320,20 +379,154 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			return;
 		}
 
+		ImmutableHashSet<ServiceMoniker>.Builder? availabilityChangedMonikers = null;
 		lock (this.syncObject)
 		{
 			foreach (KeyValuePair<ServiceMoniker, ServiceRegistration> service in services)
 			{
-				if (!this.registeredServices.ContainsKey(service.Key))
+				if (!this.registeredServices.TryGetValue(service.Key, out ServiceRegistration? existingRegistration))
 				{
 					ImmutableInterlocked.TryAdd(ref this.registeredServices, service.Key, service.Value);
+					if (this.TryRemoveNilMarkers_NoLock(service.Key) is { Count: > 0 } removedNilMarkers)
+					{
+						(availabilityChangedMonikers ??= ImmutableHashSet.CreateBuilder<ServiceMoniker>()).UnionWith(removedNilMarkers);
+					}
+
+					this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' is now registered.", service.Key);
+				}
+				else if (existingRegistration.Equals(service.Value))
+				{
+					this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' has already been registered. Skipping duplicate registration.", service.Key);
 				}
 				else
 				{
-					this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Registered, "Service '{0}' has already been registered. Skipping duplicate registration.", service.Key);
+					this.traceSource.TraceEvent(TraceEventType.Error, (int)TraceEvents.Registered, "Service '{0}' has already been registered with conflicting data. Skipping duplicate registration.", service.Key);
 				}
 			}
 		}
+
+		// It's important to notify clients of the change, because although service proffering hasn't changed,
+		// some of these registrations may have included a ProfferingPackageId such that now that we know who
+		// to load to get a proffer call, clients that previously asked for one of these services and got a nil
+		// result may now be able to get a valid service.
+		// We *could* filter the list of monikers to only those that have a ProfferingPackageId,
+		// but by notifying all of them, our trace logs have a chance to capture both states:
+		// a request for an unregistered service, and again later a request for a service that is (potentially) not proffered.
+		if (availabilityChangedMonikers is { Count: > 0 })
+		{
+			this.OnAvailabilityChanged(null, new RegistrationAvailabilityChanged(availabilityChangedMonikers.ToImmutable()));
+		}
+	}
+
+	/// <summary>
+	/// Ensures that all service registrations have been loaded from synchronous sources.
+	/// </summary>
+	/// <remarks>
+	/// This method is called by enumeration methods like <see cref="GetServicesThatMayBeExpected"/> to ensure complete data.
+	/// </remarks>
+	protected void LoadAllRegistrations()
+	{
+		// We're about to call into a virtual method (which presumably is overridden by external code).
+		// Make sure we're not holding a private lock.
+		Assumes.False(Monitor.IsEntered(this.syncObject));
+
+		// We use a dedicated lock object for this because we're calling to a virtual method
+		// and we don't want 3rd party code deadlocking us if they were to call us back into us from another thread.
+		lock (this.loadAllRegistrationsLock)
+		{
+			if (this.allSyncRegistrationsLoaded)
+			{
+				return;
+			}
+
+			this.LoadAllRegistrationsCore();
+			this.allSyncRegistrationsLoaded = true;
+		}
+	}
+
+	/// <summary>
+	/// Ensures that all service registrations have been loaded, including those from asynchronous sources.
+	/// </summary>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>A task that completes when all asynchronous registration loading has completed.</returns>
+	/// <remarks>
+	/// This method first calls <see cref="LoadAllRegistrations"/> and then loads any additional registrations
+	/// that require asynchronous operations.
+	/// </remarks>
+	protected async ValueTask LoadAllRegistrationsAsync(CancellationToken cancellationToken)
+	{
+		this.LoadAllRegistrations();
+
+		await this.loadAllRegistrationsAsync.InitializeAsync(cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	/// When overridden by a derived class, loads all service registrations that can be loaded synchronously.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The base implementation does nothing, which is appropriate when all services are registered upfront in the constructor.
+	/// Overriding methods should register services using <see cref="RegisterServices(IReadOnlyDictionary{ServiceMoniker, ServiceRegistration})"/>.
+	/// </para>
+	/// <para>This method is called when the brokered service container must defeat lazy loading of service registrations for purposes of
+	/// producing a complete list of available services or filtering services proffered from a remote service broker.</para>
+	/// <para><see cref="LoadAllRegistrationsCoreAsync"/> is responsible for loading any additional registrations that require asynchronous operations.</para>
+	/// <para>Derived classes do not need to worry about concurrency; this method will only be invoked once.</para>
+	/// </remarks>
+	protected virtual void LoadAllRegistrationsCore()
+	{
+	}
+
+	/// <summary>
+	/// When overridden by a derived class, loads all service registrations that need to be loaded asynchronously.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The base implementation does nothing, which is appropriate when all services are registered upfront in the constructor.
+	/// Overriding methods should register services using <see cref="RegisterServices(IReadOnlyDictionary{ServiceMoniker, ServiceRegistration})"/>.
+	/// </para>
+	/// <para><see cref="LoadAllRegistrationsCore"/> is guaranteed to have been invoked before this method, and therefore this method only needs to load additional registrations that require asynchronous discovery.</para>
+	/// <para>Derived classes do not need to worry about concurrency; this method will only be invoked once.</para>
+	/// </remarks>
+	/// <returns>A task that completes when any asynchronous registration loading has completed.</returns>
+	protected virtual ValueTask LoadAllRegistrationsCoreAsync() => default;
+
+	/// <summary>
+	/// When overridden by a derived class, attempts to retrieve a service registration.
+	/// </summary>
+	/// <param name="serviceMoniker">The moniker of the service to retrieve.</param>
+	/// <param name="registration">Receives the service registration if found.</param>
+	/// <returns><see langword="true"/> if the registration was found; <see langword="false"/> otherwise.</returns>
+	/// <remarks>
+	/// <para>The default implementation returns <see langword="false"/>, leaving the service unfound.</para>
+	/// <para>
+	/// Overriding methods are responsible to retrieve the service registration if it can be done synchronously.
+	/// Services that require asynchronous discovery should be handled by overriding <see cref="TryGetServiceRegistrationCoreAsync(ServiceMoniker, CancellationToken)"/>.
+	/// </para>
+	/// </remarks>
+	protected virtual bool TryGetServiceRegistrationCore(ServiceMoniker serviceMoniker, out ServiceRegistration? registration)
+	{
+		registration = null;
+		return false;
+	}
+
+	/// <summary>
+	/// When overridden by a derived class, attempts to retrieve a service registration.
+	/// </summary>
+	/// <param name="serviceMoniker">The moniker of the service to retrieve.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>The service registration if found; <see langword="null"/> otherwise.</returns>
+	/// <remarks>
+	/// <para>The default implementation returns <see langword="null"/>, leaving the service unfound.</para>
+	/// <para>
+	/// Overriding methods are responsible to retrieve the service registration if it can be done asynchronously.
+	/// Implementations can assume that <see cref="TryGetServiceRegistrationCore(ServiceMoniker, out ServiceRegistration?)"/>
+	/// has already been invoked and returned <see langword="false"/> before this method is called, so this method only needs to handle cases that require asynchronous discovery.
+	/// </para>
+	/// </remarks>
+	protected virtual ValueTask<ServiceRegistration?> TryGetServiceRegistrationCoreAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken)
+	{
+		return default;
 	}
 
 	/// <summary>
@@ -406,6 +599,17 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	{
 		Requires.NotNull(proffered);
 
+		// Collect unregisteredMonikers *before* entering our lock
+		// since TryLookupServiceRegistrationWithLazy may call into a virtual method that could deadlock if it tries to acquire our lock.
+		ImmutableHashSet<ServiceMoniker> unregisteredMonikers = ImmutableHashSet<ServiceMoniker>.Empty;
+		foreach (ServiceMoniker moniker in proffered.Monikers)
+		{
+			if (!this.TryLookupServiceRegistrationWithLazy(moniker, out _, out _))
+			{
+				unregisteredMonikers = unregisteredMonikers.Add(moniker);
+			}
+		}
+
 		ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> oldIndex;
 		lock (this.syncObject)
 		{
@@ -423,14 +627,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 			// Index each service, and also validate that all proffered services are registered.
 			var monikerAndProfferBuilder = monikerAndProffer.ToBuilder();
-			ImmutableHashSet<ServiceMoniker> unregisteredMonikers = ImmutableHashSet<ServiceMoniker>.Empty;
 			foreach (ServiceMoniker moniker in proffered.Monikers)
 			{
-				if (!this.registeredServices.ContainsKey(moniker))
-				{
-					unregisteredMonikers = unregisteredMonikers.Add(moniker);
-				}
-
 				if (monikerAndProfferBuilder.ContainsKey(moniker))
 				{
 					// Only load the resources assembly when we know we're in the failure case.
@@ -495,8 +693,10 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <remarks>
 	/// The contents of this JSON blob are meant for human diagnostic purposes and are subject to change.
 	/// </remarks>
-	private async Task<JObject> GetDiagnosticsAsync(ServiceAudience serviceAudience, CancellationToken cancellationToken = default)
+	private async Task<JObject> GetDiagnosticsAsync(ServiceAudience serviceAudience, CancellationToken cancellationToken)
 	{
+		await this.LoadAllRegistrationsAsync(cancellationToken).ConfigureAwait(false);
+
 		var json = new JObject();
 
 		IServiceBroker serviceBroker = this.GetFullAccessServiceBroker();
@@ -558,6 +758,8 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns>The filtered, intersected set of monikers.</returns>
 	private ImmutableHashSet<ServiceMoniker> GetAllowedMonikers(ServiceSource source, ImmutableHashSet<ServiceMoniker>? serviceMonikers)
 	{
+		this.LoadAllRegistrations();
+
 		// Determine what service audience would be required on any service registration
 		// in order for us to be willing to consume the proffered service, considering our position
 		// relative to the service source.
@@ -703,7 +905,48 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns><see langword="true"/> if the service broker wrapper was found; <see langword="false"/> otherwise.</returns>
 	private bool TryGetProfferingSource(ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode)
 	{
-		return this.TryGetProfferingSource(this.profferedServiceIndex, serviceMoniker, consumingAudience, isRemoteRequest, out proffered, out errorCode);
+		ChaosBrokeredServiceAvailability availability = this.GetChaosBrokeredServiceAvailability(serviceMoniker);
+		if (this.IsRequestDeniedByChaos(serviceMoniker, consumingAudience, isRemoteRequest, availability, out errorCode))
+		{
+			proffered = null;
+			return false;
+		}
+
+		if (!this.TryLookupServiceRegistrationWithLazy(serviceMoniker, out ServiceRegistration? serviceRegistration, out ServiceMoniker? matchingServiceMoniker))
+		{
+			proffered = null;
+			errorCode = MissingBrokeredServiceErrorCode.NotLocallyRegistered;
+			return false;
+		}
+
+		(proffered, errorCode) = this.ResolveProfferingSource(this.profferedServiceIndex, serviceMoniker, consumingAudience, availability, serviceRegistration, matchingServiceMoniker);
+		return proffered is not null;
+	}
+
+	/// <summary>
+	/// Gets the proffering broker for a given service, taking both remote and local services into account,
+	/// while allowing service registrations to be discovered asynchronously.
+	/// </summary>
+	/// <param name="serviceMoniker">The sought service.</param>
+	/// <param name="consumingAudience">The audience filter that applies to the <see cref="IServiceBroker"/> that has received the request.</param>
+	/// <param name="isRemoteRequest">Indicates whether the request originates from a remote consumer via <see cref="IRemoteServiceBroker.RequestServiceChannelAsync"/>.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>The proffering wrapper, if found, and the reason for failure otherwise.</returns>
+	private async ValueTask<(IProffered? Proffered, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, CancellationToken cancellationToken)
+	{
+		ChaosBrokeredServiceAvailability availability = this.GetChaosBrokeredServiceAvailability(serviceMoniker);
+		if (this.IsRequestDeniedByChaos(serviceMoniker, consumingAudience, isRemoteRequest, availability, out MissingBrokeredServiceErrorCode errorCode))
+		{
+			return (null, errorCode);
+		}
+
+		(ServiceRegistration Registration, ServiceMoniker MatchingMoniker)? result = await this.TryLookupServiceRegistrationWithLazyAsync(serviceMoniker, cancellationToken).ConfigureAwait(false);
+		if (result is null)
+		{
+			return (null, MissingBrokeredServiceErrorCode.NotLocallyRegistered);
+		}
+
+		return this.ResolveProfferingSource(this.profferedServiceIndex, serviceMoniker, consumingAudience, availability, result.Value.Registration, result.Value.MatchingMoniker);
 	}
 
 	/// <summary>
@@ -719,10 +962,31 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns><see langword="true"/> if the service broker wrapper was found; <see langword="false"/> otherwise.</returns>
 	private bool TryGetProfferingSource(ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> profferedServiceIndex, ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, [NotNullWhen(true)] out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode)
 	{
-		ChaosBrokeredServiceAvailability availability =
-			this.chaosMonkeyConfiguration?.BrokeredServices is { } chaos && chaos.TryGetValue(serviceMoniker, out ChaosBrokeredService? chaosConfig)
-			? chaosConfig.Availability : ChaosBrokeredServiceAvailability.AllowAll;
+		ChaosBrokeredServiceAvailability availability = this.GetChaosBrokeredServiceAvailability(serviceMoniker);
+		if (this.IsRequestDeniedByChaos(serviceMoniker, consumingAudience, isRemoteRequest, availability, out errorCode))
+		{
+			proffered = null;
+			return false;
+		}
 
+		if (!this.TryLookupServiceRegistration(serviceMoniker, out ServiceRegistration? serviceRegistration, out ServiceMoniker? matchingServiceMoniker))
+		{
+			proffered = null;
+			errorCode = MissingBrokeredServiceErrorCode.NotLocallyRegistered;
+			return false;
+		}
+
+		(proffered, errorCode) = this.ResolveProfferingSource(profferedServiceIndex, serviceMoniker, consumingAudience, availability, serviceRegistration, matchingServiceMoniker);
+		return proffered is not null;
+	}
+
+	private ChaosBrokeredServiceAvailability GetChaosBrokeredServiceAvailability(ServiceMoniker serviceMoniker) =>
+		this.chaosMonkeyConfiguration?.BrokeredServices is { } chaos && chaos.TryGetValue(serviceMoniker, out ChaosBrokeredService? chaosConfig)
+			? chaosConfig.Availability
+			: ChaosBrokeredServiceAvailability.AllowAll;
+
+	private bool IsRequestDeniedByChaos(ServiceMoniker serviceMoniker, ServiceAudience consumingAudience, bool isRemoteRequest, ChaosBrokeredServiceAvailability availability, out MissingBrokeredServiceErrorCode errorCode)
+	{
 		// DenyRemote is checked later because it only applies to remote fulfillment.
 		if (availability == ChaosBrokeredServiceAvailability.DenyAll ||
 			(availability == ChaosBrokeredServiceAvailability.DenyFromRemote && isRemoteRequest))
@@ -733,99 +997,81 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			}
 
 			errorCode = MissingBrokeredServiceErrorCode.ChaosConfigurationDeniedRequest;
-			proffered = default;
-			return false;
+			return true;
 		}
 
-		if (this.TryLookupServiceRegistration(serviceMoniker, out ServiceRegistration? serviceRegistration, out ServiceMoniker? matchingServiceMoniker))
-		{
-			// If the consumer is local, we're willing to provide services to them from remote sources.
-			// Specifically: We don't provide remote consumers with remote services.
-			// We do NOT check whether the consuming (local) audience should have visibility into the remotely acquired services
-			// because the audience check was performed and services filtered when the remote service broker was originally proffered.
-			bool anyRemoteSourceExists = false;
-			if (IsLocalConsumer(consumingAudience))
-			{
-				foreach (ServiceSource source in PreferredSourceOrderForRemoteServices)
-				{
-					if (profferedServiceIndex.TryGetValue(source, out ImmutableDictionary<ServiceMoniker, IProffered>? proffersFromSource))
-					{
-						anyRemoteSourceExists = true;
-						if (proffersFromSource.TryGetValue(matchingServiceMoniker, out proffered))
-						{
-							if (availability == ChaosBrokeredServiceAvailability.DenyRemote)
-							{
-								if (this.traceSource.Switch.ShouldTrace(TraceEventType.Warning))
-								{
-									this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Request, "Request for \"{0}\" denied for remote fulfillment because of chaos configuration (client: {1}).", serviceMoniker, consumingAudience);
-								}
-
-								errorCode = MissingBrokeredServiceErrorCode.ChaosConfigurationDeniedRequest;
-								return false;
-							}
-
-							if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
-							{
-								this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Request, "Request for \"{0}\": found proffered implementation in {1} (client: {2}).", serviceMoniker, proffered.Source, consumingAudience);
-							}
-
-							errorCode = MissingBrokeredServiceErrorCode.NoExplanation;
-							return true;
-						}
-					}
-				}
-			}
-
-			// For locally proffered services, we first check that the consuming audience is allowed to see it.
-			// We only reach this far if the requested service was not expected to come from a remote source that we checked above.
-			if (serviceRegistration.IsExposedTo(consumingAudience))
-			{
-				if (this.IsLocalProfferedServiceBlockedOnExclusiveClient(serviceRegistration, consumingAudience) ||
-					(anyRemoteSourceExists && serviceRegistration.IsExposedLocally && serviceRegistration.IsExposedRemotely))
-				{
-					// We are connected to some remote host (or expect to be soon), and this service is designed to come from at least one kind of remote host.
-					// We therefore block the service from being accessed because we don't want a locally proffered service in this case.
-					errorCode = MissingBrokeredServiceErrorCode.LocalServiceHiddenOnRemoteClient;
-					proffered = default;
-					return false;
-				}
-
-				foreach (ServiceSource source in PreferredSourceOrderForLocalServices)
-				{
-					if (profferedServiceIndex.TryGetValue(source, out ImmutableDictionary<ServiceMoniker, IProffered>? proffersFromSource))
-					{
-						if (proffersFromSource.TryGetValue(matchingServiceMoniker, out proffered))
-						{
-							if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
-							{
-								this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Request, "Request for \"{0}\": found proffered implementation in {1} (client: {2}).", serviceMoniker, proffered.Source, consumingAudience);
-							}
-
-							errorCode = MissingBrokeredServiceErrorCode.NoExplanation;
-							return true;
-						}
-					}
-				}
-
-				errorCode = MissingBrokeredServiceErrorCode.ServiceFactoryNotProffered;
-			}
-			else
-			{
-				if (this.traceSource.Switch.ShouldTrace(TraceEventType.Warning))
-				{
-					this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Request, "Request for \"{0}\" from {1} denied because the service is only exposed {2}.", serviceMoniker, consumingAudience, serviceRegistration.Audience);
-				}
-
-				errorCode = MissingBrokeredServiceErrorCode.ServiceAudienceMismatch;
-			}
-		}
-		else
-		{
-			errorCode = MissingBrokeredServiceErrorCode.NotLocallyRegistered;
-		}
-
-		proffered = default;
+		errorCode = MissingBrokeredServiceErrorCode.NoExplanation;
 		return false;
+	}
+
+	private (IProffered? Proffered, MissingBrokeredServiceErrorCode ErrorCode) ResolveProfferingSource(ImmutableDictionary<ServiceSource, ImmutableDictionary<ServiceMoniker, IProffered>> profferedServiceIndex, ServiceMoniker requestedMoniker, ServiceAudience consumingAudience, ChaosBrokeredServiceAvailability availability, ServiceRegistration serviceRegistration, ServiceMoniker matchingServiceMoniker)
+	{
+		bool anyRemoteSourceExists = false;
+		if (IsLocalConsumer(consumingAudience))
+		{
+			foreach (ServiceSource source in PreferredSourceOrderForRemoteServices)
+			{
+				if (profferedServiceIndex.TryGetValue(source, out ImmutableDictionary<ServiceMoniker, IProffered>? proffersFromSource))
+				{
+					anyRemoteSourceExists = true;
+					if (proffersFromSource.TryGetValue(matchingServiceMoniker, out IProffered? proffered))
+					{
+						if (availability == ChaosBrokeredServiceAvailability.DenyRemote)
+						{
+							if (this.traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+							{
+								this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Request, "Request for \"{0}\" denied for remote fulfillment because of chaos configuration (client: {1}).", requestedMoniker, consumingAudience);
+							}
+
+							return (null, MissingBrokeredServiceErrorCode.ChaosConfigurationDeniedRequest);
+						}
+
+						if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
+						{
+							this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Request, "Request for \"{0}\": found proffered implementation in {1} (client: {2}).", requestedMoniker, proffered.Source, consumingAudience);
+						}
+
+						return (proffered, MissingBrokeredServiceErrorCode.NoExplanation);
+					}
+				}
+			}
+		}
+
+		// For locally proffered services, we first check that the consuming audience is allowed to see it.
+		// We only reach this far if the requested service was not expected to come from a remote source that we checked above.
+		if (!serviceRegistration.IsExposedTo(consumingAudience))
+		{
+			if (this.traceSource.Switch.ShouldTrace(TraceEventType.Warning))
+			{
+				this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Request, "Request for \"{0}\" from {1} denied because the service is only exposed {2}.", requestedMoniker, consumingAudience, serviceRegistration.Audience);
+			}
+
+			return (null, MissingBrokeredServiceErrorCode.ServiceAudienceMismatch);
+		}
+
+		if (this.IsLocalProfferedServiceBlockedOnExclusiveClient(serviceRegistration, consumingAudience) ||
+			(anyRemoteSourceExists && serviceRegistration.IsExposedLocally && serviceRegistration.IsExposedRemotely))
+		{
+			// We are connected to some remote host (or expect to be soon), and this service is designed to come from at least one kind of remote host.
+			// We therefore block the service from being accessed because we don't want a locally proffered service in this case.
+			return (null, MissingBrokeredServiceErrorCode.LocalServiceHiddenOnRemoteClient);
+		}
+
+		foreach (ServiceSource source in PreferredSourceOrderForLocalServices)
+		{
+			if (profferedServiceIndex.TryGetValue(source, out ImmutableDictionary<ServiceMoniker, IProffered>? proffersFromSource) &&
+				proffersFromSource.TryGetValue(matchingServiceMoniker, out IProffered? proffered))
+			{
+				if (this.traceSource.Switch.ShouldTrace(TraceEventType.Information))
+				{
+					this.traceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.Request, "Request for \"{0}\": found proffered implementation in {1} (client: {2}).", requestedMoniker, proffered.Source, consumingAudience);
+				}
+
+				return (proffered, MissingBrokeredServiceErrorCode.NoExplanation);
+			}
+		}
+
+		return (null, MissingBrokeredServiceErrorCode.ServiceFactoryNotProffered);
 	}
 
 	/// <summary>
@@ -836,6 +1082,205 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// <returns><see langword="true"/> if the locally proffered service should *not* be activated; <see langword="false"/> otherwise.</returns>
 	private bool IsLocalProfferedServiceBlockedOnExclusiveClient(ServiceRegistration serviceRegistration, ServiceAudience consumingAudience) =>
 		this.isClientOfExclusiveServer && IsLocalConsumer(consumingAudience) && serviceRegistration.IsExposedTo(ServiceAudience.RemoteExclusiveClient);
+
+	/// <summary>
+	/// Checks the in-memory index of registered services for the registration of a named service, with support for lazy loading via synchronous sources.
+	/// </summary>
+	/// <param name="serviceMoniker">The moniker for the service. If this includes a version, and no registration for that version exists, a registration without a version may be matched.</param>
+	/// <param name="serviceRegistration">The discovered service registration, if any.</param>
+	/// <param name="matchingServiceMoniker">The <paramref name="serviceMoniker"/> if a match was found, or a copy with the version removed if only a version-less service was registered, or <see langword="null"/>.</param>
+	/// <returns><see langword="true"/> if registration was found for the given <paramref name="serviceMoniker"/>; <see langword="false"/> otherwise.</returns>
+	private bool TryLookupServiceRegistrationWithLazy(ServiceMoniker serviceMoniker, [NotNullWhen(true)] out ServiceRegistration? serviceRegistration, [NotNullWhen(true)] out ServiceMoniker? matchingServiceMoniker)
+	{
+		// We may call virtual methods. Avoid calling 3rd party code while holding private locks.
+		Assumes.False(Monitor.IsEntered(this.syncObject));
+
+		if (this.TryLookupServiceRegistration(serviceMoniker, out serviceRegistration, out matchingServiceMoniker))
+		{
+			return true;
+		}
+
+		if (this.IsNilMarked(serviceMoniker))
+		{
+			serviceRegistration = null;
+			matchingServiceMoniker = null;
+			return false;
+		}
+
+		if (this.TryGetServiceRegistrationCore(serviceMoniker, out serviceRegistration))
+		{
+			Assumes.NotNull(serviceRegistration);
+			this.CacheLazyRegistration(serviceMoniker, serviceRegistration);
+			matchingServiceMoniker = serviceMoniker;
+			return true;
+		}
+
+		if (serviceMoniker.Version is not null)
+		{
+			var versionlessMoniker = new ServiceMoniker(serviceMoniker.Name);
+			if (this.TryGetServiceRegistrationCore(versionlessMoniker, out serviceRegistration))
+			{
+				Assumes.NotNull(serviceRegistration);
+				this.CacheLazyRegistration(versionlessMoniker, serviceRegistration);
+				matchingServiceMoniker = versionlessMoniker;
+				return true;
+			}
+		}
+
+		this.MarkNilLookup(serviceMoniker);
+
+		serviceRegistration = null;
+		matchingServiceMoniker = null;
+		return false;
+	}
+
+	/// <summary>
+	/// Checks the in-memory index of registered services for the registration of a named service, with support for lazy loading via asynchronous sources.
+	/// </summary>
+	/// <param name="serviceMoniker">The moniker for the service. If this includes a version, and no registration for that version exists, a registration without a version may be matched.</param>
+	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <returns>
+	/// A value indicating whether registration was found for the given <paramref name="serviceMoniker"/>,
+	/// along with the discovered registration and the moniker that matched it.
+	/// </returns>
+	private async ValueTask<(ServiceRegistration Registration, ServiceMoniker MatchingMoniker)?> TryLookupServiceRegistrationWithLazyAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken)
+	{
+		if (this.TryLookupServiceRegistration(serviceMoniker, out ServiceRegistration? serviceRegistration, out ServiceMoniker? matchingServiceMoniker))
+		{
+			return (serviceRegistration, matchingServiceMoniker);
+		}
+
+		if (this.IsNilMarked(serviceMoniker))
+		{
+			return null;
+		}
+
+		if (!this.TryGetServiceRegistrationCore(serviceMoniker, out ServiceRegistration? lazyRegistration))
+		{
+			lazyRegistration = await this.TryGetServiceRegistrationCoreAsync(serviceMoniker, cancellationToken).ConfigureAwait(false);
+		}
+
+		if (lazyRegistration is not null)
+		{
+			this.CacheLazyRegistration(serviceMoniker, lazyRegistration);
+			return (lazyRegistration, serviceMoniker);
+		}
+
+		if (serviceMoniker.Version is not null)
+		{
+			var versionlessMoniker = new ServiceMoniker(serviceMoniker.Name);
+			if (!this.TryGetServiceRegistrationCore(versionlessMoniker, out lazyRegistration))
+			{
+				lazyRegistration = await this.TryGetServiceRegistrationCoreAsync(versionlessMoniker, cancellationToken).ConfigureAwait(false);
+			}
+
+			if (lazyRegistration is not null)
+			{
+				this.CacheLazyRegistration(versionlessMoniker, lazyRegistration);
+				return (lazyRegistration, versionlessMoniker);
+			}
+		}
+
+		this.MarkNilLookup(serviceMoniker);
+		return null;
+	}
+
+	/// <summary>
+	/// Caches a lazily discovered service registration in the in-memory index of registered services.
+	/// </summary>
+	/// <param name="serviceMoniker">The moniker for the service.</param>
+	/// <param name="serviceRegistration">The service registration to cache.</param>
+	private void CacheLazyRegistration(ServiceMoniker serviceMoniker, ServiceRegistration serviceRegistration)
+	{
+		lock (this.syncObject)
+		{
+			if (this.registeredServices.TryGetValue(serviceMoniker, out ServiceRegistration? existingRegistration))
+			{
+				Verify.Operation(existingRegistration.Equals(serviceRegistration), "Service '{0}' is already registered with a different configuration.", serviceMoniker);
+			}
+			else
+			{
+				ImmutableInterlocked.TryAdd(ref this.registeredServices, serviceMoniker, serviceRegistration);
+			}
+
+			this.TryRemoveNilMarkers_NoLock(serviceMoniker);
+		}
+
+		this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' is now JIT registered.", serviceMoniker);
+	}
+
+	private bool IsNilMarked(ServiceMoniker serviceMoniker)
+	{
+		lock (this.syncObject)
+		{
+			return this.nilMarkedMonikers.Contains(serviceMoniker);
+		}
+	}
+
+	private void MarkNilLookup(ServiceMoniker serviceMoniker)
+	{
+		if (serviceMoniker.Name.Length > MaxNilMarkedMonikerNameLength)
+		{
+			this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Registered, "Skipping nil marker for service '{0}' because its name length ({1}) exceeds the configured limit of {2}.", serviceMoniker, serviceMoniker.Name.Length, MaxNilMarkedMonikerNameLength);
+			return;
+		}
+
+		bool cacheCleared = false;
+		lock (this.syncObject)
+		{
+			if (!this.TryLookupServiceRegistration(serviceMoniker, out _, out _))
+			{
+				if (this.nilMarkedMonikers.Count >= MaxNilMarkedMonikers)
+				{
+					this.nilMarkedMonikers = ImmutableHashSet<ServiceMoniker>.Empty;
+					cacheCleared = true;
+				}
+
+				this.nilMarkedMonikers = this.nilMarkedMonikers.Add(serviceMoniker);
+			}
+		}
+
+		if (cacheCleared)
+		{
+			this.traceSource.TraceEvent(TraceEventType.Warning, (int)TraceEvents.Registered, "The nil-marked service moniker cache reached its ceiling of {0}. Clearing the cache to bound memory usage.", MaxNilMarkedMonikers);
+		}
+	}
+
+	/// <summary>
+	/// Removes any nil markers for the given <paramref name="registeredMoniker"/> (and certain variants)
+	/// from the in-memory index of registered services.
+	/// </summary>
+	/// <param name="registeredMoniker">The moniker to remove.</param>
+	/// <returns>The nil-marked monikers that were removed, or <see langword="null"/> if none were removed.</returns>
+	/// <remarks>
+	/// Callers should already hold a lock on <see cref="syncObject"/> when calling this method.
+	/// </remarks>
+	private ImmutableHashSet<ServiceMoniker>? TryRemoveNilMarkers_NoLock(ServiceMoniker registeredMoniker)
+	{
+		ImmutableHashSet<ServiceMoniker> existingNilMarkedMonikers = this.nilMarkedMonikers;
+		ImmutableHashSet<ServiceMoniker>.Builder? updatedNilMarkedMonikers = null;
+		ImmutableHashSet<ServiceMoniker>.Builder? removedNilMarkedMonikers = null;
+
+		foreach (ServiceMoniker nilMarkedMoniker in existingNilMarkedMonikers)
+		{
+			bool shouldRemove = nilMarkedMoniker == registeredMoniker
+				|| (registeredMoniker.Version is null && StringComparer.Ordinal.Equals(nilMarkedMoniker.Name, registeredMoniker.Name));
+			if (shouldRemove)
+			{
+				updatedNilMarkedMonikers ??= existingNilMarkedMonikers.ToBuilder();
+				updatedNilMarkedMonikers.Remove(nilMarkedMoniker);
+				(removedNilMarkedMonikers ??= ImmutableHashSet.CreateBuilder<ServiceMoniker>()).Add(nilMarkedMoniker);
+			}
+		}
+
+		if (updatedNilMarkedMonikers is null)
+		{
+			return null;
+		}
+
+		this.nilMarkedMonikers = updatedNilMarkedMonikers.ToImmutable();
+		return removedNilMarkedMonikers?.ToImmutable();
+	}
 
 	/// <summary>
 	/// Checks the in-memory index of registered services for the registration of a named service.
@@ -864,5 +1309,141 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 		matchingServiceMoniker = null;
 		return false;
+	}
+
+	private ProffererId GetProffererId(IProffered? proffered) => new(proffered);
+
+	private struct ProffererId : IEquatable<ProffererId>
+	{
+		private WeakReference? weakRef;
+
+		private Guid? id;
+
+		internal ProffererId(IProffered? proffered)
+		{
+			switch (proffered)
+			{
+				case IProfferedWithId hasId:
+					this.id = hasId.Id;
+					break;
+				case IProffered:
+					this.weakRef = new WeakReference(proffered);
+					break;
+			}
+		}
+
+		internal bool IsEmpty => this.weakRef is null && this.id is null;
+
+		public override bool Equals(object? obj) => obj is ProffererId other && this.Equals(other);
+
+		public bool Equals(ProffererId other)
+		{
+			// If we were initialized with a null proffer, we match against any other null proffer.
+			if (this.IsEmpty && other.IsEmpty)
+			{
+				return true;
+			}
+
+			// If we or they are null (but not BOTH, as verified above) then we're not equal.
+			if (this.IsEmpty || other.IsEmpty)
+			{
+				return false;
+			}
+
+			// Our preferred mode is ID based (to avoid WeakReference costs).
+			// If we were initialized with ID mode, then a matching proffer object
+			// would necessarily have to (still) support ID mode.
+			if (this.id is Guid thisId)
+			{
+				return thisId.Equals(other.id);
+			}
+
+			object? thisTarget = this.weakRef?.Target;
+			object? otherTarget = other.weakRef?.Target;
+
+			if (thisTarget is null || otherTarget is null)
+			{
+				return false;
+			}
+
+			return ReferenceEquals(thisTarget, otherTarget);
+		}
+
+		public bool Matches(IProffered? other)
+		{
+			// If we were initialized with a null proffer, we match against any other null proffer.
+			if (this.IsEmpty && other is null)
+			{
+				return true;
+			}
+
+			// If we or they are null (but not BOTH, as verified above) then we're not equal.
+			if ((this.weakRef is null && this.id is null) || other is null)
+			{
+				return false;
+			}
+
+			// Our preferred mode is ID based (to avoid WeakReference costs).
+			// If we were initialized with ID mode, then a matching proffer object
+			// would necessarily have to (still) support ID mode.
+			if (this.id is Guid thisId)
+			{
+				return other is IProfferedWithId { Id: Guid otherId } && thisId.Equals(otherId);
+			}
+
+			// Fallback to WeakReference mode for external implementations of IProffered.
+			object? thisTarget = this.weakRef?.Target;
+			if (thisTarget is null)
+			{
+				return false;
+			}
+
+			return ReferenceEquals(thisTarget, other);
+		}
+
+		public override int GetHashCode() =>
+			this.id is Guid thisId ? thisId.GetHashCode() :
+			this.weakRef?.Target is object target ? RuntimeHelpers.GetHashCode(target) :
+			0;
+	}
+
+	private sealed class RegistrationAvailabilityChanged : IProfferedWithId
+	{
+		internal RegistrationAvailabilityChanged(ImmutableHashSet<ServiceMoniker> monikers)
+		{
+			this.Monikers = monikers;
+		}
+
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+		{
+			add { }
+			remove { }
+		}
+
+		public Guid Id { get; } = Guid.NewGuid();
+
+		public ServiceSource Source => ServiceSource.SameProcess;
+
+		public ImmutableHashSet<ServiceMoniker> Monikers { get; }
+
+		public void Dispose()
+		{
+		}
+
+		public ValueTask<System.IO.Pipelines.IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
+			=> throw new NotSupportedException();
+
+		public ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+			where T : class
+			=> throw new NotSupportedException();
+
+		Task<RemoteServiceConnectionInfo> IRemoteServiceBroker.RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
+			=> throw new NotSupportedException();
+
+		Task IRemoteServiceBroker.HandshakeAsync(ServiceBrokerClientMetadata clientMetadata, CancellationToken cancellationToken)
+			=> throw new NotSupportedException();
+
+		Task IRemoteServiceBroker.CancelServiceRequestAsync(Guid serviceRequestId)
+			=> throw new NotSupportedException();
 	}
 }

@@ -46,6 +46,11 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 	}
 
 	/// <summary>
+	/// Gets the ID of the package to load so that this service will actually be proffered.
+	/// </summary>
+	protected virtual object? ProfferingPackageId => null;
+
+	/// <summary>
 	/// Gets or sets the sharing boundary factory used to activate each MEF brokered service.
 	/// </summary>
 	[Import]
@@ -352,7 +357,7 @@ public abstract class ServiceBrokerOfExportedServices : IServiceBroker
 				// rather than detect and report it. :(
 				if (monikers.Add(moniker))
 				{
-					ServiceRegistration registration = new(exportMetadata.Audience[i], null, exportMetadata.AllowTransitiveGuestClients[i])
+					ServiceRegistration registration = new(exportMetadata.Audience[i], this.ProfferingPackageId, exportMetadata.AllowTransitiveGuestClients[i])
 					{
 						AdditionalServiceInterfaceTypeNames = exportMetadata.OptionalInterfacesImplemented?[i] is string?[] ifaces ? ifaces.ToImmutableArray() : ImmutableArray<string>.Empty,
 					};

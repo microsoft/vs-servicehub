@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Reflection;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.ServiceHub.Framework.Testing;
 using Microsoft.VisualStudio.Shell.ServiceBroker;
+using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities.ServiceBroker;
 using Nerdbank.Streams;
 using StreamJsonRpc;
@@ -265,6 +268,150 @@ public class BrokeredServiceContainerTests : TestBase
 		}
 	}
 
+	[Fact, Obsolete]
+	public void GetServicesThatMayBeExpected_LoadsSynchronousRegistrationsOnce()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		container.SynchronousRegistrations.Add(Descriptor.Moniker, new ServiceRegistration(ServiceAudience.LiveShareGuest, null, allowGuestClients: false));
+
+		List<ServiceMoniker> firstEnumeration = [.. container.GetServicesThatMayBeExpected(ServiceSource.TrustedServer)];
+		List<ServiceMoniker> secondEnumeration = [.. container.GetServicesThatMayBeExpected(ServiceSource.TrustedServer)];
+
+		Assert.Contains(Descriptor.Moniker, firstEnumeration);
+		Assert.Equal(firstEnumeration, secondEnumeration);
+		Assert.Equal(1, container.LoadAllRegistrationsCallCount);
+	}
+
+	[Fact]
+	public async Task GetServicesThatMayBeExpectedAsync_LoadsSynchronousRegistrationsOnce()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		container.SynchronousRegistrations.Add(Descriptor.Moniker, new ServiceRegistration(ServiceAudience.LiveShareGuest, null, allowGuestClients: false));
+
+		List<ServiceMoniker> firstEnumeration = [.. await container.GetServicesThatMayBeExpectedAsync(ServiceSource.TrustedServer, this.TimeoutToken)];
+		List<ServiceMoniker> secondEnumeration = [.. await container.GetServicesThatMayBeExpectedAsync(ServiceSource.TrustedServer, this.TimeoutToken)];
+
+		Assert.Contains(Descriptor.Moniker, firstEnumeration);
+		Assert.Equal(firstEnumeration, secondEnumeration);
+		Assert.Equal(1, container.LoadAllRegistrationsCallCount);
+	}
+
+	[Fact]
+	public async Task LoadAllRegistrationsAsync_LoadsSynchronousAndAsynchronousRegistrationsOnce()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		container.SynchronousRegistrations.Add(Descriptor.Moniker, new ServiceRegistration(ServiceAudience.LiveShareGuest, null, allowGuestClients: false));
+		container.AsynchronousRegistrations.Add(Descriptor1_0.Moniker, new ServiceRegistration(ServiceAudience.LiveShareGuest, null, allowGuestClients: false));
+
+		await container.LoadAllRegistrationsForTestingAsync(this.TimeoutToken);
+		await container.LoadAllRegistrationsForTestingAsync(this.TimeoutToken);
+
+		Assert.Equal(1, container.LoadAllRegistrationsCallCount);
+		Assert.Equal(1, container.LoadAllRegistrationsAsyncCallCount);
+		Assert.Contains(Descriptor.Moniker, container.RegisteredMonikers);
+		Assert.Contains(Descriptor1_0.Moniker, container.RegisteredMonikers);
+	}
+
+	[Fact]
+	public void RegisterServices_AllowsIdenticalDuplicateRegistration()
+	{
+		MockBrokeredServiceContainer container = new();
+		ServiceRegistration registration = new(ServiceAudience.Process, null, allowGuestClients: false);
+
+		container.RegisterServices(new Dictionary<ServiceMoniker, ServiceRegistration> { { Descriptor.Moniker, registration } });
+		container.RegisterServices(new Dictionary<ServiceMoniker, ServiceRegistration> { { Descriptor.Moniker, registration } });
+	}
+
+	[Fact]
+	public async Task LazyRegistrationDuringRequest_DoesNotRaiseAvailabilityChanged()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		IServiceBroker serviceBroker = container.GetFullAccessServiceBroker();
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> availabilityChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		serviceBroker.AvailabilityChanged += (_, args) => availabilityChanged.TrySetResult(args);
+		container.AsynchronousPerServiceRegistrations.Add(
+			Descriptor.Moniker,
+			new ProfferingServiceRegistration(
+				ServiceAudience.Process,
+				new object(),
+				() => container.Proffer(Descriptor, (mk, options, sb, ct) => new(new MockService()))));
+
+		using IMockService? proxy = await serviceBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken);
+
+		Assert.NotNull(proxy);
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => availabilityChanged.Task.WithCancellation(ExpectedTimeoutToken));
+	}
+
+	[Fact]
+	public async Task RegisterServicesAfterMissingRequest_RaisesAvailabilityChangedToInterestedBrokers()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		IServiceBroker usedBroker = container.GetFullAccessServiceBroker();
+		IServiceBroker unusedBroker = container.GetFullAccessServiceBroker();
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> availabilityChangedArgs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> unexpectedAvailabilityChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		usedBroker.AvailabilityChanged += (_, args) => availabilityChangedArgs.TrySetResult(args);
+		unusedBroker.AvailabilityChanged += (_, args) => unexpectedAvailabilityChanged.TrySetResult(args);
+
+		Assert.Null(await usedBroker.GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken));
+
+		container.RegisterServicesForTesting(new Dictionary<ServiceMoniker, ServiceRegistration>
+		{
+			{ Descriptor.Moniker, new ServiceRegistration(ServiceAudience.Process, null, allowGuestClients: false) },
+		});
+
+		BrokeredServicesChangedEventArgs args = await availabilityChangedArgs.Task.WithCancellation(this.TimeoutToken);
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => unexpectedAvailabilityChanged.Task.WithCancellation(ExpectedTimeoutToken));
+
+		Assert.Contains(Descriptor.Moniker, args.ImpactedServices);
+		Assert.False(args.OtherServicesImpacted);
+	}
+
+	[Fact]
+	public void ProffererId_WeakReferenceEqualityUsesMatchingHashCode()
+	{
+		static object CreateProffererId(object proffered)
+		{
+			Type proffererIdType = typeof(GlobalBrokeredServiceContainer).GetNestedType("ProffererId", BindingFlags.NonPublic)!;
+			Type iProfferedType = typeof(GlobalBrokeredServiceContainer).GetNestedType("IProffered", BindingFlags.NonPublic)!;
+			ConstructorInfo constructor = proffererIdType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, [iProfferedType], modifiers: null)!;
+			return constructor.Invoke([proffered]);
+		}
+
+		object proffered = new WeakReferenceProfferedContainer().CreateWeakReferenceProffered();
+
+		object first = CreateProffererId(proffered);
+		object second = CreateProffererId(proffered);
+
+		Assert.Equal(first, second);
+		Assert.Equal(first.GetHashCode(), second.GetHashCode());
+	}
+
+	[Fact]
+	public async Task RegisterVersionlessServiceAfterMissingVersionedRequest_RaisesAvailabilityChangedToInterestedBrokers()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		IServiceBroker usedBroker = container.GetFullAccessServiceBroker();
+		IServiceBroker unusedBroker = container.GetFullAccessServiceBroker();
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> availabilityChangedArgs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<BrokeredServicesChangedEventArgs> unexpectedAvailabilityChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		usedBroker.AvailabilityChanged += (_, args) => availabilityChangedArgs.TrySetResult(args);
+		unusedBroker.AvailabilityChanged += (_, args) => unexpectedAvailabilityChanged.TrySetResult(args);
+
+		Assert.Null(await usedBroker.GetProxyAsync<IMockService>(Descriptor1_0, this.TimeoutToken));
+
+		container.RegisterServicesForTesting(new Dictionary<ServiceMoniker, ServiceRegistration>
+		{
+			{ Descriptor.Moniker, new ServiceRegistration(ServiceAudience.Process, null, allowGuestClients: false) },
+		});
+
+		BrokeredServicesChangedEventArgs args = await availabilityChangedArgs.Task.WithCancellation(this.TimeoutToken);
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => unexpectedAvailabilityChanged.Task.WithCancellation(ExpectedTimeoutToken));
+
+		Assert.Equal(Descriptor1_0.Moniker, Assert.Single(args.ImpactedServices));
+		Assert.False(args.OtherServicesImpacted);
+	}
+
 	private void ProfferUnversionedService()
 	{
 		this.container.Proffer(Descriptor, (mk, options, sb, ct) =>
@@ -295,6 +442,110 @@ public class BrokeredServiceContainerTests : TestBase
 	{
 		public void Dispose()
 		{
+		}
+	}
+
+	private sealed class WeakReferenceProfferedContainer : GlobalBrokeredServiceContainer
+	{
+		internal WeakReferenceProfferedContainer()
+			: base(ImmutableDictionary<ServiceMoniker, ServiceRegistration>.Empty, isClientOfExclusiveServer: false, joinableTaskFactory: null, new TraceSource("Test"))
+		{
+		}
+
+		public override IReadOnlyDictionary<string, string> LocalUserCredentials => ImmutableDictionary<string, string>.Empty;
+
+		internal object CreateWeakReferenceProffered() => new WeakReferenceProffered();
+
+		private sealed class WeakReferenceProffered : IProffered
+		{
+			public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+			{
+				add { }
+				remove { }
+			}
+
+			public ServiceSource Source => ServiceSource.SameProcess;
+
+			public ImmutableHashSet<ServiceMoniker> Monikers { get; } = ImmutableHashSet<ServiceMoniker>.Empty;
+
+			public void Dispose()
+			{
+			}
+
+			public Task HandshakeAsync(ServiceBrokerClientMetadata clientMetadata, CancellationToken cancellationToken = default)
+				=> throw new NotSupportedException();
+
+			public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
+				=> throw new NotSupportedException();
+
+			public ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+				where T : class
+				=> throw new NotSupportedException();
+
+			public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+				=> throw new NotSupportedException();
+
+			public Task CancelServiceRequestAsync(Guid serviceRequestId)
+				=> throw new NotSupportedException();
+		}
+	}
+
+	private sealed class LazyRegistrationBrokeredServiceContainer : GlobalBrokeredServiceContainer
+	{
+		internal LazyRegistrationBrokeredServiceContainer(TraceSource traceSource)
+			: base(ImmutableDictionary<ServiceMoniker, ServiceRegistration>.Empty, isClientOfExclusiveServer: false, joinableTaskFactory: null, traceSource)
+		{
+		}
+
+		public override IReadOnlyDictionary<string, string> LocalUserCredentials => ImmutableDictionary<string, string>.Empty;
+
+		internal Dictionary<ServiceMoniker, ServiceRegistration> SynchronousRegistrations { get; } = new();
+
+		internal Dictionary<ServiceMoniker, ServiceRegistration> AsynchronousRegistrations { get; } = new();
+
+		internal Dictionary<ServiceMoniker, ServiceRegistration> AsynchronousPerServiceRegistrations { get; } = new();
+
+		internal int LoadAllRegistrationsCallCount { get; private set; }
+
+		internal int LoadAllRegistrationsAsyncCallCount { get; private set; }
+
+		internal ImmutableArray<ServiceMoniker> RegisteredMonikers => this.RegisteredServices.Keys.ToImmutableArray();
+
+		internal Task LoadAllRegistrationsForTestingAsync(CancellationToken cancellationToken) => this.LoadAllRegistrationsAsync(cancellationToken).AsTask();
+
+		internal void RegisterServicesForTesting(IReadOnlyDictionary<ServiceMoniker, ServiceRegistration> services) => this.RegisterServices(services);
+
+		protected override void LoadAllRegistrationsCore()
+		{
+			this.LoadAllRegistrationsCallCount++;
+			this.RegisterServices(this.SynchronousRegistrations);
+		}
+
+		protected override ValueTask LoadAllRegistrationsCoreAsync()
+		{
+			this.LoadAllRegistrationsAsyncCallCount++;
+			this.RegisterServices(this.AsynchronousRegistrations);
+			return default;
+		}
+
+		protected override ValueTask<ServiceRegistration?> TryGetServiceRegistrationCoreAsync(ServiceMoniker serviceMoniker, CancellationToken cancellationToken)
+			=> new(this.AsynchronousPerServiceRegistrations.TryGetValue(serviceMoniker, out ServiceRegistration? registration) ? registration : null);
+	}
+
+	private sealed class ProfferingServiceRegistration : ServiceRegistration
+	{
+		private readonly Action loadProfferingPackage;
+
+		internal ProfferingServiceRegistration(ServiceAudience audience, object profferingPackageId, Action loadProfferingPackage)
+			: base(audience, profferingPackageId, allowGuestClients: true)
+		{
+			this.loadProfferingPackage = loadProfferingPackage;
+		}
+
+		protected override Task LoadProfferingPackageAsync(CancellationToken cancellationToken)
+		{
+			this.loadProfferingPackage();
+			return Task.CompletedTask;
 		}
 	}
 }
