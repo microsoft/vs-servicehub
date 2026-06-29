@@ -33,7 +33,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 		/// The set of services that have been queried for (whether or not they were found)
 		/// since the last time the <see cref="AvailabilityChanged"/> event has been raised regarding them.
 		/// </summary>
-		private readonly HashSet<ServiceMoniker> observedServices = new HashSet<ServiceMoniker>();
+		private readonly Dictionary<ServiceMoniker, ProffererId> observedServices = new();
 
 		private EventHandler<BrokeredServicesChangedEventArgs>? availabilityChanged;
 
@@ -197,10 +197,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				// since that can cause the client to dispose the service we just acquired and re-request it.
 				// If we ever need to address the race condition of a proffered service changing *during* acquisition,
 				// we should be careful to avoid propagating events to the client unless it really is important/relevant/new.
-				lock (this.SyncObject)
-				{
-					this.observedServices.Add(serviceMoniker);
-				}
+				this.RecordObservedService(serviceMoniker, proffered);
 			}
 		}
 
@@ -296,10 +293,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				// since that can cause the client to dispose the service we just acquired and re-request it.
 				// If we ever need to address the race condition of a proffered service changing *during* acquisition,
 				// we should be careful to avoid propagating events to the client unless it really is important/relevant/new.
-				lock (this.SyncObject)
-				{
-					this.observedServices.Add(serviceDescriptor.Moniker);
-				}
+				this.RecordObservedService(serviceDescriptor.Moniker, proffered);
 			}
 		}
 
@@ -323,9 +317,10 @@ public abstract partial class GlobalBrokeredServiceContainer
 
 			using StartActivityExtension.TraceActivity activity = this.container.traceSource.StartActivity("Requesting service channel to \"{0}\"", serviceMoniker);
 
+			IProffered? proffered = null;
 			try
 			{
-				(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, isRemoteRequest: true, cancellationToken).ConfigureAwait(false);
+				(proffered, MissingBrokeredServiceErrorCode errorCode) = await this.TryGetProfferingSourceAsync(serviceMoniker, isRemoteRequest: true, cancellationToken).ConfigureAwait(false);
 				if (proffered is object)
 				{
 					RemoteServiceConnectionInfo connectionInfo = proffered is ProfferedViewIntrinsicService viewIntrinsic
@@ -382,10 +377,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 				// since that can cause the client to dispose the service we just acquired and re-request it.
 				// If we ever need to address the race condition of a proffered service changing *during* acquisition,
 				// we should be careful to avoid propagating events to the client unless it really is important/relevant/new.
-				lock (this.SyncObject)
-				{
-					this.observedServices.Add(serviceMoniker);
-				}
+				this.RecordObservedService(serviceMoniker, proffered);
 			}
 		}
 
@@ -419,31 +411,43 @@ public abstract partial class GlobalBrokeredServiceContainer
 			ImmutableHashSet<ServiceMoniker> impactedServices = args.ImpactedServices;
 
 			// Filter down to just those services that our client has asked about.
-			IImmutableSet<ServiceMoniker> impactedAndObservedServices;
+			ImmutableHashSet<ServiceMoniker>.Builder impactedAndObservedServices = ImmutableHashSet.CreateBuilder<ServiceMoniker>();
 			lock (this.SyncObject)
 			{
 				// Record which services were both impacted by the sender and observed by this view.
-				impactedAndObservedServices = impactedServices.Intersect(this.observedServices);
-
-				// Remove the impacted services from our observed collection since we're raising a changed event now.
-				// No more events will be raised regarding these impacted services unless they are queried for again.
-				this.observedServices.ExceptWith(impactedAndObservedServices);
-			}
-
-			if (oldIndex != null)
-			{
-				// This change came from a change to the proffering tables (not just an backing service broker internal change).
-				// Further filter down by verifying that the proffering source for each service was *actually* impacted.
-				// If a local service proffering changed, but we're connected to a remote environment where the service is expected to come from,
-				// then there's no meaningful change to the service from the consumer's perspective for example.
-				foreach (ServiceMoniker moniker in impactedAndObservedServices)
+				foreach (ServiceMoniker moniker in impactedServices)
 				{
-					bool oldResult = this.container.TryGetProfferingSource(oldIndex, moniker, this.Audience, isRemoteRequest: false, out IProffered? oldProffered, out _);
-					bool newResult = this.container.TryGetProfferingSource(moniker, this.Audience, isRemoteRequest: false, out IProffered? newProffered, out _);
-					if (oldResult == newResult && oldProffered == newProffered)
+					if (this.observedServices.TryGetValue(moniker, out ProffererId observedProfferer))
 					{
-						// The source of this service hasn't actually changed, so don't tell consumers that it has.
-						impactedAndObservedServices = impactedAndObservedServices.Remove(moniker);
+						// Remove the impacted services from our observed collection since we're raising a changed event now.
+						// No more events will be raised regarding these impacted services unless they are queried for again.
+						this.observedServices.Remove(moniker);
+
+						if (oldIndex is not null)
+						{
+							// This change came from a change to the proffering tables (not just an backing service broker internal change).
+							// Further filter down by verifying that the proffering source for each service was *actually* impacted.
+							// If a local service proffering changed, but we're connected to a remote environment where the service is expected to come from,
+							// then there's no meaningful change to the service from the consumer's perspective for example.
+							bool oldResult = this.container.TryGetProfferingSource(oldIndex, moniker, this.Audience, isRemoteRequest: false, out IProffered? oldProffered, out _);
+							bool newResult = this.container.TryGetProfferingSource(moniker, this.Audience, isRemoteRequest: false, out IProffered? newProffered, out _);
+							if (oldResult == newResult && oldProffered == newProffered)
+							{
+								// The source of this service hasn't actually changed, so don't tell consumers that it has.
+								continue;
+							}
+
+							if (observedProfferer.Matches(newProffered))
+							{
+								// It so happens that what the client actually observed is the same as what it observed before, so don't tell consumers that it has changed.
+								// This can happen because GlobalBrokeredServiceContainer.OnAvailabilityChanged calls us asynchronously,
+								// so even though RecordObservedService is invoked *after* proffering may have occurred, by the time we run here
+								// the observedServices collection may include the service that was successfully retrieved anyway.
+								continue;
+							}
+						}
+
+						impactedAndObservedServices.Add(moniker);
 					}
 				}
 			}
@@ -458,7 +462,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			// since they asked about it earlier. And it's possible that the change to the service is a proffering change where the availability for this client changed.
 			try
 			{
-				availabilityChanged.Invoke(this, new BrokeredServicesChangedEventArgs(impactedAndObservedServices, otherServicesImpacted: false));
+				availabilityChanged.Invoke(this, new BrokeredServicesChangedEventArgs(impactedAndObservedServices.ToImmutable(), otherServicesImpacted: false));
 			}
 			catch
 			{
@@ -468,7 +472,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 
 		internal async ValueTask<(IProffered? ProfferingSource, MissingBrokeredServiceErrorCode ErrorCode)> TryGetProfferingSourceAsync(ServiceMoniker serviceMoniker, bool isRemoteRequest, CancellationToken cancellationToken)
 		{
-			if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, isRemoteRequest, out IProffered? proffered, out MissingBrokeredServiceErrorCode errorCode))
+			(IProffered? proffered, MissingBrokeredServiceErrorCode errorCode) = await this.container.TryGetProfferingSourceAsync(serviceMoniker, this.Audience, isRemoteRequest, cancellationToken).ConfigureAwait(false);
+			if (proffered is not null)
 			{
 				return (proffered, errorCode);
 			}
@@ -477,7 +482,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 			{
 				if (await this.LoadProfferingPackageAsync(serviceMoniker, cancellationToken).ConfigureAwait(false))
 				{
-					if (this.container.TryGetProfferingSource(serviceMoniker, this.Audience, isRemoteRequest, out proffered, out errorCode))
+					(proffered, errorCode) = await this.container.TryGetProfferingSourceAsync(serviceMoniker, this.Audience, isRemoteRequest, cancellationToken).ConfigureAwait(false);
+					if (proffered is not null)
 					{
 						return (proffered, errorCode);
 					}
@@ -545,6 +551,31 @@ public abstract partial class GlobalBrokeredServiceContainer
 			options.ClientUICulture ??= this.clientUICulture;
 
 			return options;
+		}
+
+		private void RecordObservedService(ServiceMoniker moniker, IProffered? proffered)
+		{
+			// Avoid calling into the container while we hold a private lock.
+			Assumes.False(Monitor.IsEntered(this.SyncObject));
+
+			ProffererId profferId = this.container.GetProffererId(proffered);
+			lock (this.SyncObject)
+			{
+				// If this service was observed previously, we should preserve its value
+				// so that the oldest observed profferer is the one that is used to filter out events.
+				// The only time it's safe to purge/overwrite this value is after we've notified
+				// the client that the service has changed (i.e. in the AvailabilityChanged event).
+				// Our code to raise the event drains the observedServices collection of any impacted services,
+				// allowing (eventually) newer proffered objects to be stored in this dictionary.
+#if NET
+				this.observedServices.TryAdd(moniker, profferId);
+#else
+				if (!this.observedServices.ContainsKey(moniker))
+				{
+					this.observedServices[moniker] = profferId;
+				}
+#endif
+			}
 		}
 	}
 }
