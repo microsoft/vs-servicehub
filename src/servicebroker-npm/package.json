@@ -49,7 +49,7 @@
 		"jest": "30.4.2",
 		"jest-util": "30.4.1",
 		"jshint": "2.13.6",
-		"nerdbank-gitversioning": "3.9.50",
+		"nerdbank-gitversioning": "3.10.85",
 		"nyc": "18.0.0",
 		"prettier": "3.8.3",
 		"ts-jest": "29.4.11",
