@@ -1110,7 +1110,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 		if (this.TryGetServiceRegistrationCore(serviceMoniker, out serviceRegistration))
 		{
 			Assumes.NotNull(serviceRegistration);
-			this.CacheLazyRegistration(serviceMoniker, serviceRegistration);
+			serviceRegistration = this.CacheLazyRegistration(serviceMoniker, serviceRegistration);
 			matchingServiceMoniker = serviceMoniker;
 			return true;
 		}
@@ -1121,7 +1121,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			if (this.TryGetServiceRegistrationCore(versionlessMoniker, out serviceRegistration))
 			{
 				Assumes.NotNull(serviceRegistration);
-				this.CacheLazyRegistration(versionlessMoniker, serviceRegistration);
+				serviceRegistration = this.CacheLazyRegistration(versionlessMoniker, serviceRegistration);
 				matchingServiceMoniker = versionlessMoniker;
 				return true;
 			}
@@ -1162,7 +1162,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 		if (lazyRegistration is not null)
 		{
-			this.CacheLazyRegistration(serviceMoniker, lazyRegistration);
+			lazyRegistration = this.CacheLazyRegistration(serviceMoniker, lazyRegistration);
 			return (lazyRegistration, serviceMoniker);
 		}
 
@@ -1176,7 +1176,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 
 			if (lazyRegistration is not null)
 			{
-				this.CacheLazyRegistration(versionlessMoniker, lazyRegistration);
+				lazyRegistration = this.CacheLazyRegistration(versionlessMoniker, lazyRegistration);
 				return (lazyRegistration, versionlessMoniker);
 			}
 		}
@@ -1190,23 +1190,42 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 	/// </summary>
 	/// <param name="serviceMoniker">The moniker for the service.</param>
 	/// <param name="serviceRegistration">The service registration to cache.</param>
-	private void CacheLazyRegistration(ServiceMoniker serviceMoniker, ServiceRegistration serviceRegistration)
+	private ServiceRegistration CacheLazyRegistration(ServiceMoniker serviceMoniker, ServiceRegistration serviceRegistration)
 	{
+		ServiceRegistration? effectiveRegistration = null;
+		bool addedRegistration = false;
 		lock (this.syncObject)
 		{
 			if (this.registeredServices.TryGetValue(serviceMoniker, out ServiceRegistration? existingRegistration))
 			{
-				Verify.Operation(existingRegistration.Equals(serviceRegistration), "Service '{0}' is already registered with a different configuration.", serviceMoniker);
+				if (existingRegistration.Equals(serviceRegistration))
+				{
+					this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' has already been registered. Skipping duplicate registration.", serviceMoniker);
+				}
+				else
+				{
+					this.traceSource.TraceEvent(TraceEventType.Error, (int)TraceEvents.Registered, "Service '{0}' has already been registered with conflicting data. Skipping duplicate registration.", serviceMoniker);
+				}
+
+				effectiveRegistration = existingRegistration;
 			}
 			else
 			{
 				ImmutableInterlocked.TryAdd(ref this.registeredServices, serviceMoniker, serviceRegistration);
+				effectiveRegistration = serviceRegistration;
+				addedRegistration = true;
 			}
 
 			this.TryRemoveNilMarkers_NoLock(serviceMoniker);
 		}
 
-		this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' is now JIT registered.", serviceMoniker);
+		if (addedRegistration)
+		{
+			this.traceSource.TraceEvent(TraceEventType.Verbose, (int)TraceEvents.Registered, "Service '{0}' is now JIT registered.", serviceMoniker);
+		}
+
+		Assumes.NotNull(effectiveRegistration);
+		return effectiveRegistration;
 	}
 
 	private bool IsNilMarked(ServiceMoniker serviceMoniker)
@@ -1355,7 +1374,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			// would necessarily have to (still) support ID mode.
 			if (this.id is Guid thisId)
 			{
-				return thisId.Equals(other.id);
+				return EqualityComparer<Guid?>.Default.Equals(thisId, other.id);
 			}
 
 			object? thisTarget = this.weakRef?.Target;

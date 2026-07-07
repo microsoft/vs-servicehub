@@ -323,6 +323,31 @@ public class BrokeredServiceContainerTests : TestBase
 	}
 
 	[Fact]
+	public void Proffer_IgnoresConflictingLazySynchronousRegistration()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		ServiceRegistration registered = new(ServiceAudience.Process, null, allowGuestClients: false);
+		container.RegisterServicesForTesting(new Dictionary<ServiceMoniker, ServiceRegistration> { { Descriptor.Moniker, registered } });
+		container.SynchronousPerServiceRegistrations.Add(Descriptor.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: true));
+
+		container.Proffer(Descriptor, (mk, options, sb, ct) => new(new MockService()));
+
+		Assert.Same(registered, container.GetRegisteredServiceRegistration(Descriptor.Moniker));
+	}
+
+	[Fact]
+	public async Task GetProxyAsync_IgnoresConflictingLazyAsynchronousRegistration()
+	{
+		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
+		ServiceRegistration registered = new(ServiceAudience.Process, null, allowGuestClients: false);
+		container.RegisterServicesForTesting(new Dictionary<ServiceMoniker, ServiceRegistration> { { Descriptor.Moniker, registered } });
+		container.AsynchronousPerServiceRegistrations.Add(Descriptor.Moniker, new ServiceRegistration(ServiceAudience.Local, null, allowGuestClients: true));
+
+		Assert.Null(await container.GetFullAccessServiceBroker().GetProxyAsync<IMockService>(Descriptor, this.TimeoutToken));
+		Assert.Same(registered, container.GetRegisteredServiceRegistration(Descriptor.Moniker));
+	}
+
+	[Fact]
 	public async Task LazyRegistrationDuringRequest_DoesNotRaiseAvailabilityChanged()
 	{
 		LazyRegistrationBrokeredServiceContainer container = new(new TraceSource("Test"));
@@ -501,6 +526,8 @@ public class BrokeredServiceContainerTests : TestBase
 
 		internal Dictionary<ServiceMoniker, ServiceRegistration> SynchronousRegistrations { get; } = new();
 
+		internal Dictionary<ServiceMoniker, ServiceRegistration> SynchronousPerServiceRegistrations { get; } = new();
+
 		internal Dictionary<ServiceMoniker, ServiceRegistration> AsynchronousRegistrations { get; } = new();
 
 		internal Dictionary<ServiceMoniker, ServiceRegistration> AsynchronousPerServiceRegistrations { get; } = new();
@@ -515,11 +542,16 @@ public class BrokeredServiceContainerTests : TestBase
 
 		internal void RegisterServicesForTesting(IReadOnlyDictionary<ServiceMoniker, ServiceRegistration> services) => this.RegisterServices(services);
 
+		internal ServiceRegistration GetRegisteredServiceRegistration(ServiceMoniker serviceMoniker) => this.RegisteredServices[serviceMoniker];
+
 		protected override void LoadAllRegistrationsCore()
 		{
 			this.LoadAllRegistrationsCallCount++;
 			this.RegisterServices(this.SynchronousRegistrations);
 		}
+
+		protected override bool TryGetServiceRegistrationCore(ServiceMoniker serviceMoniker, out ServiceRegistration? registration)
+			=> this.SynchronousPerServiceRegistrations.TryGetValue(serviceMoniker, out registration);
 
 		protected override ValueTask LoadAllRegistrationsCoreAsync()
 		{
