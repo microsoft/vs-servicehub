@@ -15,7 +15,7 @@ public partial class GlobalBrokeredServiceContainer
 	/// Services brokered services that are proffered via an in-proc <see cref="IServiceBroker"/>.
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-	protected class ProfferedServiceBroker : IProffered
+	protected class ProfferedServiceBroker : IProfferedWithId
 	{
 		private readonly GlobalBrokeredServiceContainer container;
 		private readonly IRemoteServiceBroker remoteServiceBrokerWrapper;
@@ -36,6 +36,9 @@ public partial class GlobalBrokeredServiceContainer
 			add => this.ServiceBroker.AvailabilityChanged += value;
 			remove => this.ServiceBroker.AvailabilityChanged -= value;
 		}
+
+		/// <inheritdoc/>
+		public Guid Id { get; } = Guid.NewGuid();
 
 		/// <inheritdoc/>
 		public ImmutableHashSet<ServiceMoniker> Monikers { get; }

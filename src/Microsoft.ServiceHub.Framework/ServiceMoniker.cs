@@ -89,7 +89,7 @@ public class ServiceMoniker : IEquatable<ServiceMoniker>
 	/// <inheritdoc />
 	public bool Equals(ServiceMoniker? other)
 	{
-		return !(other is null)
+		return other is not null
 			&& this.Name == other.Name
 			&& EqualityComparer<Version?>.Default.Equals(this.Version, other.Version);
 	}
