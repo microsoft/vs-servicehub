@@ -50,7 +50,7 @@ overrides:
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.3.4
-  node-releases: 2.0.38
+  node-releases: 2.0.50
   'picomatch@4': 4.0.4
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6
