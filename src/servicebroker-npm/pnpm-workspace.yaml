@@ -54,6 +54,6 @@ overrides:
   'picomatch@4': 4.0.4
   react-is: 19.2.6
   react-is-19: npm:react-is@19.2.6
-  synckit: 0.11.12
+  synckit: 0.11.13
   tinyglobby: 0.2.15
   unrs-resolver: 1.11.1
