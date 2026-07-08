@@ -43,12 +43,12 @@ overrides:
   'brace-expansion@1': 1.1.15
   'brace-expansion@2': 2.1.1
   'brace-expansion@5': 5.0.7
-  browserslist: 4.28.1
-  caniuse-lite: 1.0.30001790
-  electron-to-chromium: 1.5.367
+  browserslist: 4.28.4
+  caniuse-lite: 1.0.30001800
+  electron-to-chromium: 1.5.387
   get-east-asian-width: 1.5.0
-  immutable: 5.1.5
-  istanbul-lib-processinfo: 3.0.0
+  immutable: 5.1.9
+  istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.3.4
   node-releases: 2.0.38
   'picomatch@4': 4.0.4
