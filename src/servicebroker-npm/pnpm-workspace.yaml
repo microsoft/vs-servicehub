@@ -47,7 +47,7 @@ overrides:
   caniuse-lite: 1.0.30001790
   electron-to-chromium: 1.5.367
   get-east-asian-width: 1.5.0
-  immutable: 5.1.5
+  immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.0
   'lru-cache@11': 11.3.4
   node-releases: 2.0.38
