@@ -32,7 +32,7 @@ overrides:
   '@ungap/structured-clone': 1.3.2
   '@humanfs/core': 0.19.2
   '@humanfs/node': 0.16.8
-  acorn: 8.16.0
+  acorn: 8.17.0
   ajv: 6.14.0
   baseline-browser-mapping: 2.10.42
   brace-expansion@1: 1.1.15
@@ -749,14 +749,14 @@ packages:
   acorn-jsx@5.3.2:
     resolution: {integrity: sha1-ftW7VZCLOy8bxVxq8WU7rafweTc=}
     peerDependencies:
-      acorn: 8.16.0
+      acorn: 8.17.0
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha1-imuMqPxbNGha8V2rtEEYZjwpZJY=}
     engines: {node: '>=0.4.0'}
 
-  acorn@8.16.0:
-    resolution: {integrity: sha1-TOecib5Ar+ev6POtuQKh8c6awIo=}
+  acorn@8.17.0:
+    resolution: {integrity: sha1-F4WtuE+vjYrdEDabk4Jvwr0I8f4=}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -2892,15 +2892,15 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  acorn-jsx@5.3.2(acorn@8.16.0):
+  acorn-jsx@5.3.2(acorn@8.17.0):
     dependencies:
-      acorn: 8.16.0
+      acorn: 8.17.0
 
   acorn-walk@8.3.5:
     dependencies:
-      acorn: 8.16.0
+      acorn: 8.17.0
 
-  acorn@8.16.0: {}
+  acorn@8.17.0: {}
 
   aggregate-error@3.1.0:
     dependencies:
@@ -3254,8 +3254,8 @@ snapshots:
 
   espree@11.2.0:
     dependencies:
-      acorn: 8.16.0
-      acorn-jsx: 5.3.2(acorn@8.16.0)
+      acorn: 8.17.0
+      acorn-jsx: 5.3.2(acorn@8.17.0)
       eslint-visitor-keys: 5.0.1
 
   esprima@4.0.1: {}
@@ -4303,7 +4303,7 @@ snapshots:
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
       '@types/node': 20.19.43
-      acorn: 8.16.0
+      acorn: 8.17.0
       acorn-walk: 8.3.5
       arg: 4.1.3
       create-require: 1.1.1
