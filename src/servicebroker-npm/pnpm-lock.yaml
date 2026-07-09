@@ -38,7 +38,7 @@ overrides:
   brace-expansion@1: 1.1.15
   brace-expansion@2: 2.1.1
   brace-expansion@5: 5.0.7
-  browserslist: 4.28.4
+  browserslist: 4.28.5
   caniuse-lite: 1.0.30001800
   electron-to-chromium: 1.5.387
   get-east-asian-width: 1.5.0
@@ -858,8 +858,8 @@ packages:
     resolution: {integrity: sha1-Gw5GlltHna1lr3N7SgJ5CgVJgzc=}
     engines: {node: 18 || 20 || >=22}
 
-  browserslist@4.28.4:
-    resolution: {integrity: sha1-3YuBZ6MoRf9fjNbOE/WruhbNBMk=}
+  browserslist@4.28.5:
+    resolution: {integrity: sha1-Q4t9OMDUtHdAu7NneNW9ygGzeDg=}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
@@ -2061,7 +2061,7 @@ packages:
     resolution: {integrity: sha1-ZNdttYcTE2rL60xJEUNmzGzC6A0=}
     hasBin: true
     peerDependencies:
-      browserslist: 4.28.4
+      browserslist: 4.28.5
 
   uri-js@4.4.1:
     resolution: {integrity: sha1-mxpSWVIlhZ5V9mnZKPiMbFfyp34=}
@@ -2205,7 +2205,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.29.7
       '@babel/helper-validator-option': 7.29.7
-      browserslist: 4.28.4
+      browserslist: 4.28.5
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -3020,13 +3020,13 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
-  browserslist@4.28.4:
+  browserslist@4.28.5:
     dependencies:
       baseline-browser-mapping: 2.10.42
       caniuse-lite: 1.0.30001800
       electron-to-chromium: 1.5.387
       node-releases: 2.0.50
-      update-browserslist-db: 1.2.3(browserslist@4.28.4)
+      update-browserslist-db: 1.2.3(browserslist@4.28.5)
 
   bs-logger@0.2.6:
     dependencies:
@@ -4374,9 +4374,9 @@ snapshots:
       '@unrs/resolver-binding-win32-ia32-msvc': 1.11.1
       '@unrs/resolver-binding-win32-x64-msvc': 1.11.1
 
-  update-browserslist-db@1.2.3(browserslist@4.28.4):
+  update-browserslist-db@1.2.3(browserslist@4.28.5):
     dependencies:
-      browserslist: 4.28.4
+      browserslist: 4.28.5
       escalade: 3.2.0
       picocolors: 1.1.1
 

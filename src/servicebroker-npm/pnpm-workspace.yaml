@@ -43,7 +43,7 @@ overrides:
   'brace-expansion@1': 1.1.15
   'brace-expansion@2': 2.1.1
   'brace-expansion@5': 5.0.7
-  browserslist: 4.28.4
+  browserslist: 4.28.5
   caniuse-lite: 1.0.30001800
   electron-to-chromium: 1.5.387
   get-east-asian-width: 1.5.0
