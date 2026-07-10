@@ -46,7 +46,7 @@ overrides:
   browserslist: 4.28.4
   caniuse-lite: 1.0.30001800
   electron-to-chromium: 1.5.387
-  get-east-asian-width: 1.5.0
+  get-east-asian-width: 1.6.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.3.4

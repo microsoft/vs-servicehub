@@ -41,7 +41,7 @@ overrides:
   browserslist: 4.28.4
   caniuse-lite: 1.0.30001800
   electron-to-chromium: 1.5.387
-  get-east-asian-width: 1.5.0
+  get-east-asian-width: 1.6.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   lru-cache@11: 11.3.4
@@ -1232,8 +1232,8 @@ packages:
     resolution: {integrity: sha1-T5RBKoLbMvNuOwuXQfipf+sDH34=}
     engines: {node: 6.* || 8.* || >= 10.*}
 
-  get-east-asian-width@1.5.0:
-    resolution: {integrity: sha1-znAI/jRe3PVJem9VfPpUvDGKnOc=}
+  get-east-asian-width@1.6.0:
+    resolution: {integrity: sha1-IWkA+R3xGossGYw+HZPWwDWndrk=}
     engines: {node: '>=18'}
 
   get-package-type@0.1.0:
@@ -3363,7 +3363,7 @@ snapshots:
 
   get-caller-file@2.0.5: {}
 
-  get-east-asian-width@1.5.0: {}
+  get-east-asian-width@1.6.0: {}
 
   get-package-type@0.1.0: {}
 
@@ -4219,7 +4219,7 @@ snapshots:
   string-width@7.2.0:
     dependencies:
       emoji-regex: 10.6.0
-      get-east-asian-width: 1.5.0
+      get-east-asian-width: 1.6.0
       strip-ansi: 7.2.0
 
   string_decoder@0.10.31: {}
