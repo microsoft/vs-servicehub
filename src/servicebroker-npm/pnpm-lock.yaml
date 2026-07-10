@@ -33,7 +33,7 @@ overrides:
   '@humanfs/core': 0.19.2
   '@humanfs/node': 0.16.8
   acorn: 8.17.0
-  ajv: 6.14.0
+  ajv: 6.15.0
   baseline-browser-mapping: 2.10.42
   brace-expansion@1: 1.1.15
   brace-expansion@2: 2.1.1
@@ -764,8 +764,8 @@ packages:
     resolution: {integrity: sha1-kmcP9Q9TWb23o+DUDQ7DDFc3aHo=}
     engines: {node: '>=8'}
 
-  ajv@6.14.0:
-    resolution: {integrity: sha1-/QZ3E+IoIQY267CMYL03Zdbb5zo=}
+  ajv@6.15.0:
+    resolution: {integrity: sha1-B+mCx0YmFnqnoklcU4F4ktcTlJI=}
 
   ansi-escapes@4.3.2:
     resolution: {integrity: sha1-ayKR0dt9mLZSHV8e+kLQ86n+tl4=}
@@ -2907,7 +2907,7 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ajv@6.14.0:
+  ajv@6.15.0:
     dependencies:
       fast-deep-equal: 3.1.3
       fast-json-stable-stringify: 2.1.0
@@ -3229,7 +3229,7 @@ snapshots:
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.4.3
       '@types/estree': 1.0.9
-      ajv: 6.14.0
+      ajv: 6.15.0
       cross-spawn: 7.0.6
       debug: 4.4.3
       escape-string-regexp: 4.0.0
