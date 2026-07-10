@@ -462,6 +462,11 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 		{
 			// If we've lost our connection and/or been disposed, be polite during a delay between that event and when folks stop using our service broker
 			// by simply returning null for the service. When aggregated with other service brokers, this provides the graceful fallback path that folks want.
+			if (this.TraceSource.Switch.ShouldTrace(TraceEventType.Error))
+			{
+				this.TraceSource.TraceEvent(TraceEventType.Error, (int)TraceEvents.ServiceRequestFailure, "Remote connection lost. Unable to complete request for service.");
+			}
+
 			return null;
 		}
 
