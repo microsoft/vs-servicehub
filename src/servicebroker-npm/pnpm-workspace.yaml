@@ -56,4 +56,4 @@ overrides:
   react-is-19: npm:react-is@19.2.7
   synckit: 0.11.13
   tinyglobby: 0.2.17
-  unrs-resolver: 1.11.1
+  unrs-resolver: 1.12.2
