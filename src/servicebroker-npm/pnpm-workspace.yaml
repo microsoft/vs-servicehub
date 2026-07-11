@@ -49,7 +49,7 @@ overrides:
   get-east-asian-width: 1.6.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
-  'lru-cache@11': 11.5.1
+  'lru-cache@11': 11.5.2
   node-releases: 2.0.50
   'picomatch@4': 4.0.5
   react-is: 19.2.7
