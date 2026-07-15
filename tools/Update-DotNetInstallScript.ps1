@@ -23,12 +23,9 @@ foreach ($script in $scripts) {
     Write-Host "Updating $script from GitHub..."
     try {
         if ($PSCmdlet.ShouldProcess($OutFile, "Update from $Uri")) {
-            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
-            if ($script -eq 'dotnet-install.sh') {
-                $fileInfo = Get-Item $OutFile
-                if (-not $fileInfo.IsReadOnly) {
-                    & chmod +x $OutFile
-                }
+            Invoke-WebRequest -Uri $Uri -OutFile $OutFile
+            if ($script -eq 'dotnet-install.sh' -and $IsLinux -or $IsMacOS) {
+                & chmod +x $OutFile
             }
             Write-Host "✓ Successfully updated $script" -ForegroundColor Green
         }

@@ -295,6 +295,13 @@ if (-not (Test-Path $DotNetInstallScriptPath)) {
     exit 1
 }
 
+if ($IsMacOS -or $IsLinux) {
+    $fileInfo = Get-Item $DotNetInstallScriptPath
+    if (-not $fileInfo.IsReadOnly) {
+        & chmod +x $DotNetInstallScriptPath
+    }
+}
+
 # In case the script we invoke is in a directory with spaces, wrap it with single quotes.
 # In case the path includes single quotes, escape them.
 $DotNetInstallScriptPathExpression = $DotNetInstallScriptPath.Replace("'", "''")
