@@ -40,7 +40,7 @@ overrides:
   acorn: 8.17.0
   ajv: 8.20.0
   baseline-browser-mapping: 2.10.42
-  'brace-expansion@1': 1.1.15
+  'brace-expansion@1': 1.1.16
   'brace-expansion@2': 2.1.1
   'brace-expansion@5': 5.0.7
   browserslist: 4.28.5
