@@ -296,10 +296,7 @@ if (-not (Test-Path $DotNetInstallScriptPath)) {
 }
 
 if ($IsMacOS -or $IsLinux) {
-    $fileInfo = Get-Item $DotNetInstallScriptPath
-    if (-not $fileInfo.IsReadOnly) {
-        & chmod +x $DotNetInstallScriptPath
-    }
+    & chmod +x $DotNetInstallScriptPath
 }
 
 # In case the script we invoke is in a directory with spaces, wrap it with single quotes.
