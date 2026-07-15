@@ -5,7 +5,8 @@
     Updates the cached dotnet-install scripts from the dotnet/install-scripts GitHub repository.
 .DESCRIPTION
     Downloads the latest dotnet-install.ps1 and dotnet-install.sh scripts from
-    https://github.com/dotnet/install-scripts and caches them locally to avoid GitHub API rate limiting.
+    https://github.com/dotnet/install-scripts and caches them locally to avoid repeated
+    network downloads and keep a local copy available for the repo tooling.
     Run this script periodically to get the latest installation scripts.
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
