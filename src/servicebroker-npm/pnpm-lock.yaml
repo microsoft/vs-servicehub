@@ -33,7 +33,7 @@ overrides:
   '@humanfs/core': 0.19.2
   '@humanfs/node': 0.16.8
   acorn: 8.17.0
-  ajv: 6.15.0
+  ajv: 8.20.0
   baseline-browser-mapping: 2.10.42
   brace-expansion@1: 1.1.16
   brace-expansion@2: 2.1.1
@@ -767,8 +767,8 @@ packages:
     resolution: {integrity: sha1-kmcP9Q9TWb23o+DUDQ7DDFc3aHo=}
     engines: {node: '>=8'}
 
-  ajv@6.15.0:
-    resolution: {integrity: sha1-B+mCx0YmFnqnoklcU4F4ktcTlJI=}
+  ajv@8.20.0:
+    resolution: {integrity: sha1-MEs2Nq3Yi6fZNnYN1Q7OAG3qlfk=}
 
   ansi-escapes@4.3.2:
     resolution: {integrity: sha1-ayKR0dt9mLZSHV8e+kLQ86n+tl4=}
@@ -1173,6 +1173,9 @@ packages:
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=}
 
+  fast-uri@3.1.3:
+    resolution: {integrity: sha1-9pWkDwBqulBWMVc6ACHdshGUrRE=}
+
   fb-watchman@2.0.2:
     resolution: {integrity: sha1-6VJO5rXHfp5QAa8PhfOtu4YjJVw=}
 
@@ -1549,8 +1552,8 @@ packages:
   json-parse-even-better-errors@2.3.1:
     resolution: {integrity: sha1-fEeAWpQxmSjgV3dAXcEuH3pO4C0=}
 
-  json-schema-traverse@0.4.1:
-    resolution: {integrity: sha1-afaofZUTq4u4/mO9sJecRI5oRmA=}
+  json-schema-traverse@1.0.0:
+    resolution: {integrity: sha1-rnvLNlard6c7pcSb9lTzjmtoYOI=}
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha1-nbe1lJatPzz+8wp1FC0tkwrXJlE=}
@@ -1798,10 +1801,6 @@ packages:
     resolution: {integrity: sha1-nVmZuoezvwqKywUyLWny9apPt2M=}
     engines: {node: '>=8'}
 
-  punycode@2.3.1:
-    resolution: {integrity: sha1-AnQi4vrsCyXhVJw+G9gwm5EztuU=}
-    engines: {node: '>=6'}
-
   pure-rand@7.0.1:
     resolution: {integrity: sha1-b1OlqePkpHRFgir5aCHKUJ7TdWY=}
 
@@ -1820,6 +1819,10 @@ packages:
 
   require-directory@2.1.1:
     resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
+    engines: {node: '>=0.10.0'}
+
+  require-from-string@2.0.2:
+    resolution: {integrity: sha1-iaf92TgmEmcxjq/hT5wy5ZjDaQk=}
     engines: {node: '>=0.10.0'}
 
   require-main-filename@2.0.0:
@@ -2065,9 +2068,6 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: 4.28.5
-
-  uri-js@4.4.1:
-    resolution: {integrity: sha1-mxpSWVIlhZ5V9mnZKPiMbFfyp34=}
 
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha1-Yzbo1xllyz01obu3hoRFp8BSZL8=}
@@ -2912,12 +2912,12 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ajv@6.15.0:
+  ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-json-stable-stringify: 2.1.0
-      json-schema-traverse: 0.4.1
-      uri-js: 4.4.1
+      fast-uri: 3.1.3
+      json-schema-traverse: 1.0.0
+      require-from-string: 2.0.2
 
   ansi-escapes@4.3.2:
     dependencies:
@@ -3234,7 +3234,7 @@ snapshots:
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.4.3
       '@types/estree': 1.0.9
-      ajv: 6.15.0
+      ajv: 8.20.0
       cross-spawn: 7.0.6
       debug: 4.4.3
       escape-string-regexp: 4.0.0
@@ -3311,6 +3311,8 @@ snapshots:
   fast-json-stable-stringify@2.1.0: {}
 
   fast-levenshtein@2.0.6: {}
+
+  fast-uri@3.1.3: {}
 
   fb-watchman@2.0.2:
     dependencies:
@@ -3874,7 +3876,7 @@ snapshots:
 
   json-parse-even-better-errors@2.3.1: {}
 
-  json-schema-traverse@0.4.1: {}
+  json-schema-traverse@1.0.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
@@ -4125,8 +4127,6 @@ snapshots:
     dependencies:
       fromentries: 1.3.2
 
-  punycode@2.3.1: {}
-
   pure-rand@7.0.1: {}
 
   react-is@18.3.1: {}
@@ -4145,6 +4145,8 @@ snapshots:
       es6-error: 4.1.1
 
   require-directory@2.1.1: {}
+
+  require-from-string@2.0.2: {}
 
   require-main-filename@2.0.0: {}
 
@@ -4384,10 +4386,6 @@ snapshots:
       browserslist: 4.28.5
       escalade: 3.2.0
       picocolors: 1.1.1
-
-  uri-js@4.4.1:
-    dependencies:
-      punycode: 2.3.1
 
   v8-compile-cache-lib@3.0.1: {}
 
