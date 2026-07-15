@@ -24,6 +24,12 @@ foreach ($script in $scripts) {
     try {
         if ($PSCmdlet.ShouldProcess($OutFile, "Update from $Uri")) {
             Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+            if ($script -eq 'dotnet-install.sh') {
+                $fileInfo = Get-Item $OutFile
+                if (-not $fileInfo.IsReadOnly) {
+                    & chmod +x $OutFile
+                }
+            }
             Write-Host "✓ Successfully updated $script" -ForegroundColor Green
         }
     }
