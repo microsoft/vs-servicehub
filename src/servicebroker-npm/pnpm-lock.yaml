@@ -27,7 +27,7 @@ overrides:
   '@babel/types': 7.29.7
   '@istanbuljs/schema': 0.1.6
   '@pkgr/core': 0.3.6
-  '@sinclair/typebox': 0.34.49
+  '@sinclair/typebox': 0.34.52
   '@types/estree': 1.0.9
   '@ungap/structured-clone': 1.3.2
   '@humanfs/core': 0.19.2
@@ -506,8 +506,8 @@ packages:
     resolution: {integrity: sha1-NWlwi9S+TYhwujK/HEVtrIFgDZc=}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  '@sinclair/typebox@0.34.49':
-    resolution: {integrity: sha1-TxNpI08uz2k4ZkdsOy4bVNKp1o4=}
+  '@sinclair/typebox@0.34.52':
+    resolution: {integrity: sha1-YvimhuSrKKiUSQLirS1kgxLvEcs=}
 
   '@sinonjs/commons@3.0.1':
     resolution: {integrity: sha1-ECk1fkTKkBphVYX20nc428iQhM0=}
@@ -2562,7 +2562,7 @@ snapshots:
 
   '@jest/schemas@30.4.1':
     dependencies:
-      '@sinclair/typebox': 0.34.49
+      '@sinclair/typebox': 0.34.52
 
   '@jest/snapshot-utils@30.4.1':
     dependencies:
@@ -2658,7 +2658,7 @@ snapshots:
 
   '@pkgr/core@0.3.6': {}
 
-  '@sinclair/typebox@0.34.49': {}
+  '@sinclair/typebox@0.34.52': {}
 
   '@sinonjs/commons@3.0.1':
     dependencies:
