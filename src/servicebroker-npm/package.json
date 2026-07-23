@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "pnpm@11.10.0",
+	"packageManager": "pnpm@11.15.1",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
