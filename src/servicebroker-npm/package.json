@@ -51,7 +51,7 @@
 		"jshint": "2.13.6",
 		"nerdbank-gitversioning": "3.10.85",
 		"nyc": "18.0.0",
-		"prettier": "3.9.5",
+		"prettier": "3.9.6",
 		"ts-jest": "29.4.11",
 		"ts-node": "10.9.2",
 		"typescript": "6.0.3",
