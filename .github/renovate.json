@@ -9,6 +9,14 @@
 		{
 			"matchFileNames": ["Directory.Packages.Analyzers.props"],
 			"enabled": false
+		},
+		{
+			"description": "Keep pnpm major-version overrides within their selected major.",
+			"matchManagers": ["npm"],
+			"matchFileNames": ["src/servicebroker-npm/pnpm-workspace.yaml"],
+			"matchPackageNames": ["/@\\d+$/"],
+			"matchUpdateTypes": ["major"],
+			"enabled": false
 		}
 	],
 	"customManagers": [
