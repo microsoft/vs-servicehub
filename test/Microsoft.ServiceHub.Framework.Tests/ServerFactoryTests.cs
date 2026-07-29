@@ -279,6 +279,51 @@ public class ServerFactoryTests : TestBase
 		}
 	}
 
+	[Fact]
+	public async Task ServerAlreadyListening_FailsFastWhenPipeIsMissing()
+	{
+		string channelName = ServerFactory.PrependPipePrefix($"{nameof(this.ServerAlreadyListening_FailsFastWhenPipeIsMissing)}_{Guid.NewGuid():N}");
+
+		// No server ever creates this pipe. The client claims the server already published the name,
+		// so the connection must report the missing pipe instead of waiting for the token to be canceled.
+		await Assert.ThrowsAsync<FileNotFoundException>(() => ServerFactory.ConnectAsync(
+			channelName,
+			new ServerFactory.ClientOptions { ServerAlreadyListening = true },
+			this.TimeoutToken));
+	}
+
+	[Fact]
+	public async Task ServerAlreadyListening_ConnectsToExistingServer()
+	{
+		AsyncManualResetEvent callbackEntered = new();
+		IIpcServer server = ServerFactory.Create(
+			stream =>
+			{
+				callbackEntered.Set();
+				stream.Dispose();
+				return Task.CompletedTask;
+			},
+			new ServerFactory.ServerOptions
+			{
+				TraceSource = this.CreateTestTraceSource(nameof(this.ServerAlreadyListening_ConnectsToExistingServer)),
+			});
+
+		try
+		{
+			using Stream clientStream = await ServerFactory.ConnectAsync(
+				server.Name,
+				new ServerFactory.ClientOptions { ServerAlreadyListening = true },
+				this.TimeoutToken);
+			await callbackEntered.WaitAsync(this.TimeoutToken);
+		}
+		finally
+		{
+			await server.DisposeAsync();
+		}
+
+		await server.Completion.WithCancellation(this.TimeoutToken);
+	}
+
 	private static PipeOptions GetPipeOptions(Stream pipeStream)
 	{
 		FieldInfo? pipeOptionsField = pipeStream.GetType().GetField("pipeOptions", BindingFlags.NonPublic | BindingFlags.Instance);
