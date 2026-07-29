@@ -80,27 +80,44 @@ internal class AsyncNamedPipeClientStream : PipeStream
 	/// Connects pipe client to server.
 	/// </summary>
 	/// <param name="maxRetries">Maximum number of retries.</param>
+	/// <param name="maxRetriesWhenPipeIsMissing">Maximum number of retries to take while the pipe does not exist. This caps <paramref name="maxRetries"/> for that particular failure.</param>
 	/// <param name="retryDelayMs">Milliseconds delay between retries.</param>
 	/// <param name="cancellationToken">Cancellation token.</param>
 	/// <returns>A task representing the establishment of the client connection.</returns>
+	/// <exception cref="FileNotFoundException">Thrown if the pipe does not exist after <paramref name="maxRetriesWhenPipeIsMissing"/> retries.</exception>
 	/// <exception cref="TimeoutException">Thrown if no connection can be established.</exception>
 	internal async Task ConnectAsync(
 		int maxRetries,
+		int maxRetriesWhenPipeIsMissing,
 		int retryDelayMs,
 		CancellationToken cancellationToken)
 	{
 		var errorCodeMap = new Dictionary<int, int>();
 		int retries = 0;
+		int retriesWhilePipeMissing = 0;
 		while (!cancellationToken.IsCancellationRequested)
 		{
-			if (retries > maxRetries || this.TryConnect())
+			if (retries > maxRetries || this.TryConnect(out int errorCode))
 			{
 				break;
 			}
 
 			retries++;
-			var errorCode = Marshal.GetLastWin32Error();
 			errorCodeMap[errorCode] = errorCodeMap.ContainsKey(errorCode) ? errorCodeMap[errorCode] + 1 : 1;
+
+			if (maxRetriesWhenPipeIsMissing < int.MaxValue)
+			{
+				// Only consecutive misses indicate a server that is gone. A server that is recreating its pipe
+				// produces isolated misses interleaved with other errors, so any other error resets the count.
+				if (errorCode is not ((int)WIN32_ERROR.ERROR_FILE_NOT_FOUND or (int)WIN32_ERROR.ERROR_PATH_NOT_FOUND))
+				{
+					retriesWhilePipeMissing = 0;
+				}
+				else if (retriesWhilePipeMissing++ >= maxRetriesWhenPipeIsMissing)
+				{
+					throw new FileNotFoundException($"The pipe '{this.pipePath}' does not exist.", this.pipePath);
+				}
+			}
 
 			await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
 		}
@@ -130,7 +147,7 @@ internal class AsyncNamedPipeClientStream : PipeStream
 		return access;
 	}
 
-	private bool TryConnect()
+	private bool TryConnect(out int errorCode)
 	{
 		SafePipeHandle handle = CreateNamedPipeClient(
 			this.pipePath,
@@ -143,9 +160,13 @@ internal class AsyncNamedPipeClientStream : PipeStream
 
 		if (handle.IsInvalid)
 		{
+			// Read the error before disposing the handle, since disposal overwrites it.
+			errorCode = Marshal.GetLastWin32Error();
 			handle.Dispose();
 			return false;
 		}
+
+		errorCode = 0;
 
 		// Success!
 		this.InitializeHandle(handle, false, true);
