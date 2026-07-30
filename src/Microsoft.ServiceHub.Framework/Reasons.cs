@@ -1,11 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#pragma warning disable CS0419 // Ambiguous reference in cref attribute
+
 namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
-/// String constants for use in <c>RequiresUnreferencedCodeAttribute</c> and <c>RequiresDynamicCodeAttribute</c> attributes.
+/// String constants for use in <see cref="RequiresUnreferencedCodeAttribute"/> and <see cref="RequiresDynamicCodeAttribute"/> attributes.
 /// </summary>
+#pragma warning restore CS0419 // Ambiguous reference in cref attribute
 internal static class Reasons
 {
 #pragma warning disable SA1600 // Elements should be documented
