@@ -4,12 +4,13 @@
 namespace Microsoft.ServiceHub.Framework;
 
 /// <summary>
-/// String constants for use in <see cref="RequiresUnreferencedCodeAttribute"/> and <see cref="RequiresDynamicCodeAttribute"/> attributes.
+/// String constants for use in <c>RequiresUnreferencedCodeAttribute</c> and <c>RequiresDynamicCodeAttribute</c> attributes.
 /// </summary>
 internal static class Reasons
 {
 #pragma warning disable SA1600 // Elements should be documented
 	internal const string Formatters = "This API may create formatters that require this functionality.";
 	internal const string DynamicProxy = "This API creates dynamic proxies that require this functionality.";
+	internal const string JsonSerialization = "This API uses JSON serialization, which requires reflection and may require dynamic code.";
 	internal const string TypeLoad = "This API loads types by name.";
 }
