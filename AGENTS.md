@@ -8,7 +8,7 @@
 
 ## npm package registry
 
-* Always use the registry in `src/servicebroker-npm/.npmrc` for every npm-related command, including package-manager bootstrap, metadata queries, and package installation. Do not fall back to npmjs.org.
+* For restores/installs and tool bootstrap in this repo, always use the registry in `src/servicebroker-npm/.npmrc` (do not switch to npmjs.org). Publishing to npmjs.org is handled separately by the release pipelines.
 * Refresh the Azure Artifacts npm credential before accessing the registry:
   ```powershell
   cd src/servicebroker-npm
