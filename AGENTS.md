@@ -6,6 +6,16 @@
 * Run the `.github/Prime-ForCopilot.ps1` script (once) before running any `dotnet` or `msbuild` commands.
   If you see any build errors about not finding git objects or a shallow clone, it may be time to run this script again.
 
+## npm package registry
+
+* Always use the registry in `src/servicebroker-npm/.npmrc` for every npm-related command, including package-manager bootstrap, metadata queries, and package installation. Do not fall back to npmjs.org.
+* Refresh the Azure Artifacts npm credential before accessing the registry:
+  ```powershell
+  cd src/servicebroker-npm
+  artifacts-npm-credprovider -f -c .\.npmrc
+  ```
+* The registry exposes packages only after a seven-day delay from their npmjs.org publication. If an install cannot find a requested version, use the newest version available from this registry that was published at least seven days ago.
+
 ## Software Design
 
 * Design APIs to be highly testable, and all functionality should be tested.
