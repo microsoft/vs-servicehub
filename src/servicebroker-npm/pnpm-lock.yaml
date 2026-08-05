@@ -143,8 +143,8 @@ importers:
         specifier: 8.65.0
         version: 8.65.0(eslint@10.8.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       yargs:
-        specifier: 18.0.0
-        version: 18.0.0
+        specifier: 18.1.0
+        version: 18.1.0
 
 packages:
 
@@ -1912,6 +1912,10 @@ packages:
     resolution: {integrity: sha1-tbuOIWXOJ11NQ0dt0nAK2Qkdttw=}
     engines: {node: '>=18'}
 
+  string-width@8.2.2:
+    resolution: {integrity: sha1-cxBRZJPfV1dC/pivb66H2F1e0Kw=}
+    engines: {node: '>=20'}
+
   string_decoder@0.10.31:
     resolution: {integrity: sha1-YuIDvEF2bGwoyfyEMB2rHFMQ+pQ=}
 
@@ -2154,8 +2158,8 @@ packages:
     resolution: {integrity: sha1-d53/5ryv7FlqcXLpgyiaWIZH+qo=}
     engines: {node: '>=12'}
 
-  yargs@18.0.0:
-    resolution: {integrity: sha1-bIQlmAYnOnRrCfV5CHtoo8LSW9E=}
+  yargs@18.1.0:
+    resolution: {integrity: sha1-zX6YxwPvUWlbu/Bi7VjyjpQpG1Y=}
     engines: {node: ^20.19.0 || ^22.12.0 || >=23}
 
   yn@3.1.1:
@@ -4231,6 +4235,11 @@ snapshots:
       get-east-asian-width: 1.6.0
       strip-ansi: 7.2.0
 
+  string-width@8.2.2:
+    dependencies:
+      get-east-asian-width: 1.6.0
+      strip-ansi: 7.2.0
+
   string_decoder@0.10.31: {}
 
   strip-ansi@6.0.1:
@@ -4490,12 +4499,12 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  yargs@18.0.0:
+  yargs@18.1.0:
     dependencies:
       cliui: 9.0.1
       escalade: 3.2.0
       get-caller-file: 2.0.5
-      string-width: 7.2.0
+      string-width: 8.2.2
       y18n: 5.0.8
       yargs-parser: 22.0.0
 
