@@ -35,7 +35,7 @@ overrides:
   acorn: 8.18.0
   ajv: 8.20.0
   baseline-browser-mapping: 2.11.8
-  brace-expansion@1: 1.1.16
+  brace-expansion@1: 1.1.18
   brace-expansion@2: 2.1.4
   brace-expansion@5: 5.0.8
   browserslist: 4.28.7
@@ -851,8 +851,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  brace-expansion@1.1.16:
-    resolution: {integrity: sha1-cj06MMBVjCJavJ/Eeac+FOJsPC8=}
+  brace-expansion@1.1.18:
+    resolution: {integrity: sha1-POdNiYhRNr4VNTQfjD1EJcKaXKs=}
 
   brace-expansion@2.1.4:
     resolution: {integrity: sha1-WJ2rEcABjQNmvmTNi/Esjb7MgyY=}
@@ -3016,7 +3016,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.8: {}
 
-  brace-expansion@1.1.16:
+  brace-expansion@1.1.18:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
@@ -3947,11 +3947,11 @@ snapshots:
 
   minimatch@3.0.8:
     dependencies:
-      brace-expansion: 1.1.16
+      brace-expansion: 1.1.18
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.16
+      brace-expansion: 1.1.18
 
   minimatch@9.0.9:
     dependencies:
