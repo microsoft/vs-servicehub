@@ -100,7 +100,7 @@ if ($isMTP) {
         -c $Configuration `
         -bl:"$testBinLog" `
         -- `
-        --filter-not-trait 'TestCategory=FailsInCloudTest$extraFilter' `
+        --filter-not-trait "TestCategory=FailsInCloudTest$extraFilter" `
         @mtpArgs `
         @dumpSwitches `
         @extraArgs
