@@ -64,6 +64,15 @@ $failedTests = 0
 if ($isMTP) {
     if ($OnCI) { $extraArgs += '--no-progress' }
 
+    $filterArgs = @(
+        ,'--filter-not-trait','TestCategory=FailsInCloudTest'
+    )
+    if ($IsLinux -or $IsMacOS) {
+        $filterArgs += @(
+            ,'--filter-not-trait','WindowsOnly=true'
+        )
+    }
+
     $dumpSwitches = @(
         ,'--hangdump'
         ,'--hangdump-timeout','5m'
@@ -100,7 +109,7 @@ if ($isMTP) {
         -c $Configuration `
         -bl:"$testBinLog" `
         -- `
-        --filter-not-trait "TestCategory=FailsInCloudTest$extraFilter" `
+        @filterArgs `
         @mtpArgs `
         @dumpSwitches `
         @extraArgs
