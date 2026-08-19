@@ -17,10 +17,10 @@ internal static class ReferencesHelper
 		.WithNuGetConfigFilePath(NuGetConfigPath)
 		.WithPackages(
 		[
-			new PackageIdentity("System.ComponentModel.Composition", "10.0.1"),
+			new PackageIdentity("System.ComponentModel.Composition", "10.0.9"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.16"),
-			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.1"),
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.57"),
+			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.19"),
 		]);
 
 	/// <summary>Replaces the .NET 8 reference assembly for System.Collections.Immutable with the version used by this test project.</summary>
