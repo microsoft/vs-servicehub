@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <PropertyGroup>
+    <!-- VS SDK packages support net8.0 but transitively import StringTools targets that only recognize net10.0. -->
+    <SuppressTfmSupportBuildWarnings Condition="'$(TargetFramework)'=='net8.0'">true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Avoid compile error about missing namespace when combining ImplicitUsings with .NET Framework target frameworks. -->
     <Using Remove="System.Net.Http" Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'" />
