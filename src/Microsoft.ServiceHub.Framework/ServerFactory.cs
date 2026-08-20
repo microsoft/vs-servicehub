@@ -87,18 +87,24 @@ public static class ServerFactory
 		PipeOptions pipeOptions = StandardPipeOptions;
 		var name = TrimWindowsPrefixForDotNet(pipeName);
 		var maxRetries = options.FailFast ? 0 : int.MaxValue;
+
+		// A server creates its pipe before it hands out the name, so when the caller obtained the name from the
+		// server a missing pipe means the server is gone rather than not started yet, and waiting for it to appear
+		// would hang for the life of the cancellation token. A few retries still cover the moment where a server
+		// that accepts multiple clients is replacing the instance that a previous client just connected to.
+		int maxRetriesWhenPipeIsMissing = options.ServerAlreadyListening ? MaxRetryAttemptsForFileNotFoundException : int.MaxValue;
 		PipeStream? pipeStream = null;
 		try
 		{
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
 				pipeStream = new AsyncNamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
-				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(maxRetries, ConnectRetryIntervalMs, cancellationToken).ConfigureAwait(false);
+				await ((AsyncNamedPipeClientStream)pipeStream).ConnectAsync(maxRetries, maxRetriesWhenPipeIsMissing, ConnectRetryIntervalMs, cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
 				pipeStream = new NamedPipeClientStream(".", name, PipeDirection.InOut, pipeOptions);
-				await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
+				await ConnectWithRetryAsync((NamedPipeClientStream)pipeStream, fullPipeOptions, cancellationToken, name, maxRetriesWhenPipeIsMissing, maxRetries, withSpinningWait: options.CpuSpinOverFirstChanceExceptions).ConfigureAwait(false);
 			}
 
 			return pipeStream;
@@ -145,16 +151,19 @@ public static class ServerFactory
 	/// <param name="npcs">The named pipe client stream to connect.</param>
 	/// <param name="pipeOptions">The pipe options applied to this connection.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
+	/// <param name="pipePath">The path of the file that backs the pipe. Non-Windows pipe names are rooted paths, so this is the pipe name itself.</param>
+	/// <param name="maxRetriesWhenPipeIsMissing">The maximum number of retries to attempt while <paramref name="pipePath"/> does not exist, or <see cref="int.MaxValue"/> to not check.</param>
 	/// <param name="maxRetries">The maximum number of retries to attempt.</param>
 	/// <param name="withSpinningWait">Whether or not the connect should be attempted with a spinning wait.
 	/// If the pipe being connected to is known to exist, it is safe to use a spinning wait to avoid potentially throwing exceptions for retries.</param>
 	/// <returns>A <see cref="Task"/> that tracks the asynchronous connection attempt.</returns>
-	private static async Task ConnectWithRetryAsync(NamedPipeClientStream npcs, PipeOptions pipeOptions, CancellationToken cancellationToken, int maxRetries = int.MaxValue, bool withSpinningWait = false)
+	private static async Task ConnectWithRetryAsync(NamedPipeClientStream npcs, PipeOptions pipeOptions, CancellationToken cancellationToken, string pipePath, int maxRetriesWhenPipeIsMissing, int maxRetries = int.MaxValue, bool withSpinningWait = false)
 	{
 		Requires.NotNull(npcs, nameof(npcs));
 
 		ConcurrentDictionary<string, int> retryExceptions = new ConcurrentDictionary<string, int>();
 		int fileNotFoundRetryCount = 0;
+		int pipeMissingRetryCount = 0;
 		int totalRetries = 0;
 
 		while (true)
@@ -188,7 +197,24 @@ public static class ServerFactory
 					cancellationToken.ThrowIfCancellationRequested();
 					throw;
 				}
-				else if (((ex is IOException && ex.HResult == HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_SEM_TIMEOUT)) || ex is TimeoutException) && totalRetries < maxRetries)
+
+				if (maxRetriesWhenPipeIsMissing < int.MaxValue)
+				{
+					// A missing pipe surfaces here as TimeoutException rather than FileNotFoundException, which the
+					// chain below would retry forever, so the absence of the file is what identifies this case.
+					// Only consecutive misses indicate a server that is gone. A server that is recreating its pipe
+					// produces isolated misses, so observing the pipe again resets the count.
+					if (File.Exists(pipePath))
+					{
+						pipeMissingRetryCount = 0;
+					}
+					else if (pipeMissingRetryCount++ >= maxRetriesWhenPipeIsMissing)
+					{
+						throw new FileNotFoundException($"The pipe '{pipePath}' does not exist.", pipePath);
+					}
+				}
+
+				if (((ex is IOException && ex.HResult == HRESULT_FROM_WIN32(WIN32_ERROR.ERROR_SEM_TIMEOUT)) || ex is TimeoutException) && totalRetries < maxRetries)
 				{
 					// Ignore and retry.
 					totalRetries++;
@@ -301,5 +327,21 @@ public static class ServerFactory
 		/// This property is only meaningful when <see cref="FailFast"/> is <see langword="false"/>.
 		/// </remarks>
 		public bool CpuSpinOverFirstChanceExceptions { get; init; }
+
+		/// <summary>
+		/// Gets a value indicating whether the server is known to have already created the pipe.
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Set this when the pipe name came from the server itself, which only publishes the name after it begins
+		/// listening. Under that condition a missing pipe proves the server is gone, so the connection fails with
+		/// <see cref="FileNotFoundException"/> instead of waiting for a pipe that will never be created.
+		/// A pipe that exists but has no free instance is still retried.
+		/// </para>
+		/// <para>
+		/// This property is only meaningful when <see cref="FailFast"/> is <see langword="false"/>.
+		/// </para>
+		/// </remarks>
+		public bool ServerAlreadyListening { get; init; }
 	}
 }

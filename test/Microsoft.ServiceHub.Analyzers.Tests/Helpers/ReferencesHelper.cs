@@ -3,6 +3,7 @@
 
 #pragma warning disable SA1202 // Elements should be ordered by access - because field initializer depend on each other
 
+using System.Collections.Immutable;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using PolyType;
@@ -16,11 +17,26 @@ internal static class ReferencesHelper
 		.WithNuGetConfigFilePath(NuGetConfigPath)
 		.WithPackages(
 		[
-			new PackageIdentity("System.ComponentModel.Composition", "10.0.1"),
+			new PackageIdentity("System.ComponentModel.Composition", "10.0.9"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.16"),
-			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.1"),
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.57"),
+			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.19"),
 		]);
+
+	/// <summary>Replaces the .NET 8 reference assembly for System.Collections.Immutable with the version used by this test project.</summary>
+	/// <param name="solution">The test solution.</param>
+	/// <param name="projectId">The test project to update.</param>
+	/// <returns>The updated test solution.</returns>
+	internal static Solution UseCurrentImmutableCollections(Solution solution, ProjectId projectId)
+	{
+		foreach (MetadataReference reference in solution.GetProject(projectId)!.MetadataReferences.Where(
+			reference => string.Equals(Path.GetFileName(reference.Display), "System.Collections.Immutable.dll", StringComparison.OrdinalIgnoreCase)))
+		{
+			solution = solution.RemoveMetadataReference(projectId, reference);
+		}
+
+		return solution.AddMetadataReference(projectId, MetadataReference.CreateFromFile(typeof(ImmutableArray<>).Assembly.Location));
+	}
 
 	internal static IEnumerable<MetadataReference> GetReferences()
 	{

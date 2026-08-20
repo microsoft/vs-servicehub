@@ -46,6 +46,8 @@ public partial class GlobalBrokeredServiceContainer
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>A task that represents the async operation.</returns>
 	[Obsolete("This API is reserved for Visual Studio internal use and may change or be removed in a future version.")]
+	[RequiresDynamicCode(Reasons.JsonSerialization)]
+	[RequiresUnreferencedCode(Reasons.JsonSerialization)]
 	protected async Task ApplyChaosMonkeyConfigurationAsync(string chaosMonkeyConfigurationPath, CancellationToken cancellationToken)
 	{
 		await TaskScheduler.Default;
