@@ -37,7 +37,7 @@ overrides:
   baseline-browser-mapping: 2.11.14
   brace-expansion@1: 1.1.18
   brace-expansion@2: 2.1.4
-  brace-expansion@5: 5.0.8
+  brace-expansion@5: 5.0.9
   browserslist: 4.28.8
   caniuse-lite: 1.0.30001806
   electron-to-chromium: 1.5.405
@@ -857,8 +857,8 @@ packages:
   brace-expansion@2.1.4:
     resolution: {integrity: sha1-WJ2rEcABjQNmvmTNi/Esjb7MgyY=}
 
-  brace-expansion@5.0.8:
-    resolution: {integrity: sha1-E1rQ2NgI6xjrXg7Joh86C5LvGM8=}
+  brace-expansion@5.0.9:
+    resolution: {integrity: sha1-fHJDiAm1+lur9UGZofHCgaaYT88=}
     engines: {node: 20 || >=22}
 
   browserslist@4.28.8:
@@ -3025,7 +3025,7 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.8:
+  brace-expansion@5.0.9:
     dependencies:
       balanced-match: 4.0.4
 
@@ -3943,7 +3943,7 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.8
+      brace-expansion: 5.0.9
 
   minimatch@3.0.8:
     dependencies:
