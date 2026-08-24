@@ -146,6 +146,7 @@ try {
         Write-Host "Installing NPM packages" -ForegroundColor $HeaderColor
         Set-Location 'src/servicebroker-npm'
         $packageManager = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+        $packageManagerName, $packageManagerVersion = $packageManager -split '@', 2
         $corepackEnvironment = @{}
         foreach ($corepackEnvironmentVariable in 'COREPACK_NPM_REGISTRY', 'COREPACK_NPM_TOKEN', 'COREPACK_NPM_USERNAME', 'COREPACK_NPM_PASSWORD') {
             $corepackEnvironment[$corepackEnvironmentVariable] = [Environment]::GetEnvironmentVariable($corepackEnvironmentVariable, 'Process')
@@ -153,11 +154,18 @@ try {
 
         try {
             if ($env:GITHUB_ACTIONS -ne 'true') {
+                if (Get-Command artifacts-npm-credprovider -ErrorAction SilentlyContinue) {
+                    artifacts-npm-credprovider -f -c .\.npmrc
+                    if ($lastexitcode -ne 0) {
+                        throw "Failure while refreshing NPM feed credentials."
+                    }
+                }
+
                 . ./Set-CorepackEnvironment.ps1
             }
-            corepack prepare $packageManager --activate
+            npm install --global $packageManager --registry $env:COREPACK_NPM_REGISTRY --userconfig .\.npmrc
             if ($lastexitcode -ne 0) {
-                throw "Failure while preparing package manager."
+                throw "Failure while installing package manager."
             }
         }
         finally {
@@ -169,10 +177,20 @@ try {
                 }
             }
         }
+
+        $actualPackageManagerVersion = pnpm --version
+        if ($lastexitcode -ne 0) {
+            throw "Failure while verifying package manager."
+        }
+
+        if ($actualPackageManagerVersion.Trim() -ne $packageManagerVersion) {
+            throw "Expected $packageManagerName $packageManagerVersion but found $($actualPackageManagerVersion.Trim())."
+        }
+
         Remove-Item .pnp.* -Force -ErrorAction SilentlyContinue
         $npmRestoreAttempts = 2
         for ($attempt = 1; $attempt -le $npmRestoreAttempts; $attempt++) {
-            corepack pnpm run auth-install
+            pnpm install --frozen-lockfile
             if ($lastexitcode -eq 0) {
                 break
             }
