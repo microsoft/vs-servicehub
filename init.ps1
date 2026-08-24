@@ -160,9 +160,9 @@ try {
                         throw "Failure while refreshing NPM feed credentials."
                     }
                 }
-
-                . ./Set-CorepackEnvironment.ps1
             }
+
+            . ./Set-CorepackEnvironment.ps1
             npm install --global $packageManager --registry $env:COREPACK_NPM_REGISTRY --userconfig .\.npmrc
             if ($lastexitcode -ne 0) {
                 throw "Failure while installing package manager."
