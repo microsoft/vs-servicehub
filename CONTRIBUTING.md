@@ -43,10 +43,10 @@ The NPM package built from this repo restores its public dependencies from the A
 Then use the checked-in install script from the repo root:
 
 ```ps1
-corepack pnpm --dir src/servicebroker-npm run auth-install
+pnpm --dir src/servicebroker-npm run auth-install
 ```
 
-The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm --dir src/servicebroker-npm run auth-install` works too.
+The root `init.ps1` script installs the pnpm version pinned by this repo's `packageManager` field.
 
 #### NPM/pnpm Maintenance
 
