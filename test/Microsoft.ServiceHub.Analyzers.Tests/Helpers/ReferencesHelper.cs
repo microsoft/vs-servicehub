@@ -13,10 +13,18 @@ internal static class ReferencesHelper
 {
 	private static readonly string NuGetConfigPath = FindNuGetConfigPath();
 
-	public static readonly ReferenceAssemblies References = ReferenceAssemblies.Net.Net80
+	public static readonly ReferenceAssemblies References =
+#if NETFRAMEWORK
+		ReferenceAssemblies.NetFramework.Net472.Default
+#else
+		ReferenceAssemblies.Net.Net80
+#endif
 		.WithNuGetConfigFilePath(NuGetConfigPath)
 		.WithPackages(
 		[
+#if NETFRAMEWORK
+			new PackageIdentity("Microsoft.Bcl.AsyncInterfaces", "10.0.10"),
+#endif
 			new PackageIdentity("System.ComponentModel.Composition", "10.0.9"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
 			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.57"),

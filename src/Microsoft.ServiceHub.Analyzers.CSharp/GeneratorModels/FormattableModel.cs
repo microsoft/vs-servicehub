@@ -28,4 +28,20 @@ internal abstract record FormattableModel
 	internal virtual void WriteNestedTypes(SourceWriter writer)
 	{
 	}
+
+	internal virtual void WriteResilientConstructorStatements(SourceWriter writer)
+	{
+	}
+
+	internal virtual void WriteResilientEvents(SourceWriter writer)
+	{
+	}
+
+	internal virtual void WriteResilientFields(SourceWriter writer)
+	{
+	}
+
+	internal virtual void WriteResilientMethods(SourceWriter writer)
+	{
+	}
 }

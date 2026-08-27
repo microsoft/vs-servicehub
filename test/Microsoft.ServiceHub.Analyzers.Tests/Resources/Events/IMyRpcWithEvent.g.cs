@@ -5,6 +5,7 @@
 #pragma warning disable // Disable all warnings so that [Experimental] APIs don't flag anything.
 
 [global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IMyRpcWithEvent_Proxy))]
+[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IMyRpcWithEvent_Proxy_ResilientProxy))]
 partial interface IMyRpcWithEvent
 {
 }
@@ -30,6 +31,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				{
 					target.VanillaEvent += value;
 				}
+		
 			}
 		
 			remove
@@ -49,6 +51,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				{
 					target.MyEvent += value;
 				}
+		
 			}
 		
 			remove
@@ -56,6 +59,76 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				if (this.TargetOrNull is global::IMyRpcWithEvent target)
 				{
 					target.MyEvent -= value;
+				}
+			}
+		}
+	}
+	
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.ServiceHub.Analyzers.CSharp", "x.x.x.x")]
+	internal class IMyRpcWithEvent_Proxy_ResilientProxy : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::IMyRpcWithEvent>
+		, global::IMyRpcWithEvent
+	{
+		private global::System.EventHandler? VanillaEventHandlers;
+		private readonly ResilientEvent<global::System.EventHandler> VanillaEventSubscription;
+		private readonly object VanillaEventSyncObject = new object();
+		private global::System.EventHandler<global::MyEventArgs>? MyEventHandlers;
+		private readonly ResilientEvent<global::System.EventHandler<global::MyEventArgs>> MyEventSubscription;
+		private readonly object MyEventSyncObject = new object();
+		
+		public IMyRpcWithEvent_Proxy_ResilientProxy(
+			global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
+			global::Microsoft.ServiceHub.Framework.ServiceRpcDescriptor serviceDescriptor,
+			global::Microsoft.ServiceHub.Framework.ServiceActivationOptions options)
+			: base(serviceBroker, serviceDescriptor, options)
+		{
+			this.VanillaEventSubscription = this.CreateEvent<global::System.EventHandler>(
+				(sender, args) => this.VanillaEventHandlers?.Invoke(this, args),
+				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent += handler,
+				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent -= handler);
+			this.MyEventSubscription = this.CreateEvent<global::System.EventHandler<global::MyEventArgs>>(
+				(sender, args) => this.MyEventHandlers?.Invoke(this, args),
+				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent += handler,
+				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent -= handler);
+		}
+		
+		public event global::System.EventHandler? VanillaEvent
+		{
+			add
+			{
+				lock (this.VanillaEventSyncObject)
+				{
+					bool active = UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: true);
+					this.VanillaEventSubscription.SetActive(active);
+				}
+			}
+		
+			remove
+			{
+				lock (this.VanillaEventSyncObject)
+				{
+					bool active = UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: false);
+					this.VanillaEventSubscription.SetActive(active);
+				}
+			}
+		}
+		
+		public event global::System.EventHandler<global::MyEventArgs>? MyEvent
+		{
+			add
+			{
+				lock (this.MyEventSyncObject)
+				{
+					bool active = UpdateEventHandlers(ref this.MyEventHandlers, value, add: true);
+					this.MyEventSubscription.SetActive(active);
+				}
+			}
+		
+			remove
+			{
+				lock (this.MyEventSyncObject)
+				{
+					bool active = UpdateEventHandlers(ref this.MyEventHandlers, value, add: false);
+					this.MyEventSubscription.SetActive(active);
 				}
 			}
 		}

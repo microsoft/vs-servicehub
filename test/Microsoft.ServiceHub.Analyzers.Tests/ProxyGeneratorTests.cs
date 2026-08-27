@@ -84,4 +84,18 @@ public class ProxyGeneratorTests
 			}
 			""");
 	}
+
+	[Fact]
+	public async Task UnsupportedResilientMembers_StillGenerateLocalProxy()
+	{
+		await VerifyCS.RunDefaultAsync("""
+			public delegate void CustomEventHandler(int value);
+
+			[JsonRpcContract]
+			public partial interface IMyRpc
+			{
+				event CustomEventHandler Changed;
+			}
+			""");
+	}
 }

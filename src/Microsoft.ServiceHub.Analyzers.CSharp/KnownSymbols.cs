@@ -7,6 +7,7 @@ internal class KnownSymbols(Compilation compilation)
 {
 	private bool? hasRequiredReferences;
 
+	private Option<INamedTypeSymbol?> iasyncDisposable;
 	private Option<INamedTypeSymbol> idisposable;
 	private Option<INamedTypeSymbol> jsonRpcContractAttribute;
 	private Option<INamedTypeSymbol?> rpcMarshalableOptionalInterface;
@@ -30,6 +31,8 @@ internal class KnownSymbols(Compilation compilation)
 	public INamedTypeSymbol? JsonRpcProxyAttribute => this.Optional(ref this.jsonRpcProxyAttribute, Types.JsonRpcProxyAttribute.FullName);
 
 	public INamedTypeSymbol IDisposable => this.Required(ref this.idisposable, "System.IDisposable");
+
+	public INamedTypeSymbol? IAsyncDisposable => this.Optional(ref this.iasyncDisposable, "System.IAsyncDisposable");
 
 	public INamedTypeSymbol Task => this.Required(ref this.task, "System.Threading.Tasks.Task");
 

@@ -88,14 +88,23 @@ public class ProxyGenerator : IIncrementalGenerator
 			{ SpecialType: SpecialType.System_Void } => RpcSpecialType.Void,
 			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.TaskOfT) => RpcSpecialType.Task,
 			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.ValueTaskOfT) => RpcSpecialType.ValueTask,
-			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.IAsyncEnumerableOfT) => RpcSpecialType.IAsyncEnumerable,
+			{ IsGenericType: true } namedType when IsAsyncEnumerable(namedType, symbols.IAsyncEnumerableOfT) => RpcSpecialType.IAsyncEnumerable,
 			{ IsGenericType: false } namedType when Equal(type, symbols.Task) => RpcSpecialType.Task,
 			{ IsGenericType: false } namedType when Equal(type, symbols.ValueTask) => RpcSpecialType.ValueTask,
 			{ IsGenericType: false } namedType when Equal(type, symbols.CancellationToken) => RpcSpecialType.CancellationToken,
 			_ => RpcSpecialType.Other,
 		};
 
-		static bool Equal(ITypeSymbol candidate, ITypeSymbol? standard) => standard is not null && SymbolEqualityComparer.Default.Equals(candidate, standard);
+		static bool Equal(ITypeSymbol candidate, ITypeSymbol? standard)
+			=> standard is not null
+			&& (SymbolEqualityComparer.Default.Equals(candidate, standard)
+				|| candidate.GetDocumentationCommentId() == standard.GetDocumentationCommentId());
+
+		static bool IsAsyncEnumerable(INamedTypeSymbol candidate, INamedTypeSymbol standard)
+			=> Equal(candidate.ConstructedFrom, standard)
+			|| (candidate.Arity == 1
+				&& candidate.Name == "IAsyncEnumerable"
+				&& candidate.ContainingNamespace.ToDisplayString() == "System.Collections.Generic");
 	}
 
 	/// <summary>

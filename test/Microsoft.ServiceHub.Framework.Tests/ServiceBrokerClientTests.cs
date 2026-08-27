@@ -260,6 +260,7 @@ public class ServiceBrokerClientTests : TestBase
 		this.client = new ServiceBrokerClient(ServiceBrokerAggregator.ForceMarshal(this.serviceBroker));
 
 		TaskCompletionSource<BrokeredServicesChangedEventArgs> invalidated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		ICalculator disconnectedProxy;
 		this.client.Invalidated += (s, e, ct) =>
 		{
 			invalidated.TrySetResult(e);
@@ -268,6 +269,8 @@ public class ServiceBrokerClientTests : TestBase
 
 		using (ServiceBrokerClient.Rental<ICalculator> rental = await this.client.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken))
 		{
+			disconnectedProxy = Assert.IsAssignableFrom<ICalculator>(rental.Proxy);
+
 			// Arrange for the connection to be lost (on the service side).
 			this.serviceBroker.ForceKillLastServicePipe();
 
@@ -275,6 +278,10 @@ public class ServiceBrokerClientTests : TestBase
 			Assert.False(args.OtherServicesImpacted);
 			Assert.Equal(TestServices.Calculator.Moniker, Assert.Single(args.ImpactedServices));
 		}
+
+		using ServiceBrokerClient.Rental<ICalculator> replacement = await this.client.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
+		Assert.NotSame(disconnectedProxy, replacement.Proxy);
+		Assert.Equal(3, await Assert.IsAssignableFrom<ICalculator>(replacement.Proxy).AddAsync(1, 2));
 	}
 
 	[Fact]

@@ -40,6 +40,9 @@ internal record ProxyModel : FormattableModel
 		this.GenericTypeSuffix = genericPart ?? string.Empty;
 
 		this.HasInvalidInterfaces = this.Interfaces.Any(iface => iface.HasUnsupportedMemberTypes);
+		this.HasInvalidResilientInterfaces = this.HasInvalidInterfaces
+			|| this.Interfaces.SelectMany(iface => iface.Methods).Any(method => !method.SupportsResilientProxy)
+			|| this.Interfaces.SelectMany(iface => iface.Events).Any(evt => !evt.SupportsResilientProxy);
 
 		if (!this.HasInvalidInterfaces)
 		{
@@ -65,6 +68,8 @@ internal record ProxyModel : FormattableModel
 	internal string? FileName { get; }
 
 	internal bool HasInvalidInterfaces { get; }
+
+	internal bool HasInvalidResilientInterfaces { get; }
 
 	internal bool HasOptionalInterfaces { get; init; }
 
@@ -157,6 +162,11 @@ internal record ProxyModel : FormattableModel
 		writer.Indentation--;
 		writer.WriteLine("}");
 
+		if (!this.HasInvalidResilientInterfaces)
+		{
+			this.WriteResilientProxy(writer, visibility, isPublic);
+		}
+
 		writer.Indentation--;
 		writer.WriteLine("}");
 
@@ -211,6 +221,38 @@ internal record ProxyModel : FormattableModel
 		}
 	}
 
+	internal override void WriteResilientConstructorStatements(SourceWriter writer)
+	{
+		foreach (FormattableModel formattable in this.formattableElements)
+		{
+			formattable.WriteResilientConstructorStatements(writer);
+		}
+	}
+
+	internal override void WriteResilientEvents(SourceWriter writer)
+	{
+		foreach (FormattableModel formattable in this.formattableElements)
+		{
+			formattable.WriteResilientEvents(writer);
+		}
+	}
+
+	internal override void WriteResilientFields(SourceWriter writer)
+	{
+		foreach (FormattableModel formattable in this.formattableElements)
+		{
+			formattable.WriteResilientFields(writer);
+		}
+	}
+
+	internal override void WriteResilientMethods(SourceWriter writer)
+	{
+		foreach (FormattableModel formattable in this.formattableElements)
+		{
+			formattable.WriteResilientMethods(writer);
+		}
+	}
+
 	private static (string NonGenericPart, string? GenericPart) SplitGenericName(string name)
 	{
 		int genericStart = name.IndexOf('<');
@@ -262,12 +304,20 @@ internal record ProxyModel : FormattableModel
 		writer.WriteLine($$"""
 			[global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof({{ProxyGenerator.GenerationNamespace}}.{{this.Name}}{{this.GenericTypeDefinitionSuffix}}))]
 			""");
+		if (!this.HasInvalidResilientInterfaces)
+		{
+			writer.WriteLine($"[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof({ProxyGenerator.GenerationNamespace}.{this.Name}_ResilientProxy{this.GenericTypeDefinitionSuffix}))]");
+		}
 
 		foreach (string prescribedTypeArg in iface.PrescribedTypeArgs)
 		{
 			writer.WriteLine($$"""
 				[global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof({{ProxyGenerator.GenerationNamespace}}.{{this.Name}}<{{prescribedTypeArg}}>))]
 				""");
+			if (!this.HasInvalidResilientInterfaces)
+			{
+				writer.WriteLine($"[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof({ProxyGenerator.GenerationNamespace}.{this.Name}_ResilientProxy<{prescribedTypeArg}>))]");
+			}
 		}
 
 		writer.WriteLine($$"""
@@ -293,5 +343,54 @@ internal record ProxyModel : FormattableModel
 		writer.WriteLine("""
 			}
 			""");
+	}
+
+	private void WriteResilientProxy(SourceWriter writer, string visibility, bool isPublic)
+	{
+		writer.WriteLine($$"""
+
+			[global::System.CodeDom.Compiler.GeneratedCodeAttribute("{{ThisAssembly.AssemblyName}}", "{{ThisAssembly.AssemblyFileVersion}}")]
+			""");
+		if (isPublic)
+		{
+			writer.WriteLine("""
+				[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+				""");
+		}
+
+		writer.WriteLine($$"""
+			{{visibility}} class {{this.Name}}_ResilientProxy{{this.GenericTypeSuffix}} : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::{{this.Interfaces.First().FullName}}>
+			""");
+		writer.Indentation++;
+		foreach (InterfaceModel iface in this.Interfaces)
+		{
+			writer.WriteLine($", global::{iface.FullName}");
+		}
+
+		writer.Indentation--;
+		writer.WriteLine("""
+			{
+			""");
+		writer.Indentation++;
+		this.WriteResilientFields(writer);
+		writer.WriteLine($$"""
+
+			public {{this.Name}}_ResilientProxy(
+				global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
+				global::Microsoft.ServiceHub.Framework.ServiceRpcDescriptor serviceDescriptor,
+				global::Microsoft.ServiceHub.Framework.ServiceActivationOptions options)
+				: base(serviceBroker, serviceDescriptor, options)
+			{
+			""");
+		writer.Indentation++;
+		this.WriteResilientConstructorStatements(writer);
+		writer.Indentation--;
+		writer.WriteLine("""
+			}
+			""");
+		this.WriteResilientEvents(writer);
+		this.WriteResilientMethods(writer);
+		writer.Indentation--;
+		writer.WriteLine("}");
 	}
 }

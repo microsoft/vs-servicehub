@@ -3,8 +3,10 @@
 
 namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
-internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters) : FormattableModel
+internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters, bool IsAsyncDispose) : FormattableModel
 {
+	internal bool SupportsResilientProxy => this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask or RpcSpecialType.IAsyncEnumerable or RpcSpecialType.Void;
+
 	internal bool TakesCancellationToken => this.Parameters.Length > 0 && this.Parameters[^1].SpecialType == RpcSpecialType.CancellationToken;
 
 	internal ParameterModel? CancellationToken => this.TakesCancellationToken ? this.Parameters[^1] : null;
@@ -90,6 +92,63 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 			""");
 	}
 
+	internal override void WriteResilientMethods(SourceWriter writer)
+	{
+		if (this.IsAsyncDispose)
+		{
+			return;
+		}
+
+		string cancellationToken = this.CancellationToken?.Name ?? "default";
+		string arguments = string.Join(", ", this.Parameters.Select(p => p.Name));
+		writer.WriteLine($$"""
+
+			{{this.ReturnType}} {{this.DeclaringInterfaceName}}.{{this.Name}}({{string.Join(", ", this.Parameters.Select(p => $"{p.Type} {p.Name}"))}})
+			{
+			""");
+		writer.Indentation++;
+
+		if (this.CancellationTokenExpression is not null)
+		{
+			writer.WriteLine($"{this.CancellationTokenExpression}.ThrowIfCancellationRequested();");
+		}
+
+		switch (this.ReturnSpecialType)
+		{
+			case RpcSpecialType.Task:
+			case RpcSpecialType.ValueTask:
+				writer.WriteLine($$"""
+					return InvokeAsync();
+
+					async {{this.ReturnType}} InvokeAsync()
+					{
+						using (ProxyRental rental = await this.RentProxyAsync({{cancellationToken}}).ConfigureAwait(false))
+						{
+					""");
+				writer.Indentation += 2;
+				string returnKeyword = this.ReturnTypeArg is null ? string.Empty : "return ";
+				writer.WriteLine($"{returnKeyword}await (({this.DeclaringInterfaceName})rental.Proxy).{this.Name}({arguments}).ConfigureAwait(false);");
+				writer.Indentation -= 2;
+				writer.WriteLine("""
+						}
+					}
+					""");
+				break;
+			case RpcSpecialType.IAsyncEnumerable:
+				writer.WriteLine($"return this.InvokeAsyncEnumerableAsync(target => (({this.DeclaringInterfaceName})target).{this.Name}({arguments}), {cancellationToken});");
+				break;
+			case RpcSpecialType.Void:
+				writer.WriteLine($"this.InvokeNotification(target => (({this.DeclaringInterfaceName})target).{this.Name}({arguments}), {cancellationToken});");
+				break;
+			default:
+				writer.WriteLine("""throw new global::System.NotSupportedException("Resilient proxies require asynchronous RPC contract methods.");""");
+				break;
+		}
+
+		writer.Indentation--;
+		writer.WriteLine("}");
+	}
+
 	internal static MethodModel Create(IMethodSymbol method, KnownSymbols symbols)
 	{
 		return new MethodModel(
@@ -98,6 +157,7 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 			method.ReturnType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
 			ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols),
 			method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] } ? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat) : null,
-			new([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]));
+			new([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]),
+			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable));
 	}
 }

@@ -158,7 +158,7 @@ public class ServiceBrokerClient : IDisposableObservable
 						T? proxy = await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
 						if (proxy is StreamJsonRpc.IJsonRpcClientProxy localProxy)
 						{
-							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnInvalidated(new BrokeredServicesChangedEventArgs(ImmutableHashSet.Create(serviceRpcDescriptor.Moniker)));
+							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnProxyDisconnected((serviceRpcDescriptor.Moniker, typeof(T)), clientLazy!);
 						}
 
 						return proxy;
@@ -305,6 +305,37 @@ public class ServiceBrokerClient : IDisposableObservable
 		finally
 		{
 			this.OnInvalidated(e);
+		}
+	}
+
+	/// <summary>
+	/// Invalidates a cached proxy after its RPC connection is lost.
+	/// </summary>
+	/// <param name="key">The key for the disconnected proxy.</param>
+	/// <param name="disconnectedProxy">The disconnected proxy.</param>
+	private void OnProxyDisconnected((ServiceMoniker Moniker, Type ClientType) key, AsyncLazy<object?> disconnectedProxy)
+	{
+		BrokeredServicesChangedEventArgs args = new(ImmutableHashSet.Create(key.Moniker));
+		List<IDisposable>? disposableProxies;
+		lock (this.syncObject)
+		{
+			if (this.IsDisposed
+				|| !this.clientCache.TryGetValue(key, out AsyncLazy<object?>? currentProxy)
+				|| !ReferenceEquals(currentProxy, disconnectedProxy))
+			{
+				return;
+			}
+
+			disposableProxies = this.InvalidateProxies(args);
+		}
+
+		try
+		{
+			this.DisposeOldProxies(disposableProxies);
+		}
+		finally
+		{
+			this.OnInvalidated(args);
 		}
 	}
 
