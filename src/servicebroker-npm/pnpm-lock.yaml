@@ -34,7 +34,7 @@ overrides:
   '@humanfs/node': 0.16.8
   acorn: 8.18.0
   ajv: 8.20.0
-  baseline-browser-mapping: 2.11.15
+  baseline-browser-mapping: 2.11.16
   brace-expansion@1: 1.1.18
   brace-expansion@2: 2.1.4
   brace-expansion@5: 5.0.9
@@ -847,8 +847,8 @@ packages:
     resolution: {integrity: sha1-v7EGYv7tgZaixi58aOF3IMJ0F5o=}
     engines: {node: 18 || 20 || >=22}
 
-  baseline-browser-mapping@2.11.15:
-    resolution: {integrity: sha1-nAysk9fTBPPWG7QQiKECzWLmhnY=}
+  baseline-browser-mapping@2.11.16:
+    resolution: {integrity: sha1-D6GaTs4uNEOeyqP9yopZrPvSh/s=}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -3015,7 +3015,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  baseline-browser-mapping@2.11.15: {}
+  baseline-browser-mapping@2.11.16: {}
 
   brace-expansion@1.1.18:
     dependencies:
@@ -3032,7 +3032,7 @@ snapshots:
 
   browserslist@4.28.8:
     dependencies:
-      baseline-browser-mapping: 2.11.15
+      baseline-browser-mapping: 2.11.16
       caniuse-lite: 1.0.30001809
       electron-to-chromium: 1.5.411
       node-releases: 2.0.53
