@@ -22,8 +22,16 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		typeof(IAsyncDisposable),
 	];
 
+	private EventHandler? availabilityChangedHandlers;
 	private object? disposedHandlers;
 	private EventHandler<ResilientServiceProxyInvalidatedEventArgs>? invalidatedHandlers;
+
+	/// <inheritdoc />
+	public event EventHandler? AvailabilityChanged
+	{
+		add => UpdateEventHandlers(ref this.availabilityChangedHandlers, value, add: true);
+		remove => UpdateEventHandlers(ref this.availabilityChangedHandlers, value, add: false);
+	}
 
 	/// <inheritdoc />
 	public event EventHandler? Disposed
@@ -45,6 +53,11 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		add => UpdateEventHandlers(ref this.invalidatedHandlers, value, add: true);
 		remove => UpdateEventHandlers(ref this.invalidatedHandlers, value, add: false);
 	}
+
+	/// <summary>
+	/// Gets a value indicating whether this proxy currently has a backing service.
+	/// </summary>
+	public abstract bool IsAvailable { get; }
 
 	/// <summary>
 	/// Gets a value indicating whether this proxy has been disposed.
@@ -118,6 +131,30 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns><see langword="true"/> when the service was available.</returns>
 	protected abstract ValueTask<bool> InitializeAsync(CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Raises <see cref="AvailabilityChanged"/>.
+	/// </summary>
+	protected void OnAvailabilityChanged()
+	{
+		EventHandler? handlers = this.availabilityChangedHandlers;
+		if (handlers is null)
+		{
+			return;
+		}
+
+		foreach (EventHandler handler in handlers.GetInvocationList())
+		{
+			try
+			{
+				handler(this, EventArgs.Empty);
+			}
+			catch (Exception ex)
+			{
+				this.TraceEventHandlerFailure(ex);
+			}
+		}
+	}
 
 	/// <summary>
 	/// Raises <see cref="Invalidated"/>.

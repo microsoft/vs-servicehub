@@ -15,6 +15,8 @@ public partial interface IResilientTestService : IAsyncDisposable
 	IAsyncEnumerable<int> StreamAsync(CancellationToken cancellationToken);
 
 	void Notify(int value);
+
+	Task<IDisposable> ObserveAsync(IObserver<int> observer, CancellationToken cancellationToken);
 }
 
 [JsonRpcContract]

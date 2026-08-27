@@ -89,6 +89,7 @@ public class ProxyGenerator : IIncrementalGenerator
 			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.TaskOfT) => RpcSpecialType.Task,
 			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.ValueTaskOfT) => RpcSpecialType.ValueTask,
 			{ IsGenericType: true } namedType when IsAsyncEnumerable(namedType, symbols.IAsyncEnumerableOfT) => RpcSpecialType.IAsyncEnumerable,
+			{ IsGenericType: true } namedType when Equal(namedType.ConstructedFrom, symbols.IObserverOfT) => RpcSpecialType.IObserver,
 			{ IsGenericType: false } namedType when Equal(type, symbols.Task) => RpcSpecialType.Task,
 			{ IsGenericType: false } namedType when Equal(type, symbols.ValueTask) => RpcSpecialType.ValueTask,
 			{ IsGenericType: false } namedType when Equal(type, symbols.CancellationToken) => RpcSpecialType.CancellationToken,

@@ -3,9 +3,10 @@
 
 namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
-internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters, bool IsAsyncDispose) : FormattableModel
+internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters, bool IsAsyncDispose, bool IsObserverSubscription) : FormattableModel
 {
-	internal bool SupportsResilientProxy => this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask or RpcSpecialType.IAsyncEnumerable or RpcSpecialType.Void;
+	internal bool SupportsResilientProxy => this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask or RpcSpecialType.IAsyncEnumerable or RpcSpecialType.Void
+		|| this.IsObserverSubscription;
 
 	internal bool TakesCancellationToken => this.Parameters.Length > 0 && this.Parameters[^1].SpecialType == RpcSpecialType.CancellationToken;
 
@@ -117,6 +118,17 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 		{
 			case RpcSpecialType.Task:
 			case RpcSpecialType.ValueTask:
+				if (this.IsObserverSubscription)
+				{
+					string helperName = this.ReturnSpecialType == RpcSpecialType.Task ? "InvokeTaskSubscriptionAsync" : "InvokeValueTaskSubscriptionAsync";
+					string targetName = this.GetUniqueParameterName("__resilientTarget");
+					string reattachCancellationTokenName = this.GetUniqueParameterName("__resilientCancellationToken");
+					string reattachArguments = string.Join(", ", this.Parameters.Select(
+						(parameter, index) => this.TakesCancellationToken && index == this.Parameters.Length - 1 ? reattachCancellationTokenName : parameter.Name));
+					writer.WriteLine($"return this.{helperName}({targetName} => (({this.DeclaringInterfaceName}){targetName}).{this.Name}({arguments}), ({targetName}, {reattachCancellationTokenName}) => (({this.DeclaringInterfaceName}){targetName}).{this.Name}({reattachArguments}), {cancellationToken});");
+					break;
+				}
+
 				writer.WriteLine($$"""
 					return InvokeAsync();
 
@@ -151,13 +163,34 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 
 	internal static MethodModel Create(IMethodSymbol method, KnownSymbols symbols)
 	{
+		var parameters = new ImmutableEquatableArray<ParameterModel>([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]);
+		RpcSpecialType returnSpecialType = ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols);
+		string? returnTypeArg = method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] }
+			? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
+			: null;
+		bool isObserverSubscription = returnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask
+			&& method.ReturnType is INamedTypeSymbol { TypeArguments: [ITypeSymbol subscriptionType] }
+			&& SymbolEqualityComparer.Default.Equals(subscriptionType, symbols.IDisposable)
+			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver);
 		return new MethodModel(
 			method.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
 			method.Name,
 			method.ReturnType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
-			ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols),
-			method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] } ? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat) : null,
-			new([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]),
-			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable));
+			returnSpecialType,
+			returnTypeArg,
+			parameters,
+			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable),
+			isObserverSubscription);
+	}
+
+	private string GetUniqueParameterName(string baseName)
+	{
+		string name = baseName;
+		while (this.Parameters.Any(parameter => parameter.Name == name))
+		{
+			name += "_";
+		}
+
+		return name;
 	}
 }

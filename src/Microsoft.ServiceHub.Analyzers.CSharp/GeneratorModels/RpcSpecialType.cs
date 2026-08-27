@@ -15,5 +15,6 @@ internal enum RpcSpecialType
 	Task,
 	ValueTask,
 	IAsyncEnumerable,
+	IObserver,
 	CancellationToken,
 }

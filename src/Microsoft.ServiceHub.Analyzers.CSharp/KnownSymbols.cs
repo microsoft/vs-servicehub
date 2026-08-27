@@ -18,6 +18,7 @@ internal class KnownSymbols(Compilation compilation)
 	private Option<INamedTypeSymbol> valueTask;
 	private Option<INamedTypeSymbol> valueTaskOfT;
 	private Option<INamedTypeSymbol> iasyncEnumerableOfT;
+	private Option<INamedTypeSymbol> iobserverOfT;
 	private Option<INamedTypeSymbol> cancellationToken;
 
 	public bool HasRequiredReferences => this.hasRequiredReferences ??= compilation.References.Any(r => r is PortableExecutableReference { FilePath: string path } && string.Equals(Path.GetFileNameWithoutExtension(path), "StreamJsonRpc", StringComparison.OrdinalIgnoreCase));
@@ -43,6 +44,8 @@ internal class KnownSymbols(Compilation compilation)
 	public INamedTypeSymbol ValueTaskOfT => this.Required(ref this.valueTaskOfT, "System.Threading.Tasks.ValueTask`1");
 
 	public INamedTypeSymbol IAsyncEnumerableOfT => this.Required(ref this.iasyncEnumerableOfT, "System.Collections.Generic.IAsyncEnumerable`1");
+
+	public INamedTypeSymbol IObserverOfT => this.Required(ref this.iobserverOfT, "System.IObserver`1");
 
 	public INamedTypeSymbol CancellationToken => this.Required(ref this.cancellationToken, "System.Threading.CancellationToken");
 
