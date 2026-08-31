@@ -51,7 +51,7 @@ overrides:
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.5.2
   node-releases: 2.0.53
-  'picomatch@4': 4.0.5
+  'picomatch@4': 4.0.7
   react-is: 19.2.8
   react-is-19: npm:react-is@19.2.8
   synckit: 0.11.13
