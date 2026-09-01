@@ -333,7 +333,7 @@ describe('Service Broker tests', function () {
 					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
 					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
 					try {
-						const collectedErrors: any[] = []
+						const collectedErrors: unknown[] = []
 						const collectedValues: number[] = []
 						const failObserver = new Observer<number>(
 							value => collectedValues.push(value),
@@ -342,7 +342,9 @@ describe('Service Broker tests', function () {
 						let wasDisposed = false
 						const disposableFailObserver = failObserver as unknown as IDisposable
 						disposableFailObserver.dispose = () => { wasDisposed = true }
-						await proxy?.observeNumbers(failObserver, 3, true)
+						assert(proxy)
+						await proxy.observeNumbers(failObserver, 3, true)
+						assert.deepEqual(collectedValues, [1, 2, 3], 'Expected all values to be received before the failure is reported')
 						assert(wasDisposed, 'The observer must be disposed after the call completes')
 						assert.strictEqual(collectedErrors.length, 1, 'Exactly one error should be received from the failed observer')
 					} finally {
