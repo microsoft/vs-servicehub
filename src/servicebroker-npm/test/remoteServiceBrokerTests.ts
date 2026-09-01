@@ -332,20 +332,23 @@ describe('Service Broker tests', function () {
 					const s = new MultiplexingRemoteServiceBroker(channel)
 					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
 					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
-					const collectedErrors: any[] = []
-					const collectedValues: number[] = []
-					const failObserver = new Observer<number>(
-						value => collectedValues.push(value),
-						error => { if (error) { collectedErrors.push(error) } } // only track errors; completion case not expected with failAtEnd=true
-					)
-					let wasDisposed = false
-					const disposableFailObserver = failObserver as unknown as IDisposable
-					disposableFailObserver.dispose = () => { wasDisposed = true }
-					await proxy?.observeNumbers(failObserver, 3, true)
-					assert(wasDisposed, 'The observer must be disposed after the call completes')
-					assert.strictEqual(collectedErrors.length, 1, 'Exactly one error should be received from the failed observer')
-					proxy?.dispose()
-					broker.dispose()
+					try {
+						const collectedErrors: any[] = []
+						const collectedValues: number[] = []
+						const failObserver = new Observer<number>(
+							value => collectedValues.push(value),
+							error => { if (error) { collectedErrors.push(error) } } // only track errors; completion case not expected with failAtEnd=true
+						)
+						let wasDisposed = false
+						const disposableFailObserver = failObserver as unknown as IDisposable
+						disposableFailObserver.dispose = () => { wasDisposed = true }
+						await proxy?.observeNumbers(failObserver, 3, true)
+						assert(wasDisposed, 'The observer must be disposed after the call completes')
+						assert.strictEqual(collectedErrors.length, 1, 'Exactly one error should be received from the failed observer')
+					} finally {
+						proxy?.dispose()
+						broker.dispose()
+					}
 					await channel.completion
 				} finally {
 					mx?.dispose()
