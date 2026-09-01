@@ -20,6 +20,11 @@
     <MicroBuild_LocalizeOutputAssembly>false</MicroBuild_LocalizeOutputAssembly>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="tools\**" Pack="true" PackagePath="tools\" />
+    <Content Include="buildTransitive\**" Pack="true" PackagePath="buildTransitive\" />
+  </ItemGroup>
+
   <Target Name="PackBuildOutputs" DependsOnTargets="ResolveProjectReferences;SatelliteDllsProjectOutputGroup;SatelliteDllsProjectOutputGroupDependencies">
     <ItemGroup>
       <!-- Analysis of C# projects -->
@@ -52,5 +57,5 @@
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
   </ItemDefinitionGroup>
-  
+
 </Project>

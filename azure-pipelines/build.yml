@@ -366,8 +366,6 @@ jobs:
     fetchDepth: 0 # avoid shallow clone so nbgv can do its work.
     clean: true
   - template: install-dependencies.yml
-    parameters:
-      initArgs: -NoRestore
   - template: publish-symbols.yml
     parameters:
       EnableLinuxBuild: ${{ parameters.EnableLinuxBuild }}

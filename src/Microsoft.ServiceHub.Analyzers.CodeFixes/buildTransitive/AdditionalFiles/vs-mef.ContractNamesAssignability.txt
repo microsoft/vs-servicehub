@@ -1,0 +1,1 @@
+Microsoft.ServiceHub.Framework.IServiceBroker <= Microsoft.VisualStudio.Shell.ServiceBroker.SVsFullAccessServiceBroker

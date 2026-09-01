@@ -48,11 +48,12 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 	 */
 	public static async connectToRemoteServiceBroker(
 		server: IRemoteServiceBroker,
-		cancellationToken: CancellationToken = CancellationToken.CONTINUE
+		cancellationToken: CancellationToken = CancellationToken.CONTINUE,
+		clientMetadata?: ServiceBrokerClientMetadata,
 	): Promise<RemoteServiceBroker> {
 		assert(server)
 
-		return await RemoteServiceBroker.initializeBrokerConnection(server, cancellationToken)
+		return await RemoteServiceBroker.initializeBrokerConnection(server, cancellationToken, clientMetadata)
 	}
 
 	/**
@@ -156,7 +157,7 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 	 */
 	public constructor(
 		private readonly serviceBroker: IRemoteServiceBroker,
-		clientMetadata: ServiceBrokerClientMetadata,
+		private readonly clientMetadata: ServiceBrokerClientMetadata,
 		private readonly multiplexingStream?: MultiplexingStream
 	) {
 		super()
@@ -202,9 +203,9 @@ export class RemoteServiceBroker extends (EventEmitter as new () => ServiceBroke
 			remoteConnectionInfo = await this.serviceBroker.requestServiceChannel(serviceDescriptor.moniker, options, cancellationToken)
 			if (!remoteConnectionInfo || RemoteServiceConnectionInfo.isEmpty(remoteConnectionInfo)) {
 				return null
-			} else if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream) {
+			} else if (remoteConnectionInfo.multiplexingChannelId && this.multiplexingStream && RemoteServiceConnections.contains(this.clientMetadata.supportedConnections, RemoteServiceConnections.Multiplexing)) {
 				pipe = await this.multiplexingStream.acceptChannel(remoteConnectionInfo.multiplexingChannelId)
-			} else if (remoteConnectionInfo.pipeName) {
+			} else if (remoteConnectionInfo.pipeName && RemoteServiceConnections.contains(this.clientMetadata.supportedConnections, RemoteServiceConnections.IpcPipe)) {
 				// Accommodate Windows pipe names that may or may not include the requisite prefix.
 				const pipeName =
 					process.platform === 'win32' && !remoteConnectionInfo.pipeName.startsWith(PIPE_NAME_PREFIX)

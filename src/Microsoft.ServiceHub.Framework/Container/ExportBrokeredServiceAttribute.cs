@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using Microsoft.ServiceHub.Framework;
+using Microsoft.VisualStudio.Composition;
 
 namespace Microsoft.VisualStudio.Shell.ServiceBroker;
 
@@ -131,7 +132,8 @@ public class ExportBrokeredServiceAttribute : ExportAttribute
 /// set to <see langword="true"/>.
 /// </devremarks>
 #pragma warning disable SA1201 // Elements should appear in the correct order
-internal interface IBrokeredServicesExportMetadata
+[MetadataView]
+internal partial interface IBrokeredServicesExportMetadata
 #pragma warning restore SA1201 // Elements should appear in the correct order
 {
 	/// <inheritdoc cref="ExportBrokeredServiceAttribute.ServiceName"/>

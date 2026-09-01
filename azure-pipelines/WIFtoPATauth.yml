@@ -18,5 +18,6 @@ steps:
       $accessToken = az account get-access-token --query accessToken --resource '${{ parameters.resource }}' -o tsv
       # Set the access token as a secret, so it doesn't get leaked in the logs
       Write-Host "##vso[task.setsecret]$accessToken"
+      Write-Host "##vso[task.setvariable variable=AzureArtifactsAccessToken;issecret=true]$accessToken"
       # Override the apitoken of the nuget service connection, for the duration of this stage
       Write-Host "##vso[task.setendpoint id=${{ parameters.deadPATServiceConnectionId }};field=authParameter;key=apitoken]$accessToken"

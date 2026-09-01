@@ -12,7 +12,7 @@ import { ServiceBrokerClientMetadata } from './ServiceBrokerClientMetadata'
 import { ServiceMoniker } from './ServiceMoniker'
 import { FrameworkServices } from './FrameworkServices'
 import caught from 'caught'
-import { v4 as uuid } from 'uuid'
+import { randomUUID } from 'crypto'
 import { RpcEventServer } from './ServiceRpcDescriptor'
 
 export class MultiplexingRelayServiceBroker
@@ -75,7 +75,7 @@ export class MultiplexingRelayServiceBroker
 		options?: ServiceActivationOptions | undefined,
 		cancellationToken?: CancellationToken | undefined
 	): Promise<RemoteServiceConnectionInfo> {
-		const requestId = uuid()
+		const requestId = randomUUID()
 		options = options ? { ...options } : {}
 		options.multiplexingStream = this.multiplexingStreamWithClient
 		const servicePipe = await this.serviceBroker.getPipe(serviceMoniker, options, cancellationToken)

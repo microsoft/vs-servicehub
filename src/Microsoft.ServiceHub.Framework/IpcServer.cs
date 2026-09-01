@@ -198,7 +198,7 @@ internal class IpcServer : IDisposable, IIpcServer
 			// On .NET Framework, we have to implement the CurrentUserOnly security ourselves.
 			// https://github.com/dotnet/runtime/blob/220437ef6591bee5907ed097b5e193a1d1235dca/src/libraries/System.IO.Pipes/src/System/IO/Pipes/NamedPipeServerStream.Windows.cs#L98-L119
 			PipeSecurity? pipeSecurity = null;
-			if ((pipeOptions & PolyfillExtensions.PipeOptionsCurrentUserOnly) == PolyfillExtensions.PipeOptionsCurrentUserOnly)
+			if ((pipeOptions & PipeOptionsEx.CurrentUserOnly) == PipeOptionsEx.CurrentUserOnly)
 			{
 				pipeSecurity = new PipeSecurity();
 				using (WindowsIdentity currentIdentity = WindowsIdentity.GetCurrent())
@@ -216,7 +216,7 @@ internal class IpcServer : IDisposable, IIpcServer
 				// PipeOptions.CurrentUserOnly is special since it doesn't match directly to a corresponding Win32 valid flag.
 				// Remove it, while keeping others untouched since historically this has been used as a way to pass flags to CreateNamedPipe
 				// that were not defined in the enumeration.
-				pipeOptions &= ~PolyfillExtensions.PipeOptionsCurrentUserOnly;
+				pipeOptions &= ~PipeOptionsEx.CurrentUserOnly;
 			}
 
 			return new NamedPipeServerStream(

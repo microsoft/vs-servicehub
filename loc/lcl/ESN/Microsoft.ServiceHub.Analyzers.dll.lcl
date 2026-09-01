@@ -165,6 +165,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ISB005_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata somewhere in the overall expression that creates a ServiceJsonRpcPolyTypeDescriptor. Otherwise, if the descriptor is used on the service side to attach RPC to a target object, it will fail at runtime because no RpcTargetMetadata was configured.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Invoque WithRpcTargetMetadata en algún lugar de la expresión general que crea un ServiceJsonRpcPolyTypeDescriptor. De lo contrario, si el descriptor se usa en el lado del servicio para adjuntar RPC a un objeto de destino, se producirá un error en tiempo de ejecución porque no se configuró ningún RpcTargetMetadata.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata in the expression that creates a ServiceJsonRpcPolyTypeDescriptor; otherwise service-side RPC attachment to a target object can fail at runtime because no RpcTargetMetadata was configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Invoque WithRpcTargetMetadata en la expresión que crea un ServiceJsonRpcPolyTypeDescriptor; de lo contrario, los datos adjuntos RPC del lado de servicio a un objeto de destino pueden producir un error en tiempo de ejecución porque no se configuró ningún RpcTargetMetadata]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Configure RpcTargetMetadata on creation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Configurar RpcTargetMetadata al crear]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
     </Item>
   </Item>
   <Item ItemId=";Version" ItemType="0" PsrId="211" Leaf="false">

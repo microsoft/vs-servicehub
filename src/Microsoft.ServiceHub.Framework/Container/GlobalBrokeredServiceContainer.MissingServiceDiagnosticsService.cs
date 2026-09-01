@@ -24,7 +24,7 @@ public partial class GlobalBrokeredServiceContainer
 		/// <inheritdoc />
 		public async Task<MissingServiceAnalysis> AnalyzeMissingServiceAsync(ServiceMoniker missingServiceMoniker, CancellationToken cancellationToken)
 		{
-			(IProffered? profferingSource, MissingBrokeredServiceErrorCode errorCode) = await this.view.TryGetProfferingSourceAsync(missingServiceMoniker, cancellationToken).ConfigureAwait(false);
+			(IProffered? profferingSource, MissingBrokeredServiceErrorCode errorCode) = await this.view.TryGetProfferingSourceAsync(missingServiceMoniker, isRemoteRequest: false, cancellationToken).ConfigureAwait(false);
 
 			if (profferingSource is null)
 			{

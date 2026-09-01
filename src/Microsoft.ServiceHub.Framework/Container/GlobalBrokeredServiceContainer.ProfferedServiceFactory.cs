@@ -18,7 +18,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 	/// </summary>
 	[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
 	[RequiresUnreferencedCode(Reasons.TypeLoad)]
-	protected class ProfferedServiceFactory : IProffered
+	protected class ProfferedServiceFactory : IProfferedWithId
 	{
 		private static readonly ProtectedOperation ClientIsOwnerProtectedOperation = WellKnownProtectedOperations.CreateClientIsOwner();
 
@@ -48,6 +48,9 @@ public abstract partial class GlobalBrokeredServiceContainer
 			add { }
 			remove { }
 		}
+
+		/// <inheritdoc/>
+		public Guid Id { get; } = Guid.NewGuid();
 
 		/// <inheritdoc/>
 		public ServiceSource Source => ServiceSource.SameProcess; // individual service factories are *always* local to this process.
@@ -97,7 +100,7 @@ public abstract partial class GlobalBrokeredServiceContainer
 			(IDuplexPipe, IDuplexPipe) pipePair = FullDuplexStream.CreatePipePair();
 
 			// We encourage users to migrate to descriptors configured with ServiceJsonRpcDescriptor.WithMultiplexingStream(MultiplexingStream.Options).
-			ServiceRpcDescriptor descriptor = this.Descriptor is not ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null }
+			ServiceRpcDescriptor descriptor = this.Descriptor is not (ServiceJsonRpcDescriptor { MultiplexingStreamOptions: not null } or ServiceJsonRpcPolyTypeDescriptor { MultiplexingStreamOptions: not null })
 #pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
 				 ? this.Descriptor.WithMultiplexingStream(options.MultiplexingStream)
 #pragma warning restore CS0618 // Type or member is obsolete

@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.IO.Pipes;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
@@ -11,6 +13,50 @@ public class ServerFactoryTests : TestBase
 	public ServerFactoryTests(ITestOutputHelper logger)
 		: base(logger)
 	{
+	}
+
+	private static PipeOptions CurrentUserOnlyPipeOption
+	{
+		get
+		{
+#if NET5_0_OR_GREATER
+			return PipeOptions.CurrentUserOnly;
+#else
+			return (PipeOptions)0x2000_0000;
+#endif
+		}
+	}
+
+	[Fact]
+	[Trait("CWE", "284")]
+	public async Task ConnectAsyncRetainsCurrentUserOnlyForOwnerValidation()
+	{
+		Assert.SkipUnless(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "This test requires Windows named pipes.");
+
+		IIpcServer server = ServerFactory.Create(
+			stream =>
+			{
+				stream.Dispose();
+				return Task.CompletedTask;
+			},
+			new ServerFactory.ServerOptions
+			{
+				TraceSource = this.CreateTestTraceSource(nameof(this.ConnectAsyncRetainsCurrentUserOnlyForOwnerValidation)),
+			});
+
+		try
+		{
+			using Stream clientStream = await ServerFactory.ConnectAsync(server.Name, default, this.TimeoutToken);
+			PipeOptions pipeOptions = GetPipeOptions(clientStream);
+
+			Assert.True(
+				(pipeOptions & CurrentUserOnlyPipeOption) == CurrentUserOnlyPipeOption,
+				$"Expected {clientStream.GetType().FullName} to retain CurrentUserOnly so owner validation runs. Actual options: {pipeOptions}.");
+		}
+		finally
+		{
+			await server.DisposeAsync();
+		}
 	}
 
 	[Fact]
@@ -193,7 +239,7 @@ public class ServerFactoryTests : TestBase
 	[InlineData(false, true)]
 	public async Task ClientCallsBeforeServerIsReady(bool failFast, bool spinningWait)
 	{
-		string channelName = ServerFactory.PrependPipePrefix(nameof(this.ClientCallsBeforeServerIsReady));
+		string channelName = ServerFactory.PrependPipePrefix($"{nameof(this.ClientCallsBeforeServerIsReady)}_{Guid.NewGuid():N}");
 		Task<Stream> clientTask = ServerFactory.ConnectAsync(
 			channelName,
 			new ServerFactory.ClientOptions { FailFast = failFast, CpuSpinOverFirstChanceExceptions = spinningWait },
@@ -231,5 +277,58 @@ public class ServerFactoryTests : TestBase
 			await server.DisposeAsync();
 			await server.Completion.WithCancellation(this.TimeoutToken);
 		}
+	}
+
+	[Fact]
+	public async Task ServerAlreadyListening_FailsFastWhenPipeIsMissing()
+	{
+		string channelName = ServerFactory.PrependPipePrefix($"{nameof(this.ServerAlreadyListening_FailsFastWhenPipeIsMissing)}_{Guid.NewGuid():N}");
+
+		// No server ever creates this pipe. The client claims the server already published the name,
+		// so the connection must report the missing pipe instead of waiting for the token to be canceled.
+		await Assert.ThrowsAsync<FileNotFoundException>(() => ServerFactory.ConnectAsync(
+			channelName,
+			new ServerFactory.ClientOptions { ServerAlreadyListening = true },
+			this.TimeoutToken));
+	}
+
+	[Fact]
+	public async Task ServerAlreadyListening_ConnectsToExistingServer()
+	{
+		AsyncManualResetEvent callbackEntered = new();
+		IIpcServer server = ServerFactory.Create(
+			stream =>
+			{
+				callbackEntered.Set();
+				stream.Dispose();
+				return Task.CompletedTask;
+			},
+			new ServerFactory.ServerOptions
+			{
+				TraceSource = this.CreateTestTraceSource(nameof(this.ServerAlreadyListening_ConnectsToExistingServer)),
+			});
+
+		try
+		{
+			using Stream clientStream = await ServerFactory.ConnectAsync(
+				server.Name,
+				new ServerFactory.ClientOptions { ServerAlreadyListening = true },
+				this.TimeoutToken);
+			await callbackEntered.WaitAsync(this.TimeoutToken);
+		}
+		finally
+		{
+			await server.DisposeAsync();
+		}
+
+		await server.Completion.WithCancellation(this.TimeoutToken);
+	}
+
+	private static PipeOptions GetPipeOptions(Stream pipeStream)
+	{
+		FieldInfo? pipeOptionsField = pipeStream.GetType().GetField("pipeOptions", BindingFlags.NonPublic | BindingFlags.Instance);
+		Assert.NotNull(pipeOptionsField);
+
+		return Assert.IsType<PipeOptions>(pipeOptionsField.GetValue(pipeStream));
 	}
 }

@@ -76,6 +76,19 @@ public class ServiceRegistration
 		return $"{nameof(ServiceAudience)}: {this.Audience}, {nameof(this.AllowGuestClients)}: {this.AllowGuestClients}, {nameof(this.ProfferingPackageId)}: {this.ProfferingPackageId}";
 	}
 
+	/// <inheritdoc />
+	public override bool Equals(object? obj)
+	{
+		return obj is ServiceRegistration other
+			&& this.Audience == other.Audience
+			&& this.AllowGuestClients == other.AllowGuestClients
+			&& Equals(this.ProfferingPackageId, other.ProfferingPackageId)
+			&& this.AdditionalServiceInterfaceTypeNames.SequenceEqual(other.AdditionalServiceInterfaceTypeNames);
+	}
+
+	/// <inheritdoc/>
+	public override int GetHashCode() => HashCode.Combine(this.Audience, this.AllowGuestClients, this.ProfferingPackageId);
+
 	/// <summary>
 	/// Gets a value indicating whether this service is approved for consuming by a given audience.
 	/// </summary>

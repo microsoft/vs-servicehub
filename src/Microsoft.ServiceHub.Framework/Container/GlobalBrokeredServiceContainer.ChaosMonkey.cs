@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Task = System.Threading.Tasks.Task;
@@ -31,6 +32,11 @@ public partial class GlobalBrokeredServiceContainer
 		/// All requests will be denied if they would be fulfilled by a remote connection.
 		/// </summary>
 		DenyRemote,
+
+		/// <summary>
+		/// All requests will be denied if they originate from a remote consumer.
+		/// </summary>
+		DenyFromRemote,
 	}
 
 	/// <summary>
@@ -40,6 +46,8 @@ public partial class GlobalBrokeredServiceContainer
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>A task that represents the async operation.</returns>
 	[Obsolete("This API is reserved for Visual Studio internal use and may change or be removed in a future version.")]
+	[RequiresDynamicCode(Reasons.JsonSerialization)]
+	[RequiresUnreferencedCode(Reasons.JsonSerialization)]
 	protected async Task ApplyChaosMonkeyConfigurationAsync(string chaosMonkeyConfigurationPath, CancellationToken cancellationToken)
 	{
 		await TaskScheduler.Default;
@@ -136,6 +144,7 @@ public partial class GlobalBrokeredServiceContainer
 	private class ChaosBrokeredService
 	{
 		[DataMember]
+		[JsonConverter(typeof(StringEnumConverter), typeof(CamelCaseNamingStrategy))]
 		internal ChaosBrokeredServiceAvailability Availability { get; set; }
 	}
 }

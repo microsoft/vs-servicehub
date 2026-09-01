@@ -29,7 +29,7 @@ describe('MultiplexingRelayServiceBroker', function () {
 			const pair = FullDuplexStream.CreatePair()
 			await expect(() =>
 				MultiplexingRelayServiceBroker.connectToServer(new MockServiceBroker(), pair.first, CancellationToken.CANCELLED)
-			).rejects.toThrowError(CancellationToken.CancellationError)
+			).rejects.toThrow(CancellationToken.CancellationError)
 		})
 	})
 

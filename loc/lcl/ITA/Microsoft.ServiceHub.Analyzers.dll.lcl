@@ -165,6 +165,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ISB005_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata somewhere in the overall expression that creates a ServiceJsonRpcPolyTypeDescriptor. Otherwise, if the descriptor is used on the service side to attach RPC to a target object, it will fail at runtime because no RpcTargetMetadata was configured.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Richiamare WithRpcTargetMetadata in un punto qualsiasi dell'espressione complessiva che crea un ServiceJsonRpcPolyTypeDescriptor. In caso contrario, se il descrittore viene usato sul lato del servizio per allegare RPC a un oggetto di destinazione, si verificherà un errore in fase di runtime perché non è stato configurato alcun RpcTargetMetadata.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata in the expression that creates a ServiceJsonRpcPolyTypeDescriptor; otherwise service-side RPC attachment to a target object can fail at runtime because no RpcTargetMetadata was configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Invocare WithRpcTargetMetadata nell'espressione che crea un ServiceJsonRpcPolyTypeDescriptor; in caso contrario, l'azione di allegare RPC sul lato servizio a un oggetto di destinazione potrebbe non riuscire in fase di runtime perché non è stato configurato alcun RpcTargetMetadata]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Configure RpcTargetMetadata on creation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Configurare RpcTargetMetadata durante la creazione]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
     </Item>
   </Item>
   <Item ItemId=";Version" ItemType="0" PsrId="211" Leaf="false">

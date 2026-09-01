@@ -14,8 +14,15 @@ namespace Microsoft.ServiceHub.Framework.Reflection;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, IClientProxy, IJsonRpcLocalProxy
 {
+	// Sentinel value stored in <see cref="disposedHandlers"/> after disposal so that
+	// add/remove of <see cref="INotifyDisposable.Disposed"/> can detect the disposed state
+	// and invoke the handler immediately rather than rooting it in a backing field.
+	private static readonly object DisposedSentinel = new();
+	private static readonly HashSet<Type> BuiltInProxyInterfaces = [.. typeof(ProxyBase).GetInterfaces()];
+
 	private readonly ProxyInputs proxyInputs;
 	private object? target;
+	private object? disposedHandlers;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ProxyBase"/> class.
@@ -31,7 +38,18 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	}
 
 	/// <inheritdoc/>
-	public event EventHandler? Disposed;
+	public event EventHandler? Disposed
+	{
+		add
+		{
+			if (!TryUpdateHandlers(ref this.disposedHandlers, value, combine: true))
+			{
+				value?.Invoke(this, EventArgs.Empty);
+			}
+		}
+
+		remove => TryUpdateHandlers(ref this.disposedHandlers, value, combine: false);
+	}
 
 	/// <inheritdoc/>
 	public bool IsDisposed => this.target is null;
@@ -113,7 +131,8 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			if (ProxyImplementsCompatibleSetOfInterfaces(
 				attribute.ProxyClass,
 				proxyInputs.ContractInterface,
-				proxyInputs.AdditionalContractInterfaces.Span))
+				proxyInputs.AdditionalContractInterfaces.Span,
+				proxyInputs.AcceptProxyWithExtraInterfaces))
 			{
 				proxy = (IClientProxy?)Activator.CreateInstance(attribute.ProxyClass, target, proxyInputs);
 				return proxy is not null;
@@ -133,7 +152,14 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			return (T)(object)this;
 		}
 
-		return (T)CreateProxy(this.Target, this.proxyInputs with { AdditionalContractInterfaces = default, ContractInterface = typeof(T) }, startOrFail: false);
+		// If the wrapped target itself doesn't implement T, no proxy can satisfy the request.
+		// Match the IL-emit proxy semantics by returning null rather than throwing.
+		if (this.target is not T innerTarget)
+		{
+			return null;
+		}
+
+		return (T)CreateProxy(innerTarget, this.proxyInputs with { AdditionalContractInterfaces = default, ContractInterface = typeof(T) }, startOrFail: false);
 	}
 
 	/// <inheritdoc/>
@@ -148,7 +174,9 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 
 		(inner as IDisposable)?.Dispose();
 		inner = null;
-		this.Disposed?.Invoke(this, EventArgs.Empty);
+
+		object? handlers = Interlocked.Exchange(ref this.disposedHandlers, DisposedSentinel);
+		((EventHandler?)handlers)?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <inheritdoc/>
@@ -227,12 +255,14 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 	/// <param name="proxyClass">The type of the proxy class to be evaluated. This type must implement the specified interfaces.</param>
 	/// <param name="contractInterface">The primary contract interface that the proxy class must implement.</param>
 	/// <param name="additionalContractInterfaces">A span of additional contract interfaces that the proxy class must also implement.</param>
+	/// <param name="acceptProxyWithExtraInterfaces">A value indicating whether extra interfaces are acceptable on a source-generated proxy.</param>
 	/// <returns><see langword="true"/> if the proxy class implements the specified contract interface and additional interfaces,
 	/// (and potentially extra interfaces); otherwise, <see langword="false"/>.</returns>
 	private static bool ProxyImplementsCompatibleSetOfInterfaces(
 		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type proxyClass,
 		Type contractInterface,
-		ReadOnlySpan<Type> additionalContractInterfaces)
+		ReadOnlySpan<Type> additionalContractInterfaces,
+		bool acceptProxyWithExtraInterfaces)
 	{
 		HashSet<Type> proxyInterfaces = [.. proxyClass.GetInterfaces()];
 		if (!proxyInterfaces.Contains(contractInterface))
@@ -245,6 +275,32 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 			if (!proxyInterfaces.Contains(addl))
 			{
 				return false;
+			}
+		}
+
+		if (!acceptProxyWithExtraInterfaces)
+		{
+			foreach (Type proxyInterface in proxyInterfaces)
+			{
+				if (BuiltInProxyInterfaces.Contains(proxyInterface) || proxyInterface.IsAssignableFrom(contractInterface))
+				{
+					continue;
+				}
+
+				bool impliedByAdditionalInterface = false;
+				foreach (Type addl in additionalContractInterfaces)
+				{
+					if (proxyInterface.IsAssignableFrom(addl))
+					{
+						impliedByAdditionalInterface = true;
+						break;
+					}
+				}
+
+				if (!impliedByAdditionalInterface)
+				{
+					return false;
+				}
 			}
 		}
 
@@ -271,5 +327,29 @@ public abstract class ProxyBase : IDisposableObservable, INotifyDisposable, ICli
 				throw new InvalidCastException();
 			}
 		}
+	}
+
+	/// <summary>
+	/// Atomically updates a delegate handler field, returning <see langword="false"/> if the field
+	/// already holds <see cref="DisposedSentinel"/>.
+	/// </summary>
+	private static bool TryUpdateHandlers(ref object? handlers, EventHandler? value, bool combine)
+	{
+		object? oldValue = handlers;
+		while (oldValue != DisposedSentinel)
+		{
+			object? newValue = combine
+				? (object?)Delegate.Combine((EventHandler?)oldValue, value)
+				: (object?)Delegate.Remove((EventHandler?)oldValue, value);
+			object? prevValue = Interlocked.CompareExchange(ref handlers, newValue, oldValue);
+			if (prevValue == oldValue)
+			{
+				return true;
+			}
+
+			oldValue = prevValue;
+		}
+
+		return false;
 	}
 }

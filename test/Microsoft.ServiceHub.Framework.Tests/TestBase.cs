@@ -2,12 +2,15 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.IO.Pipelines;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
 using Nerdbank.Streams;
+using PolyType;
+using StreamJsonRpc;
 
-public abstract class TestBase : IDisposable
+public abstract partial class TestBase : IDisposable
 {
 	/// <summary>
 	/// A reasonable amount of time to wait for async work to reasonably complete.
@@ -19,6 +22,19 @@ public abstract class TestBase : IDisposable
 	public TestBase(ITestOutputHelper logger)
 	{
 		this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+	}
+
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	internal partial interface ITestRpcContract
+	{
+		/// <summary>
+		/// Verifies that a multiplexing stream backs the RPC channel such that out-of-band streams can be exchanged.
+		/// </summary>
+		/// <param name="stream">The stream to read from.</param>
+		/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+		/// <returns>A task that represents the asynchronous read operation. The task result contains the read bytes.</returns>
+		Task<byte[]> ReadStreamAsync(Stream stream, CancellationToken cancellationToken);
 	}
 
 	/// <summary>
@@ -115,6 +131,39 @@ public abstract class TestBase : IDisposable
 		if (disposing)
 		{
 			this.timeoutTokenSource.Dispose();
+		}
+	}
+
+	private protected async Task AssertBackingMultiplexingStreamAsync(ServiceRpcDescriptor descriptor)
+	{
+		(IDuplexPipe client, IDuplexPipe server) = FullDuplexStream.CreatePipePair();
+
+		descriptor.ConstructRpc(new TestRpcService(), server);
+		ITestRpcContract clientProxy = descriptor.ConstructRpc<ITestRpcContract>(client);
+
+		MemoryStream ms = new([1, 2, 3]);
+		byte[] result = await clientProxy.ReadStreamAsync(ms, this.TimeoutToken);
+		Assert.Equal(ms.ToArray(), result);
+
+		(clientProxy as IDisposable)?.Dispose();
+	}
+
+	internal class TestRpcService : ITestRpcContract
+	{
+		public async Task<byte[]> ReadStreamAsync(Stream stream, CancellationToken cancellationToken)
+		{
+			List<byte> result = [];
+
+			byte[] buffer = new byte[1024];
+			int bytesRead;
+			do
+			{
+				bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+				result.AddRange([.. buffer.AsSpan(0, bytesRead)]);
+			}
+			while (bytesRead > 0);
+
+			return [.. result];
 		}
 	}
 }

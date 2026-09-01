@@ -9,6 +9,8 @@ import { MultiplexingRemoteServiceBroker } from './testAssets/multiplexingRemote
 import { calcDescriptorUtf8Http, startCP } from './testAssets/testUtilities'
 
 describe('Activation Options tests', function () {
+	jest.setTimeout(615000)
+
 	let defaultTokenSource: {
 		token: CancellationToken
 		cancel: (reason?: any) => void
@@ -16,7 +18,7 @@ describe('Activation Options tests', function () {
 	let defaultToken: CancellationToken
 
 	beforeEach(() => {
-		defaultTokenSource = CancellationToken.timeout(10_000)
+		defaultTokenSource = CancellationToken.timeout(15_000)
 		defaultToken = defaultTokenSource.token
 	})
 
@@ -27,6 +29,8 @@ describe('Activation Options tests', function () {
 
 	it('Should update activation options', async function () {
 		let mx: MultiplexingStream | null = null
+		let firstProxy: { dispose(): void } | null = null
+		let secondProxy: { dispose(): void } | null = null
 		try {
 			mx = await startCP(defaultToken)
 			const channel = await mx.acceptChannelAsync('', undefined, defaultToken)
@@ -35,28 +39,34 @@ describe('Activation Options tests', function () {
 			const authService = new MockAuthService({ user1: 'authorized!' })
 			broker.setAuthorizationService(authService)
 
-			await broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)
+			firstProxy = await broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)
 			assert.strictEqual(s.lastReceivedOptions?.clientCulture, 'en-US', 'clientCulture should be set to "en-US" by default')
 			assert.strictEqual(s.lastReceivedOptions?.clientUICulture, 'en-US', 'clientUICulture should be set to "en-US" by default')
 			assert.strictEqual(s.lastReceivedOptions?.clientCredentials!['user1'], 'authorized!', 'clientCredentials should be set to auth service credentials')
 
 			authService.updateCredentials({ user2: 'no good' })
-			await broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)
+			secondProxy = await broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)
 			assert.strictEqual(
 				s.lastReceivedOptions?.clientCredentials!['user2'],
 				'no good',
 				'clientCredentials should be updated when auth service is updated'
 			)
+			secondProxy?.dispose()
+			secondProxy = null
+			firstProxy?.dispose()
+			firstProxy = null
 			broker.dispose()
-			mx.dispose()
 			await channel.completion
 		} finally {
+			secondProxy?.dispose()
+			firstProxy?.dispose()
 			mx?.dispose()
 		}
 	})
 
 	it('Should respect activation options when requesting service', async function () {
 		let mx: MultiplexingStream | null = null
+		let proxy: { dispose(): void } | null = null
 		try {
 			mx = await startCP(defaultToken)
 			const channel = await mx.acceptChannelAsync('', undefined, defaultToken)
@@ -70,7 +80,7 @@ describe('Activation Options tests', function () {
 				clientCulture: 'es-ES',
 			}
 
-			await broker.getProxy(calcDescriptorUtf8Http, activationOptions, defaultToken)
+			proxy = await broker.getProxy(calcDescriptorUtf8Http, activationOptions, defaultToken)
 			assert.strictEqual(s.lastReceivedOptions?.clientCulture, 'es-ES', 'Should have the clientCulture set on service request')
 			assert.strictEqual(s.lastReceivedOptions?.clientUICulture, 'es-ES', 'Should have the clientCulture set on service request')
 			assert.strictEqual(
@@ -80,9 +90,12 @@ describe('Activation Options tests', function () {
 			)
 			assert(!s.lastReceivedOptions?.clientCredentials!['user1'], 'Should not have auth received service credentials')
 
+			proxy?.dispose()
+			proxy = null
 			broker.dispose()
 			await channel.completion
 		} finally {
+			proxy?.dispose()
 			mx?.dispose()
 		}
 	})

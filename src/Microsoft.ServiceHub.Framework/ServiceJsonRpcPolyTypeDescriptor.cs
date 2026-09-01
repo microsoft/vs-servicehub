@@ -183,13 +183,10 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	private protected string DebuggerDisplay => $"{this.Moniker.Name} via {this.Protocol}/{this.MessageDelimiter}/{this.Formatter} ({this.DisplayName})";
 
 	/// <inheritdoc/>
-#pragma warning disable CS0672 // Base Member overrides obsolete member, To be handled at ServiceJsonRpcPolyTypeDescriptor only later for backward compatibility.
+	[Obsolete("Use the WithMultiplexingStream(MultiplexingStream.Options) overload as may be defined in a derived type instead.")]
 	public override ServiceRpcDescriptor WithMultiplexingStream(MultiplexingStream? multiplexingStream)
-#pragma warning restore CS0672 // Base Member overrides obsolete member
 	{
-#pragma warning disable CS0618 // Type or member is obsolete, only for backward compatibility.
 		ServiceRpcDescriptor result = base.WithMultiplexingStream(multiplexingStream);
-#pragma warning restore CS0618 // Type or member is obsolete
 
 		if (result is ServiceJsonRpcPolyTypeDescriptor serviceJsonRpcDescriptor)
 		{
@@ -318,6 +315,7 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 		{
 			ContractInterface = typeof(T),
 			AdditionalContractInterfaces = additionalServiceInterfaces.AsMemory(),
+			AcceptProxyWithExtraInterfaces = true,
 			ExceptionStrategy = this.ExceptionStrategy,
 		};
 
@@ -546,7 +544,11 @@ public class ServiceJsonRpcPolyTypeDescriptor : ServiceRpcDescriptor, IEquatable
 	/// <inheritdoc/>
 	protected override ServiceRpcDescriptor Clone() => new ServiceJsonRpcPolyTypeDescriptor(this);
 
-	private IJsonRpcMessageFormatter CreateNerdbankMessagePackFormatter(ITypeShapeProvider provider) => new NerdbankMessagePackFormatter { TypeShapeProvider = provider };
+	private IJsonRpcMessageFormatter CreateNerdbankMessagePackFormatter(ITypeShapeProvider provider) => new NerdbankMessagePackFormatter
+	{
+		TypeShapeProvider = provider,
+		MultiplexingStream = this.MultiplexingStream,
+	};
 
 	private IJsonRpcMessageFormatter CreatePolyTypeJsonFormatter(ITypeShapeProvider provider)
 	{

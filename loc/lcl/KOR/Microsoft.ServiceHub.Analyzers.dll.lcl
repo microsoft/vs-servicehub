@@ -165,6 +165,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ISB005_Description" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata somewhere in the overall expression that creates a ServiceJsonRpcPolyTypeDescriptor. Otherwise, if the descriptor is used on the service side to attach RPC to a target object, it will fail at runtime because no RpcTargetMetadata was configured.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ServiceJsonRpcPolyTypeDescriptor를 만드는 전체 식의 어딘가에 WithRpcTargetMetadata를 호출합니다. 그렇지 않으면 설명자를 서비스 측에서 사용해 RPC를 대상 개체에 연결할 때, RpcTargetMetadata가 구성되지 않아 런타임에 실패합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_MessageFormat" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invoke WithRpcTargetMetadata in the expression that creates a ServiceJsonRpcPolyTypeDescriptor; otherwise service-side RPC attachment to a target object can fail at runtime because no RpcTargetMetadata was configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ServiceJsonRpcPolyTypeDescriptor를 만드는 식에서 WithRpcTargetMetadata를 호출합니다. 그렇지 않으면 RpcTargetMetadata가 구성되지 않았으므로 런타임에 대상 개체에 대한 서비스 쪽 RPC 첨부 파일이 실패할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ISB005_Title" ItemType="0" PsrId="211" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Configure RpcTargetMetadata on creation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[만들 때 RpcTargetMetadata 구성]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
     </Item>
   </Item>
   <Item ItemId=";Version" ItemType="0" PsrId="211" Leaf="false">

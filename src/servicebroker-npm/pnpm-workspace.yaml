@@ -1,0 +1,59 @@
+packages:
+  - .
+
+allowBuilds:
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - baseline-browser-mapping
+  - caniuse-lite
+  - electron-to-chromium
+  - lru-cache
+  - node-releases
+overrides:
+  '@babel/code-frame': 7.29.7
+  '@babel/compat-data': 7.29.7
+  '@babel/core': 7.29.7
+  '@babel/generator': 7.29.8
+  '@babel/helper-compilation-targets': 7.29.7
+  '@babel/helper-globals': 7.29.7
+  '@babel/helper-module-imports': 7.29.7
+  '@babel/helper-module-transforms': 7.29.7
+  '@babel/helper-plugin-utils': 7.29.7
+  '@babel/helper-string-parser': 7.29.7
+  '@babel/helper-validator-identifier': 7.29.7
+  '@babel/helper-validator-option': 7.29.7
+  '@babel/helpers': 7.29.7
+  '@babel/parser': 7.29.8
+  '@babel/plugin-syntax-import-attributes': 7.29.7
+  '@babel/plugin-syntax-jsx': 7.29.7
+  '@babel/plugin-syntax-typescript': 7.29.7
+  '@babel/template': 7.29.7
+  '@babel/traverse': 7.29.8
+  '@babel/types': 7.29.8
+  '@istanbuljs/schema': 0.1.6
+  '@pkgr/core': 0.3.6
+  '@sinclair/typebox': 0.34.52
+  '@types/estree': 1.0.9
+  '@ungap/structured-clone': 1.3.3
+  '@humanfs/core': 0.19.2
+  '@humanfs/node': 0.16.8
+  acorn: 8.18.0
+  ajv: 8.20.0
+  baseline-browser-mapping: 2.11.19
+  'brace-expansion@1': 1.1.18
+  'brace-expansion@2': 2.1.4
+  'brace-expansion@5': 5.0.9
+  browserslist: 4.28.8
+  caniuse-lite: 1.0.30001809
+  electron-to-chromium: 1.5.413
+  get-east-asian-width: 1.6.0
+  immutable: 5.1.9
+  istanbul-lib-processinfo: 3.0.1
+  'lru-cache@11': 11.5.2
+  node-releases: 2.0.53
+  'picomatch@4': 4.0.7
+  react-is: 19.2.8
+  react-is-19: npm:react-is@19.2.8
+  synckit: 0.11.13
+  tinyglobby: 0.2.17
+  unrs-resolver: 1.12.2

@@ -2,11 +2,20 @@
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": [
 		"github>microsoft/vs-renovate-presets:microbuild",
-		"github>microsoft/vs-renovate-presets:vs_main_dependencies"
+		"github>microsoft/vs-renovate-presets:vs_main_dependencies",
+		"github>microsoft/vs-renovate-presets:dotnet_packages_LTS"
 	],
 	"packageRules": [
 		{
 			"matchFileNames": ["Directory.Packages.Analyzers.props"],
+			"enabled": false
+		},
+		{
+			"description": "Keep pnpm major-version overrides within their selected major.",
+			"matchManagers": ["npm"],
+			"matchFileNames": ["src/servicebroker-npm/pnpm-workspace.yaml"],
+			"matchPackageNames": ["/@\\d+$/"],
+			"matchUpdateTypes": ["major"],
 			"enabled": false
 		}
 	],
