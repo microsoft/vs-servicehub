@@ -6,7 +6,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <MicrosoftTestingPlatformVersion>2.3.3</MicrosoftTestingPlatformVersion>
     <MicroBuildVersion>2.0.257</MicroBuildVersion>
-    <CodeAnalysisVersion>5.10.0-1.26423.1</CodeAnalysisVersion>
+    <CodeAnalysisVersion>5.10.0-1.26431.1</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <VSThreadingVersion>18.7.57</VSThreadingVersion>
   </PropertyGroup>
@@ -40,7 +40,7 @@
     <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     <PackageVersion Include="System.Text.Json" Version="10.0.10" />
     <PackageVersion Include="TraceSource.ActivityTracing" Version="0.1.201-beta" />
-    <PackageVersion Include="Xunit.Combinatorial" Version="2.0.24" />
+    <PackageVersion Include="Xunit.Combinatorial" Version="2.1.41" />
     <PackageVersion Include="xunit.v3.core.mtp-v2" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">

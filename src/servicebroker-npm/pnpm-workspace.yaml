@@ -39,19 +39,19 @@ overrides:
   '@humanfs/node': 0.16.8
   acorn: 8.18.0
   ajv: 8.20.0
-  baseline-browser-mapping: 2.11.15
+  baseline-browser-mapping: 2.11.19
   'brace-expansion@1': 1.1.18
   'brace-expansion@2': 2.1.4
   'brace-expansion@5': 5.0.9
   browserslist: 4.28.8
   caniuse-lite: 1.0.30001809
-  electron-to-chromium: 1.5.411
+  electron-to-chromium: 1.5.413
   get-east-asian-width: 1.6.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.5.2
   node-releases: 2.0.53
-  'picomatch@4': 4.0.5
+  'picomatch@4': 4.0.7
   react-is: 19.2.8
   react-is-19: npm:react-is@19.2.8
   synckit: 0.11.13
