@@ -71,7 +71,7 @@ importers:
         version: 5.1.9
       msgpack-lite:
         specifier: ^0.1.26
-        version: 0.1.26
+        version: 0.1.27
       nerdbank-streams:
         specifier: ^2.13.16
         version: 2.13.31
@@ -1650,8 +1650,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha1-V0yBOM4dK1hh8LRFedut1gxmFbI=}
 
-  msgpack-lite@0.1.26:
-    resolution: {integrity: sha1-3TxQsm8FnyXn7e42REGDWOKprYk=}
+  msgpack-lite@0.1.27:
+    resolution: {integrity: sha1-4GCWdsFiS5ju+sQC86N5pQ8Rv5k=}
     hasBin: true
 
   napi-postinstall@0.3.4:
@@ -3964,7 +3964,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msgpack-lite@0.1.26:
+  msgpack-lite@0.1.27:
     dependencies:
       event-lite: 0.1.3
       ieee754: 1.2.1
@@ -3984,7 +3984,7 @@ snapshots:
       await-semaphore: 0.1.3
       cancellationtoken: 2.2.0
       caught: 0.1.3
-      msgpack-lite: 0.1.26
+      msgpack-lite: 0.1.27
 
   node-int64@0.4.0: {}
 
