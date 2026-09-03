@@ -29,7 +29,7 @@ overrides:
   '@pkgr/core': 0.3.6
   '@sinclair/typebox': 0.34.52
   '@types/estree': 1.0.9
-  '@ungap/structured-clone': 1.3.3
+  '@ungap/structured-clone': 1.4.0
   '@humanfs/core': 0.19.2
   '@humanfs/node': 0.16.8
   acorn: 8.18.0
@@ -644,8 +644,8 @@ packages:
     resolution: {integrity: sha1-YB1Ar5rPgqKNoihvPtr8abupAX8=}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ungap/structured-clone@1.3.3':
-    resolution: {integrity: sha1-CUBB4aTLGYfwODNUISgayL45C8w=}
+  '@ungap/structured-clone@1.4.0':
+    resolution: {integrity: sha1-Xi4TdMCjC1pC6LCDUjoiXGlF+Io=}
 
   '@unrs/resolver-binding-android-arm-eabi@1.12.2':
     resolution: {integrity: sha1-mKn+5iwB8gl0ekq1hV8c7Tim0Do=}
@@ -2839,7 +2839,7 @@ snapshots:
       '@typescript-eslint/types': 8.67.0
       eslint-visitor-keys: 5.0.1
 
-  '@ungap/structured-clone@1.3.3': {}
+  '@ungap/structured-clone@1.4.0': {}
 
   '@unrs/resolver-binding-android-arm-eabi@1.12.2':
     optional: true
@@ -3842,7 +3842,7 @@ snapshots:
   jest-worker@30.4.1:
     dependencies:
       '@types/node': 20.19.43
-      '@ungap/structured-clone': 1.3.3
+      '@ungap/structured-clone': 1.4.0
       jest-util: 30.4.1
       merge-stream: 2.0.0
       supports-color: 8.1.1
