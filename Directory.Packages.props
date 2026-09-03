@@ -34,7 +34,7 @@
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.321" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.13.16" />
     <PackageVersion Include="NuGet.Protocol" Version="7.9.0" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.26.66" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.97" />
     <PackageVersion Include="System.Collections.Immutable" Version="10.0.10" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
     <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
