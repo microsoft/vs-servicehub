@@ -68,9 +68,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 	internal class IMyRpcWithEvent_Proxy_ResilientProxy : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::IMyRpcWithEvent>
 		, global::IMyRpcWithEvent
 	{
-		private global::System.EventHandler? VanillaEventHandlers;
 		private readonly ResilientEvent<global::System.EventHandler> VanillaEventSubscription;
-		private global::System.EventHandler<global::MyEventArgs>? MyEventHandlers;
 		private readonly ResilientEvent<global::System.EventHandler<global::MyEventArgs>> MyEventSubscription;
 		
 		public IMyRpcWithEvent_Proxy_ResilientProxy(
@@ -80,13 +78,11 @@ namespace Microsoft.ServiceHub.Framework.Generated
 			: base(serviceBroker, serviceDescriptor, options)
 		{
 			this.VanillaEventSubscription = this.CreateEvent<global::System.EventHandler>(
-				(sender, args) => this.VanillaEventHandlers?.Invoke(this, args),
-				() => this.VanillaEventHandlers is not null,
+				(sender, args) => this.VanillaEventSubscription.Handlers?.Invoke(this, args),
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent += handler,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent -= handler);
 			this.MyEventSubscription = this.CreateEvent<global::System.EventHandler<global::MyEventArgs>>(
-				(sender, args) => this.MyEventHandlers?.Invoke(this, args),
-				() => this.MyEventHandlers is not null,
+				(sender, args) => this.MyEventSubscription.Handlers?.Invoke(this, args),
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent += handler,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent -= handler);
 		}
@@ -95,14 +91,12 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: true);
-				this.VanillaEventSubscription.UpdateActiveState();
+				this.VanillaEventSubscription.UpdateHandlers(value, add: true);
 			}
 		
 			remove
 			{
-				UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: false);
-				this.VanillaEventSubscription.UpdateActiveState();
+				this.VanillaEventSubscription.UpdateHandlers(value, add: false);
 			}
 		}
 		
@@ -110,14 +104,12 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				UpdateEventHandlers(ref this.MyEventHandlers, value, add: true);
-				this.MyEventSubscription.UpdateActiveState();
+				this.MyEventSubscription.UpdateHandlers(value, add: true);
 			}
 		
 			remove
 			{
-				UpdateEventHandlers(ref this.MyEventHandlers, value, add: false);
-				this.MyEventSubscription.UpdateActiveState();
+				this.MyEventSubscription.UpdateHandlers(value, add: false);
 			}
 		}
 	}

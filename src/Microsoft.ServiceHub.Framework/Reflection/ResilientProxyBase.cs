@@ -15,14 +15,21 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 	private static readonly object DisposedSentinel = new();
 	private static readonly HashSet<Type> BuiltInProxyInterfaces = [.. typeof(ResilientProxyBase).GetInterfaces()];
 
-	private EventHandler<ResilientServiceProxyChangedEventArgs>? backingServiceChangedHandlers;
+	private object? backingServiceChangedHandlers;
 	private object? disposedHandlers;
 
 	/// <inheritdoc />
 	public event EventHandler<ResilientServiceProxyChangedEventArgs>? BackingServiceChanged
 	{
-		add => UpdateEventHandlers(ref this.backingServiceChangedHandlers, value, add: true);
-		remove => UpdateEventHandlers(ref this.backingServiceChangedHandlers, value, add: false);
+		add
+		{
+			if (!TryUpdateEventHandlers(ref this.backingServiceChangedHandlers, value, combine: true))
+			{
+				throw new ObjectDisposedException(this.GetType().FullName);
+			}
+		}
+
+		remove => TryUpdateEventHandlers(ref this.backingServiceChangedHandlers, value, combine: false);
 	}
 
 	/// <inheritdoc />
@@ -30,13 +37,13 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 	{
 		add
 		{
-			if (!TryUpdateDisposedHandlers(ref this.disposedHandlers, value, combine: true))
+			if (!TryUpdateEventHandlers(ref this.disposedHandlers, value, combine: true))
 			{
 				value?.Invoke(this, EventArgs.Empty);
 			}
 		}
 
-		remove => TryUpdateDisposedHandlers(ref this.disposedHandlers, value, combine: false);
+		remove => TryUpdateEventHandlers(ref this.disposedHandlers, value, combine: false);
 	}
 
 	/// <summary>
@@ -79,7 +86,10 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		Type? proxyClass = FindProxyClass<T>(serviceDescriptor);
 		if (proxyClass is null)
 		{
-			throw new NotSupportedException($"No source-generated resilient proxy is available for {typeof(T).FullName}. Make the RPC contract and all containing types partial so Microsoft.ServiceHub.Analyzers can register one.");
+			throw new NotSupportedException(
+				$"No compatible source-generated resilient proxy is available for {typeof(T).FullName}. "
+				+ "Generation requires the RPC contract and all containing types to be partial and every contract member to be supported. "
+				+ "Selection also requires the generated interface set to match the descriptor's additional-interface and extra-interface settings.");
 		}
 
 		ResilientProxyBase proxy;
@@ -138,7 +148,7 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 	/// <param name="args">The event arguments.</param>
 	protected void OnBackingServiceChanged(ResilientServiceProxyChangedEventArgs args)
 	{
-		EventHandler<ResilientServiceProxyChangedEventArgs>? handlers = this.backingServiceChangedHandlers;
+		EventHandler<ResilientServiceProxyChangedEventArgs>? handlers = Volatile.Read(ref this.backingServiceChangedHandlers) as EventHandler<ResilientServiceProxyChangedEventArgs>;
 		if (handlers is null)
 		{
 			return;
@@ -146,6 +156,11 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 
 		foreach (EventHandler<ResilientServiceProxyChangedEventArgs> handler in handlers.GetInvocationList())
 		{
+			if (Volatile.Read(ref this.backingServiceChangedHandlers) == DisposedSentinel)
+			{
+				break;
+			}
+
 			try
 			{
 				handler(this, args);
@@ -156,6 +171,11 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 			}
 		}
 	}
+
+	/// <summary>
+	/// Clears lifecycle handlers and prevents new registrations as disposal begins.
+	/// </summary>
+	protected void OnDisposing() => Interlocked.Exchange(ref this.backingServiceChangedHandlers, DisposedSentinel);
 
 	/// <summary>
 	/// Raises <see cref="Disposed"/>.
@@ -261,14 +281,15 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		return false;
 	}
 
-	private static bool TryUpdateDisposedHandlers(ref object? handlers, EventHandler? value, bool combine)
+	private static bool TryUpdateEventHandlers<THandler>(ref object? handlers, THandler? value, bool combine)
+		where THandler : Delegate
 	{
 		object? oldValue = handlers;
 		while (oldValue != DisposedSentinel)
 		{
 			object? newValue = combine
-				? (object?)Delegate.Combine((EventHandler?)oldValue, value)
-				: (object?)Delegate.Remove((EventHandler?)oldValue, value);
+				? Delegate.Combine((THandler?)oldValue, value)
+				: Delegate.Remove((THandler?)oldValue, value);
 			object? previousValue = Interlocked.CompareExchange(ref handlers, newValue, oldValue);
 			if (previousValue == oldValue)
 			{
@@ -279,18 +300,5 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		}
 
 		return false;
-	}
-
-	private static void UpdateEventHandlers<THandler>(ref THandler? handlers, THandler? value, bool add)
-		where THandler : Delegate
-	{
-		THandler? oldValue;
-		THandler? newValue;
-		do
-		{
-			oldValue = handlers;
-			newValue = (THandler?)(add ? Delegate.Combine(oldValue, value) : Delegate.Remove(oldValue, value));
-		}
-		while (Interlocked.CompareExchange(ref handlers, newValue, oldValue) != oldValue);
 	}
 }

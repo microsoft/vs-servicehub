@@ -35,8 +35,7 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 	{
 		writer.WriteLine($$"""
 			this.{{this.Name}}Subscription = this.CreateEvent<{{this.DelegateType}}>(
-				(sender, args) => this.{{this.Name}}Handlers?.Invoke(this, args),
-				() => this.{{this.Name}}Handlers is not null,
+				(sender, args) => this.{{this.Name}}Subscription.Handlers?.Invoke(this, args),
 				(proxy, handler) => (({{this.DeclaringType}})proxy).{{this.Name}} += handler,
 				(proxy, handler) => (({{this.DeclaringType}})proxy).{{this.Name}} -= handler);
 			""");
@@ -50,14 +49,12 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 			{
 				add
 				{
-					UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: true);
-					this.{{this.Name}}Subscription.UpdateActiveState();
+					this.{{this.Name}}Subscription.UpdateHandlers(value, add: true);
 				}
 
 				remove
 				{
-					UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: false);
-					this.{{this.Name}}Subscription.UpdateActiveState();
+					this.{{this.Name}}Subscription.UpdateHandlers(value, add: false);
 				}
 			}
 			""");
@@ -66,7 +63,6 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 	internal override void WriteResilientFields(SourceWriter writer)
 	{
 		writer.WriteLine($$"""
-			private {{this.DelegateType}}? {{this.Name}}Handlers;
 			private readonly ResilientEvent<{{this.DelegateType}}> {{this.Name}}Subscription;
 			""");
 	}
