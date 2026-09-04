@@ -31,7 +31,9 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	private readonly CancellationTokenSource disposalCancellationSource = new();
 	private readonly CancellationToken disposalCancellationToken;
 	private readonly List<IResilientAttachment> resilientAttachments = [];
-	private readonly HashSet<Task<T?>> activeRefreshTasks = [];
+	private readonly HashSet<Task> activeRefreshTasks = [];
+	private readonly Dictionary<Task<T?>, Task> refreshCleanupTasks = [];
+	private readonly ConditionalWeakTable<T, Generation.ProxyLifetime> proxyLifetimes = new();
 
 	private CancellationTokenSource? refreshCancellationSource;
 	private Task<T?>? refreshTask;
@@ -41,6 +43,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	private Task notificationTail = Task.CompletedTask;
 	private TaskCompletionSource<object?> availabilityChanged = CreateTaskCompletionSource();
 	private long? pendingPreviousGeneration;
+	private Generation? pendingPreviousGenerationOwner;
 	private long nextGeneration;
 	private long refreshVersion;
 	private bool currentGenerationPublicationStarted;
@@ -113,7 +116,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// <inheritdoc />
 	public override void Dispose()
 	{
-		if (!this.TryBeginDispose(out Generation? generation, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out _))
+		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out _))
 		{
 			return;
 		}
@@ -149,6 +152,18 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				}
 			}
 
+			if (pendingGeneration is not null)
+			{
+				try
+				{
+					pendingGeneration.Release();
+				}
+				catch (Exception ex)
+				{
+					cleanupException ??= ex;
+				}
+			}
+
 			Exception? attachmentException = this.DisposeAttachments(attachments);
 			cleanupException ??= attachmentException;
 		}
@@ -167,7 +182,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// <inheritdoc />
 	public override async ValueTask DisposeAsync()
 	{
-		if (!this.TryBeginDispose(out Generation? generation, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out Task<T?>[] refreshTasks))
+		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out Task[] refreshTasks))
 		{
 			return;
 		}
@@ -191,6 +206,25 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 		availabilityChanged.TrySetResult(null);
 		await lifecyclePublication.ConfigureAwait(false);
+		try
+		{
+			await Task.WhenAll(refreshTasks).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException) when (this.disposalCancellationToken.IsCancellationRequested)
+		{
+		}
+		catch (Exception ex)
+		{
+			cleanupException ??= ex;
+		}
+
+#pragma warning disable VSTHRD003 // These tasks represent proxy disposal initiated below.
+		Task[] proxyDisposals = new[] { generation, pendingGeneration }
+			.Where(candidate => candidate is not null)
+			.Select(candidate => candidate!.ProxyDisposal)
+			.Distinct()
+			.ToArray();
+#pragma warning restore VSTHRD003
 		Task generationDisposal = Task.CompletedTask;
 		try
 		{
@@ -206,23 +240,32 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				{
 					cleanupException ??= ex;
 				}
+
+				try
+				{
+					await Task.WhenAll(proxyDisposals).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					cleanupException ??= ex;
+				}
+			}
+
+			if (pendingGeneration is not null)
+			{
+				try
+				{
+					await pendingGeneration.ReleaseAsync().ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					cleanupException ??= ex;
+				}
 			}
 
 			Exception? attachmentException = this.DisposeAttachments(attachments);
 			cleanupException ??= attachmentException;
 			await this.notificationTail.NoThrowAwaitable(captureContext: false);
-			try
-			{
-				await Task.WhenAll(refreshTasks).ConfigureAwait(false);
-			}
-			catch (OperationCanceledException) when (this.disposalCancellationToken.IsCancellationRequested)
-			{
-			}
-			catch (Exception ex)
-			{
-				cleanupException ??= ex;
-			}
-
 			try
 			{
 				await generationDisposal.ConfigureAwait(false);
@@ -405,12 +448,38 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			=> [.. (existing ?? []).Concat(generated).Distinct()];
 	}
 
+	private Generation CreateGeneration(T proxy)
+	{
+		if (!this.proxyLifetimes.TryGetValue(proxy, out Generation.ProxyLifetime? proxyLifetime))
+		{
+			proxyLifetime = new Generation.ProxyLifetime(this, proxy);
+			this.proxyLifetimes.Add(proxy, proxyLifetime);
+		}
+		else
+		{
+			Verify.Operation(proxyLifetime.TryAddReference(), "A registered proxy lifetime must still be active.");
+		}
+
+		return new Generation(this, proxy, Interlocked.Increment(ref this.nextGeneration), proxyLifetime);
+	}
+
+	private void RemoveProxyLifetime(T proxy, Generation.ProxyLifetime proxyLifetime)
+	{
+		if (this.proxyLifetimes.TryGetValue(proxy, out Generation.ProxyLifetime? registeredLifetime)
+			&& ReferenceEquals(proxyLifetime, registeredLifetime))
+		{
+			this.proxyLifetimes.Remove(proxy);
+		}
+	}
+
 	private Task<T?> GetOrStartRefreshTaskAsync()
 	{
 		TaskCompletionSource<T?>? refreshSource = null;
 		Task<T?> refresh;
 		Task publicationGate;
 		CancellationTokenSource refreshCancellationSource;
+		Generation.ProxyLifetime? retainedProxyLifetime;
+		TaskCompletionSource<object?> refreshCleanupSource;
 		long version;
 		lock (this.syncObject)
 		{
@@ -428,12 +497,17 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			refreshSource = new TaskCompletionSource<T?>(TaskCreationOptions.RunContinuationsAsynchronously);
 			refresh = this.refreshTask = refreshSource.Task;
 			refreshCancellationSource = this.refreshCancellationSource = new CancellationTokenSource();
-			this.activeRefreshTasks.Add(refresh);
+			refreshCleanupSource = CreateTaskCompletionSource();
+			refreshCleanupSource.Task.Forget();
+			this.activeRefreshTasks.Add(refreshCleanupSource.Task);
+			this.refreshCleanupTasks.Add(refresh, refreshCleanupSource.Task);
 			publicationGate = this.refreshPublicationGate;
+			retainedProxyLifetime = this.pendingPreviousGenerationOwner?.RetainProxyLifetime();
 			version = this.refreshVersion;
 		}
 
-		this.RefreshAsync(refreshSource, version, publicationGate, refreshCancellationSource).Forget();
+		this.RefreshAsync(refreshSource, version, publicationGate, refreshCancellationSource, retainedProxyLifetime, refreshCleanupSource).Forget();
+		refresh.Forget();
 		return refresh;
 	}
 
@@ -441,19 +515,42 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		TaskCompletionSource<T?> refreshSource,
 		long version,
 		Task publicationGate,
-		CancellationTokenSource refreshCancellationSource)
+		CancellationTokenSource refreshCancellationSource,
+		Generation.ProxyLifetime? retainedProxyLifetime,
+		TaskCompletionSource<object?> refreshCleanupSource)
 	{
+		Exception? cleanupException = null;
 		try
 		{
 #pragma warning disable VSTHRD003 // RefreshCoreAsync awaits only work initiated by this proxy and the publication gate it created.
 			await this.RefreshCoreAsync(refreshSource, version, publicationGate, refreshCancellationSource.Token).ConfigureAwait(false);
 #pragma warning restore VSTHRD003
 		}
+		catch (Exception ex)
+		{
+			cleanupException = ex;
+			throw;
+		}
 		finally
 		{
+			if (retainedProxyLifetime is not null)
+			{
+				try
+				{
+#pragma warning disable VSTHRD003 // This task represents disposal initiated by the retained proxy lifetime.
+					await retainedProxyLifetime.ReleaseReferenceAsync(preferAsyncDisposal: false).ConfigureAwait(false);
+#pragma warning restore VSTHRD003
+				}
+				catch (Exception ex)
+				{
+					cleanupException ??= ex;
+				}
+			}
+
 			lock (this.syncObject)
 			{
-				this.activeRefreshTasks.Remove(refreshSource.Task);
+				this.activeRefreshTasks.Remove(refreshCleanupSource.Task);
+				this.refreshCleanupTasks.Remove(refreshSource.Task);
 				if (ReferenceEquals(this.refreshCancellationSource, refreshCancellationSource))
 				{
 					this.refreshCancellationSource = null;
@@ -461,6 +558,14 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			}
 
 			refreshCancellationSource.Dispose();
+			if (cleanupException is null)
+			{
+				refreshCleanupSource.TrySetResult(null);
+			}
+			else
+			{
+				refreshCleanupSource.TrySetException(cleanupException);
+			}
 		}
 	}
 
@@ -515,11 +620,16 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			return;
 		}
 
+		Generation? candidateGeneration;
+		lock (this.syncObject)
+		{
+			candidateGeneration = proxy is null ? null : this.CreateGeneration(proxy);
+		}
+
 #pragma warning disable VSTHRD003 // The gate is created by this proxy to order publication after detaching the prior generation.
 		await publicationGate.ConfigureAwait(false);
 #pragma warning restore VSTHRD003
 
-		Generation? candidateGeneration = proxy is null ? null : new Generation(this, proxy, Interlocked.Increment(ref this.nextGeneration));
 		candidateGeneration?.SubscribeToDisconnection();
 		IResilientAttachment[] attachments = [];
 		bool superseded;
@@ -536,6 +646,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		TaskCompletionSource<object?>? availabilityChangedToSignal = null;
 		TaskCompletionSource<object?>? lifecyclePublicationSource = null;
 		ResilientServiceProxyChangedEventArgs? backingServiceChange = null;
+		Generation? previousGenerationOwner = null;
 		var synchronizedSubscriptions = new HashSet<ResilientSubscription>();
 		while (true)
 		{
@@ -665,11 +776,18 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 					{
 						this.currentGenerationPublicationStarted = true;
 						this.pendingPreviousGeneration = null;
+						previousGenerationOwner = this.pendingPreviousGenerationOwner;
+						this.pendingPreviousGenerationOwner = null;
 					}
 				}
 
 				if (publishChange)
 				{
+					if (previousGenerationOwner is not null)
+					{
+						this.ReleasePreviousGeneration(previousGenerationOwner);
+					}
+
 					this.PublishBackingServiceChanged(backingServiceChange!, refreshSource.Task);
 				}
 
@@ -758,7 +876,9 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			{
 				if (replacementSharesProxy)
 				{
-					candidateGeneration.ReleaseWithoutDisposal();
+#pragma warning disable VSTHRD103 // A superseded duplicate must not request asynchronous disposal for the surviving generation.
+					candidateGeneration.Release();
+#pragma warning restore VSTHRD103
 				}
 				else
 				{
@@ -1012,6 +1132,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	private void PublishBackingServiceChanged(ResilientServiceProxyChangedEventArgs args, long version, Task<T?> refreshTask)
 	{
 		TaskCompletionSource<object?> publicationSource = CreateTaskCompletionSource();
+		Generation? previousGenerationOwner;
 		lock (this.syncObject)
 		{
 			if (this.disposed || version != this.refreshVersion)
@@ -1020,6 +1141,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			}
 
 			this.pendingPreviousGeneration = null;
+			previousGenerationOwner = this.pendingPreviousGenerationOwner;
 			this.lifecyclePublication = publicationSource.Task;
 			this.refreshPublicationGate = publicationSource.Task;
 		}
@@ -1031,6 +1153,63 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		finally
 		{
 			publicationSource.TrySetResult(null);
+			if (previousGenerationOwner is not null)
+			{
+				Task<T?>? followupRefresh;
+				Generation? generationToRelease = null;
+				lock (this.syncObject)
+				{
+					followupRefresh = !ReferenceEquals(this.refreshTask, refreshTask) ? this.refreshTask : null;
+					if (followupRefresh is null && ReferenceEquals(this.pendingPreviousGenerationOwner, previousGenerationOwner))
+					{
+						generationToRelease = this.pendingPreviousGenerationOwner;
+						this.pendingPreviousGenerationOwner = null;
+					}
+				}
+
+				if (followupRefresh is null)
+				{
+					if (generationToRelease is not null)
+					{
+						this.ReleasePreviousGeneration(generationToRelease);
+					}
+				}
+				else
+				{
+					this.ReleasePreviousGenerationAfterRefreshAsync(previousGenerationOwner, followupRefresh).Forget();
+				}
+			}
+		}
+	}
+
+	private async Task ReleasePreviousGenerationAfterRefreshAsync(Generation previousGeneration, Task<T?> refresh)
+	{
+		await refresh.NoThrowAwaitable(captureContext: false);
+		Generation? generationToRelease = null;
+		lock (this.syncObject)
+		{
+			if (ReferenceEquals(this.pendingPreviousGenerationOwner, previousGeneration))
+			{
+				generationToRelease = this.pendingPreviousGenerationOwner;
+				this.pendingPreviousGenerationOwner = null;
+			}
+		}
+
+		if (generationToRelease is not null)
+		{
+			this.ReleasePreviousGeneration(generationToRelease);
+		}
+	}
+
+	private void ReleasePreviousGeneration(Generation previous)
+	{
+		try
+		{
+			previous.Release();
+		}
+		catch (Exception ex)
+		{
+			this.TraceEventHandlerFailure(ex);
 		}
 	}
 
@@ -1041,6 +1220,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		CancellationTokenSource? refreshCancellationSource = null;
 		TaskCompletionSource<object?>? oldAvailabilityChanged = null;
 		TaskCompletionSource<object?>? publicationGate = null;
+		bool releaseGeneration = true;
 		lock (this.syncObject)
 		{
 			if (this.disposed)
@@ -1065,6 +1245,8 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				if (wasPublished || publicationStarted)
 				{
 					this.pendingPreviousGeneration = generation.Number;
+					this.pendingPreviousGenerationOwner = generation;
+					releaseGeneration = false;
 				}
 
 				if (publicationInProgress)
@@ -1106,7 +1288,10 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 		try
 		{
-			generation?.Release();
+			if (releaseGeneration)
+			{
+				generation?.Release();
+			}
 		}
 		finally
 		{
@@ -1122,16 +1307,18 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 	private bool TryBeginDispose(
 		out Generation? generation,
+		out Generation? pendingGeneration,
 		out IResilientAttachment[] attachments,
 		out TaskCompletionSource<object?> availabilityChanged,
 		out Task lifecyclePublication,
-		out Task<T?>[] refreshTasks)
+		out Task[] refreshTasks)
 	{
 		lock (this.syncObject)
 		{
 			if (this.disposed)
 			{
 				generation = null;
+				pendingGeneration = null;
 				attachments = [];
 				availabilityChanged = this.availabilityChanged;
 				lifecyclePublication = Task.CompletedTask;
@@ -1147,13 +1334,22 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			this.currentGeneration = null;
 			this.currentGenerationPublicationStarted = false;
 			this.currentGenerationPublished = false;
+			pendingGeneration = this.pendingPreviousGenerationOwner;
+			this.pendingPreviousGenerationOwner = null;
+			this.pendingPreviousGeneration = null;
 			attachments = [.. this.resilientAttachments];
 			availabilityChanged = this.availabilityChanged;
 			LifecyclePublicationContext? publication = ActiveLifecyclePublication.Value;
 			bool disposingFromLifecycleHandler = publication is { IsActive: true, Owner: { } owner } && ReferenceEquals(owner, this);
 			lifecyclePublication = disposingFromLifecycleHandler ? Task.CompletedTask : this.lifecyclePublication;
+			Task? publicationRefreshCleanup = null;
+			if (publication is not null)
+			{
+				this.refreshCleanupTasks.TryGetValue(publication.RefreshTask, out publicationRefreshCleanup);
+			}
+
 			refreshTasks = disposingFromLifecycleHandler
-				? [.. this.activeRefreshTasks.Where(task => !ReferenceEquals(task, publication!.RefreshTask))]
+				? [.. this.activeRefreshTasks.Where(task => !ReferenceEquals(task, publicationRefreshCleanup))]
 				: [.. this.activeRefreshTasks];
 			return true;
 		}
@@ -1858,12 +2054,12 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 #pragma warning restore SA1202
 	{
 		private readonly ResilientProxyBase<T> owner;
-		private readonly TaskCompletionSource<object?> disposalCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		private readonly ProxyLifetime proxyLifetime;
+		private readonly TaskCompletionSource<object?> releaseCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		private EventHandler<JsonRpcDisconnectedEventArgs>? disconnectedHandler;
 		private int disconnected;
-		private int referenceCount = 1;
 		private int preferAsyncDisposal;
-		private int suppressDisposal;
+		private int referenceCount = 1;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Generation"/> class.
@@ -1871,11 +2067,14 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// <param name="owner">The resilient proxy.</param>
 		/// <param name="proxy">The inner proxy.</param>
 		/// <param name="number">The generation number.</param>
-		internal Generation(ResilientProxyBase<T> owner, T proxy, long number)
+		/// <param name="proxyLifetime">The lifetime shared by all generations that use the same proxy instance.</param>
+		internal Generation(ResilientProxyBase<T> owner, T proxy, long number, ProxyLifetime proxyLifetime)
 		{
 			this.owner = owner;
 			this.Proxy = proxy;
 			this.Number = number;
+			this.proxyLifetime = proxyLifetime;
+			this.releaseCompletion.Task.Forget();
 		}
 
 		/// <summary>
@@ -1892,6 +2091,21 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// Gets a value indicating whether the RPC connection has disconnected.
 		/// </summary>
 		internal bool IsDisconnected => Volatile.Read(ref this.disconnected) != 0;
+
+		/// <summary>
+		/// Gets a task that completes when the shared proxy instance is disposed.
+		/// </summary>
+		internal Task ProxyDisposal => this.proxyLifetime.Disposal;
+
+		/// <summary>
+		/// Retains the shared proxy lifetime while a refresh acquisition is outstanding.
+		/// </summary>
+		/// <returns>The retained proxy lifetime.</returns>
+		internal ProxyLifetime RetainProxyLifetime()
+		{
+			Verify.Operation(this.proxyLifetime.TryAddReference(), "An active generation must have an active proxy lifetime.");
+			return this.proxyLifetime;
+		}
 
 		/// <summary>
 		/// Attempts to acquire another lease.
@@ -1918,45 +2132,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// </summary>
 		internal void Release()
 		{
-			if (Interlocked.Decrement(ref this.referenceCount) != 0)
-			{
-				return;
-			}
-
-			if (Volatile.Read(ref this.suppressDisposal) != 0)
-			{
-				this.disposalCompletion.TrySetResult(null);
-				return;
-			}
-
-			// A disconnected RPC proxy cannot dispatch its remote asynchronous disposal, so close its local proxy synchronously instead.
-			if (Volatile.Read(ref this.preferAsyncDisposal) != 0 && this.Proxy is System.IAsyncDisposable && !this.IsDisconnected)
-			{
-				this.DisposeProxyAsync(reportFailure: true).Forget();
-				return;
-			}
-
-			try
-			{
-				if (this.Proxy is IDisposable disposable)
-				{
-					disposable.Dispose();
-					this.disposalCompletion.TrySetResult(null);
-				}
-				else if (this.Proxy is System.IAsyncDisposable)
-				{
-					this.DisposeProxyAsync(reportFailure: false).Forget();
-				}
-				else
-				{
-					this.disposalCompletion.TrySetResult(null);
-				}
-			}
-			catch (Exception ex)
-			{
-				this.disposalCompletion.TrySetException(ex);
-				throw;
-			}
+			this.ReleaseCore(preferAsyncDisposal: false);
 		}
 
 		/// <summary>
@@ -1965,20 +2141,10 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// <returns>A task that completes when the proxy is disposed.</returns>
 		internal Task ReleaseAsync()
 		{
-			Volatile.Write(ref this.preferAsyncDisposal, 1);
-			this.Release();
-#pragma warning disable VSTHRD003 // The completion source represents disposal initiated by Release above.
-			return this.disposalCompletion.Task;
+			this.ReleaseCore(preferAsyncDisposal: true);
+#pragma warning disable VSTHRD003 // The completion source represents release of all references to this generation.
+			return this.releaseCompletion.Task;
 #pragma warning restore VSTHRD003
-		}
-
-		/// <summary>
-		/// Releases this generation without disposing a proxy instance shared by its replacement.
-		/// </summary>
-		internal void ReleaseWithoutDisposal()
-		{
-			Volatile.Write(ref this.suppressDisposal, 1);
-			this.Release();
 		}
 
 		/// <summary>
@@ -1991,6 +2157,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				this.disconnectedHandler = (sender, args) =>
 				{
 					Volatile.Write(ref this.disconnected, 1);
+					this.proxyLifetime.MarkDisconnected();
 					this.owner.Invalidate(this);
 				};
 				jsonRpcProxy.JsonRpc.Disconnected += this.disconnectedHandler;
@@ -1999,6 +2166,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 					{
 						var generation = (Generation)state!;
 						Volatile.Write(ref generation.disconnected, 1);
+						generation.proxyLifetime.MarkDisconnected();
 						generation.owner.Invalidate(generation);
 					},
 					this,
@@ -2020,25 +2188,198 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			}
 		}
 
-		private async Task DisposeProxyAsync(bool reportFailure)
+		/// <summary>
+		/// Coordinates disposal across generations that use the same proxy instance.
+		/// </summary>
+		internal sealed class ProxyLifetime
 		{
-			try
+			private readonly ResilientProxyBase<T> owner;
+			private readonly T proxy;
+			private readonly TaskCompletionSource<object?> disposalCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+			private int disconnected;
+			private int preferAsyncDisposal;
+			private int referenceCount = 1;
+
+			/// <summary>
+			/// Initializes a new instance of the <see cref="ProxyLifetime"/> class.
+			/// </summary>
+			/// <param name="owner">The resilient proxy.</param>
+			/// <param name="proxy">The shared inner proxy.</param>
+			internal ProxyLifetime(ResilientProxyBase<T> owner, T proxy)
 			{
-				await ((System.IAsyncDisposable)this.Proxy).DisposeAsync().ConfigureAwait(false);
-				this.disposalCompletion.TrySetResult(null);
+				this.owner = owner;
+				this.proxy = proxy;
+				this.disposalCompletion.Task.Forget();
 			}
-			catch (Exception ex)
+
+			/// <summary>
+			/// Gets a task that completes when the proxy is disposed.
+			/// </summary>
+			internal Task Disposal
 			{
-				if (reportFailure)
+				get
+				{
+#pragma warning disable VSTHRD003 // The completion source represents disposal initiated by this lifetime.
+					return this.disposalCompletion.Task;
+#pragma warning restore VSTHRD003
+				}
+			}
+
+			/// <summary>
+			/// Attempts to retain the shared proxy.
+			/// </summary>
+			/// <returns><see langword="true"/> if the shared proxy was retained.</returns>
+			internal bool TryAddReference()
+			{
+				int oldValue;
+				do
+				{
+					oldValue = Volatile.Read(ref this.referenceCount);
+					if (oldValue == 0)
+					{
+						return false;
+					}
+				}
+				while (Interlocked.CompareExchange(ref this.referenceCount, oldValue + 1, oldValue) != oldValue);
+
+				return true;
+			}
+
+			/// <summary>
+			/// Records that the shared RPC proxy disconnected.
+			/// </summary>
+			internal void MarkDisconnected() => Volatile.Write(ref this.disconnected, 1);
+
+			/// <summary>
+			/// Releases one shared proxy reference.
+			/// </summary>
+			/// <param name="preferAsyncDisposal">A value indicating whether final disposal should be asynchronous.</param>
+			/// <returns>A task that completes with final disposal, or immediately when other references remain.</returns>
+			internal Task ReleaseReferenceAsync(bool preferAsyncDisposal)
+			{
+				if (preferAsyncDisposal)
+				{
+					Volatile.Write(ref this.preferAsyncDisposal, 1);
+				}
+
+				lock (this.owner.syncObject)
+				{
+					int remainingReferences = --this.referenceCount;
+					Verify.Operation(remainingReferences >= 0, "A proxy lifetime reference cannot be released more than once.");
+					if (remainingReferences != 0)
+					{
+						return Task.CompletedTask;
+					}
+
+					this.owner.RemoveProxyLifetime(this.proxy, this);
+				}
+
+				// A disconnected RPC proxy cannot dispatch its remote asynchronous disposal, so close its local proxy synchronously instead.
+				if (Volatile.Read(ref this.preferAsyncDisposal) != 0 && this.proxy is System.IAsyncDisposable && Volatile.Read(ref this.disconnected) == 0)
+				{
+					this.DisposeProxyAsync(reportFailure: true).Forget();
+#pragma warning disable VSTHRD003 // The completion source represents asynchronous disposal initiated above.
+					return this.disposalCompletion.Task;
+#pragma warning restore VSTHRD003
+				}
+
+				try
+				{
+					if (this.proxy is IDisposable disposable)
+					{
+						disposable.Dispose();
+						this.disposalCompletion.TrySetResult(null);
+					}
+					else if (this.proxy is System.IAsyncDisposable)
+					{
+						this.DisposeProxyAsync(reportFailure: false).Forget();
+					}
+					else
+					{
+						this.disposalCompletion.TrySetResult(null);
+					}
+				}
+				catch (Exception ex)
 				{
 					this.disposalCompletion.TrySetException(ex);
+					throw;
 				}
-				else
+
+#pragma warning disable VSTHRD003 // The completion source represents disposal initiated above.
+				return this.disposalCompletion.Task;
+#pragma warning restore VSTHRD003
+			}
+
+			private async Task DisposeProxyAsync(bool reportFailure)
+			{
+				try
 				{
-					this.owner.TraceEventHandlerFailure(ex);
+					await ((System.IAsyncDisposable)this.proxy).DisposeAsync().ConfigureAwait(false);
 					this.disposalCompletion.TrySetResult(null);
+				}
+				catch (Exception ex)
+				{
+					if (reportFailure)
+					{
+						this.disposalCompletion.TrySetException(ex);
+					}
+					else
+					{
+						this.owner.TraceEventHandlerFailure(ex);
+						this.disposalCompletion.TrySetResult(null);
+					}
 				}
 			}
 		}
+
+#pragma warning disable SA1201 // Helper methods follow the nested lifetime type they coordinate with.
+		private void ReleaseCore(bool preferAsyncDisposal)
+		{
+			if (preferAsyncDisposal)
+			{
+				Volatile.Write(ref this.preferAsyncDisposal, 1);
+			}
+
+			int remainingReferences = Interlocked.Decrement(ref this.referenceCount);
+			Verify.Operation(remainingReferences >= 0, "A generation reference cannot be released more than once.");
+			if (remainingReferences != 0)
+			{
+				return;
+			}
+
+			try
+			{
+				Task lifetimeRelease = this.proxyLifetime.ReleaseReferenceAsync(Volatile.Read(ref this.preferAsyncDisposal) != 0);
+				if (lifetimeRelease.Status == TaskStatus.RanToCompletion)
+				{
+					this.releaseCompletion.TrySetResult(null);
+				}
+				else
+				{
+					this.CompleteReleaseAsync(lifetimeRelease).Forget();
+				}
+			}
+			catch (Exception ex)
+			{
+				this.releaseCompletion.TrySetException(ex);
+				throw;
+			}
+		}
+
+		private async Task CompleteReleaseAsync(Task lifetimeRelease)
+		{
+			try
+			{
+#pragma warning disable VSTHRD003 // This task represents disposal initiated by the proxy lifetime.
+				await lifetimeRelease.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
+				this.releaseCompletion.TrySetResult(null);
+			}
+			catch (Exception ex)
+			{
+				this.releaseCompletion.TrySetException(ex);
+			}
+		}
+#pragma warning restore SA1201
 	}
 }
