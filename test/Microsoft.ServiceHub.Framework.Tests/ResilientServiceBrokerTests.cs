@@ -54,7 +54,7 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
-	public async Task Proxy_RefreshesAndRaisesInvalidated()
+	public async Task Proxy_RefreshesAndReportsReplacement()
 	{
 		var first = new ResilientTestService(1);
 		var second = new ResilientTestService(2);
@@ -68,20 +68,25 @@ public class ResilientServiceBrokerTests : TestBase
 		Assert.True(resilientProxy.IsAvailable);
 		Assert.Equal(1, await proxy.GetGenerationAsync(this.TimeoutToken));
 
-		ResilientServiceProxyInvalidatedEventArgs? invalidatedArgs = null;
-		resilientProxy.Invalidated += (sender, args) =>
+		ResilientServiceProxyChangedEventArgs? changedArgs = null;
+		int changeCount = 0;
+		resilientProxy.BackingServiceChanged += (sender, args) =>
 		{
 			Assert.Same(proxy, sender);
-			invalidatedArgs = args;
+			changeCount++;
+			changedArgs = args;
 		};
 
 		innerBroker.CurrentService = second;
 		innerBroker.RaiseAvailabilityChanged();
 
 		Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
-		Assert.NotNull(invalidatedArgs);
-		Assert.Equal(Descriptor.Moniker, invalidatedArgs.ServiceMoniker);
-		Assert.Equal(1, invalidatedArgs.Generation);
+		Assert.NotNull(changedArgs);
+		Assert.Equal(Descriptor.Moniker, changedArgs.ServiceMoniker);
+		Assert.Equal(ResilientServiceProxyChangeKind.Replaced, changedArgs.ChangeKind);
+		Assert.Equal(1, changedArgs.PreviousGeneration);
+		Assert.Equal(2, changedArgs.CurrentGeneration);
+		Assert.Equal(1, changeCount);
 		Assert.True(resilientProxy.IsAvailable);
 		Assert.True(first.IsDisposed);
 
@@ -91,33 +96,43 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
-	public async Task AvailabilityChanged_ReportsLossAndRestoration()
+	public async Task BackingServiceChanged_ReportsLossAndRestoration()
 	{
 		var first = new ResilientTestService(1);
 		var second = new ResilientTestService(2);
-		var delayedRefresh = new TaskCompletionSource<IResilientTestService?>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var innerBroker = new ResilientTestBroker { CurrentService = first };
 		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
 		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
 #pragma warning disable ISB001 // Disposed by the using statement.
 			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
 #pragma warning restore ISB001
-		List<bool> availabilityStates = [];
-		proxyLifetime.AvailabilityChanged += (sender, args) =>
+		var lost = new TaskCompletionSource<ResilientServiceProxyChangedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var gained = new TaskCompletionSource<ResilientServiceProxyChangedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+		int changeCount = 0;
+		proxyLifetime.BackingServiceChanged += (sender, args) =>
 		{
 			Assert.Same(proxyLifetime, sender);
-			availabilityStates.Add(proxyLifetime.IsAvailable);
+			changeCount++;
+			(args.ChangeKind == ResilientServiceProxyChangeKind.Lost ? lost : gained).TrySetResult(args);
 		};
 
-		innerBroker.GetProxyCallback = cancellationToken => new(delayedRefresh.Task.WithCancellation(cancellationToken));
+		innerBroker.CurrentService = null;
 		innerBroker.RaiseAvailabilityChanged();
+		ResilientServiceProxyChangedEventArgs lostArgs = await lost.Task.WithCancellation(this.TimeoutToken);
 		Assert.False(proxyLifetime.IsAvailable);
-		Assert.Equal([false], availabilityStates);
+		Assert.Equal(ResilientServiceProxyChangeKind.Lost, lostArgs.ChangeKind);
+		Assert.Equal(1, lostArgs.PreviousGeneration);
+		Assert.Null(lostArgs.CurrentGeneration);
 
-		delayedRefresh.SetResult(second);
+		innerBroker.CurrentService = second;
+		innerBroker.RaiseAvailabilityChanged();
+		ResilientServiceProxyChangedEventArgs gainedArgs = await gained.Task.WithCancellation(this.TimeoutToken);
 		Assert.Equal(2, await ((IResilientTestService)proxyLifetime).GetGenerationAsync(this.TimeoutToken));
 		Assert.True(proxyLifetime.IsAvailable);
-		Assert.Equal([false, true], availabilityStates);
+		Assert.Equal(ResilientServiceProxyChangeKind.Gained, gainedArgs.ChangeKind);
+		Assert.Null(gainedArgs.PreviousGeneration);
+		Assert.Equal(2, gainedArgs.CurrentGeneration);
+		Assert.Equal(2, changeCount);
 	}
 
 	[Fact]
@@ -149,6 +164,66 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
+	public async Task AwaitableMethods_PreCanceledTokenReturnsCanceledAwaitable()
+	{
+		var service = new ResilientTestService(1);
+		var innerBroker = new ResilientTestBroker { CurrentService = service };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+		using var cancellationSource = new CancellationTokenSource();
+		cancellationSource.Cancel();
+
+		Task<int>? task = null;
+		Assert.Null(Record.Exception(() => { task = proxy.GetGenerationAsync(cancellationSource.Token); }));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task!);
+
+		ValueTask<int> valueTask = default;
+		Assert.Null(Record.Exception(() => { valueTask = proxy.GetValueGenerationAsync(cancellationSource.Token); }));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => valueTask.AsTask());
+
+		Task<IDisposable>? subscriptionTask = null;
+		Assert.Null(Record.Exception(() => { subscriptionTask = proxy.ObserveAsync(new TestObserver<int>(), cancellationSource.Token); }));
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => subscriptionTask!);
+		Assert.Equal(0, service.InvocationCount);
+		Assert.Equal(0, service.SubscriptionCount);
+	}
+
+	[Fact]
+	public async Task RefreshInvalidatedByLifecycleHandlerReturnsLatestGeneration()
+	{
+		var first = new ResilientTestService(1);
+		var second = new ResilientTestService(2);
+		var third = new ResilientTestService(3);
+		var innerBroker = new ResilientTestBroker { CurrentService = first };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+		var changes = new List<(long? Previous, long? Current)>();
+		proxyLifetime.BackingServiceChanged += (sender, args) =>
+		{
+			changes.Add((args.PreviousGeneration, args.CurrentGeneration));
+			if (args.CurrentGeneration == 2)
+			{
+				innerBroker.CurrentService = third;
+				innerBroker.RaiseAvailabilityChanged();
+			}
+		};
+
+		innerBroker.CurrentService = second;
+		innerBroker.RaiseAvailabilityChanged();
+
+		Assert.Equal(3, await proxy.GetGenerationAsync(this.TimeoutToken));
+		Assert.Equal([(1, 2), (2, 3)], changes);
+	}
+
+	[Fact]
 	public async Task ContractEvents_FollowReplacementProxy()
 	{
 		var first = new ResilientTestService(1);
@@ -176,14 +251,15 @@ public class ResilientServiceBrokerTests : TestBase
 		innerBroker.RaiseAvailabilityChanged();
 		Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
 		first.RaiseChanged();
-		second.RaiseChanged();
+		Assert.Equal(1, eventCount);
 
+		second.RaiseChanged();
 		Assert.Equal(2, eventCount);
 		Assert.Same(proxy, lastSender);
 	}
 
 	[Fact]
-	public async Task AvailabilityChanged_HandlerCanWaitForContractEventRemoval()
+	public async Task BackingServiceChanged_HandlerCanWaitForContractEventRemoval()
 	{
 		var first = new ResilientTestService(1);
 		var second = new ResilientTestService(2);
@@ -196,13 +272,8 @@ public class ResilientServiceBrokerTests : TestBase
 		var proxy = (IResilientTestService)proxyLifetime;
 		EventHandler handler = (sender, args) => { };
 		proxy.Changed += handler;
-		proxyLifetime.AvailabilityChanged += (sender, args) =>
-		{
-			if (!proxyLifetime.IsAvailable)
-			{
-				Task.Run(() => proxy.Changed -= handler).GetAwaiter().GetResult();
-			}
-		};
+		proxyLifetime.BackingServiceChanged += (sender, args) =>
+			Task.Run(() => proxy.Changed -= handler).GetAwaiter().GetResult();
 
 		innerBroker.CurrentService = second;
 		await Task.Run(innerBroker.RaiseAvailabilityChanged, TestContext.Current.CancellationToken).WithCancellation(this.TimeoutToken);
@@ -263,7 +334,12 @@ public class ResilientServiceBrokerTests : TestBase
 		Assert.Equal(1, first.SubscriptionCount);
 
 		first.Publish(10);
+
+		// The invocation token no longer controls the subscription after ObserveAsync returns.
 		subscriptionCancellationSource.Cancel();
+		first.Publish(11);
+		Assert.Equal([10, 11], observer.Values);
+
 		innerBroker.CurrentService = second;
 		innerBroker.RaiseAvailabilityChanged();
 		Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
@@ -277,7 +353,7 @@ public class ResilientServiceBrokerTests : TestBase
 		innerBroker.RaiseAvailabilityChanged();
 		Assert.Equal(3, await proxy.GetGenerationAsync(this.TimeoutToken));
 		Assert.Equal(0, third.SubscriptionCount);
-		Assert.Equal([10, 20], observer.Values);
+		Assert.Equal([10, 11, 20], observer.Values);
 	}
 
 	[Fact]
@@ -914,6 +990,12 @@ public class ResilientServiceBrokerTests : TestBase
 		{
 			this.InvocationCount++;
 			return Task.FromResult(this.GetGenerationCallback?.Invoke() ?? generation);
+		}
+
+		public ValueTask<int> GetValueGenerationAsync(CancellationToken cancellationToken)
+		{
+			this.InvocationCount++;
+			return new(this.GetGenerationCallback?.Invoke() ?? generation);
 		}
 
 		public Task<string> GetNameAsync(CancellationToken cancellationToken)

@@ -37,6 +37,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	private Generation? currentGeneration;
 	private Task notificationTail = Task.CompletedTask;
 	private TaskCompletionSource<object?> availabilityChanged = CreateTaskCompletionSource();
+	private long? pendingPreviousGeneration;
 	private long nextGeneration;
 	private long refreshVersion;
 	private bool disposed;
@@ -496,6 +497,10 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		}
 		catch (Exception ex)
 		{
+#pragma warning disable VSTHRD003 // The gate is created by this proxy to order publication after detaching the prior generation.
+			await publicationGate.ConfigureAwait(false);
+#pragma warning restore VSTHRD003
+			ResilientServiceProxyChangedEventArgs? change = null;
 			bool refreshSuperseded;
 			lock (this.syncObject)
 			{
@@ -505,6 +510,16 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				}
 
 				refreshSuperseded = !this.disposed && version != this.refreshVersion;
+				if (!this.disposed && !refreshSuperseded && this.pendingPreviousGeneration is long previousGeneration)
+				{
+					this.pendingPreviousGeneration = null;
+					change = new(this.serviceDescriptor.Moniker, previousGeneration, currentGeneration: null);
+				}
+			}
+
+			if (change is not null)
+			{
+				this.OnBackingServiceChanged(change);
 			}
 
 			if (refreshSuperseded)
@@ -519,7 +534,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			return;
 		}
 
-#pragma warning disable VSTHRD003 // The gate is created by this proxy to order publication after its lifecycle event.
+#pragma warning disable VSTHRD003 // The gate is created by this proxy to order publication after detaching the prior generation.
 		await publicationGate.ConfigureAwait(false);
 #pragma warning restore VSTHRD003
 
@@ -538,6 +553,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 		bool installed = false;
 		TaskCompletionSource<object?>? availabilityChangedToSignal = null;
+		ResilientServiceProxyChangedEventArgs? backingServiceChange = null;
 		var synchronizedSubscriptions = new HashSet<ResilientSubscription>();
 		while (true)
 		{
@@ -611,7 +627,17 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 					{
 						this.currentGeneration = candidateGeneration;
 						availabilityChangedToSignal = this.availabilityChanged;
+						backingServiceChange = new(
+							this.serviceDescriptor.Moniker,
+							this.pendingPreviousGeneration,
+							candidateGeneration.Number);
+						this.pendingPreviousGeneration = null;
 						installed = true;
+					}
+					else if (!this.disposed && !superseded && this.pendingPreviousGeneration is long previousGeneration)
+					{
+						this.pendingPreviousGeneration = null;
+						backingServiceChange = new(this.serviceDescriptor.Moniker, previousGeneration, currentGeneration: null);
 					}
 				}
 			}
@@ -631,7 +657,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 					}
 				}
 
-				this.OnAvailabilityChanged();
+				this.OnBackingServiceChanged(backingServiceChange!);
 			}
 
 			break;
@@ -640,7 +666,19 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		if (installed)
 		{
 			availabilityChangedToSignal!.TrySetResult(null);
-			refreshSource.TrySetResult(candidateGeneration!.Proxy);
+			bool completedWithCandidate;
+			lock (this.syncObject)
+			{
+				completedWithCandidate = ReferenceEquals(this.currentGeneration, candidateGeneration)
+					&& !candidateGeneration!.IsDisconnected
+					&& refreshSource.TrySetResult(candidateGeneration.Proxy);
+			}
+
+			if (!completedWithCandidate)
+			{
+				await this.CompleteFromCurrentRefreshAsync(refreshSource).ConfigureAwait(false);
+			}
+
 			return;
 		}
 
@@ -723,6 +761,11 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		}
 		else
 		{
+			if (backingServiceChange is not null)
+			{
+				this.OnBackingServiceChanged(backingServiceChange);
+			}
+
 			refreshSource.TrySetResult(null);
 		}
 	}
@@ -771,6 +814,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		Func<T, CancellationToken, ValueTask<IDisposable>> reattachInvocation,
 		CancellationToken cancellationToken)
 	{
+		cancellationToken.ThrowIfCancellationRequested();
 		using ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false);
 		IDisposable innerSubscription = await initialInvocation(rental.Proxy).ConfigureAwait(false)
 			?? throw new InvalidOperationException("A resilient RPC subscription method returned null.");
@@ -939,6 +983,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			if (generation is not null)
 			{
 				this.currentGeneration = null;
+				this.pendingPreviousGeneration = generation.Number;
 				publicationGate = CreateTaskCompletionSource();
 				this.refreshPublicationGate = publicationGate.Task;
 			}
@@ -952,15 +997,9 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			attachments = [.. this.resilientAttachments];
 		}
 
-		if (generation is not null)
+		if (generation is not null && this.DetachGeneration(generation, attachments) is Exception detachException)
 		{
-			if (this.DetachGeneration(generation, attachments) is Exception detachException)
-			{
-				this.TraceEventHandlerFailure(detachException);
-			}
-
-			this.OnAvailabilityChanged();
-			this.OnInvalidated(new ResilientServiceProxyInvalidatedEventArgs(this.serviceDescriptor.Moniker, generation.Number));
+			this.TraceEventHandlerFailure(detachException);
 		}
 
 		publicationGate?.TrySetResult(null);

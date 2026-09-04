@@ -109,7 +109,8 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 			""");
 		writer.Indentation++;
 
-		if (this.CancellationTokenExpression is not null)
+		if (this.CancellationTokenExpression is not null
+			&& this.ReturnSpecialType is not RpcSpecialType.Task and not RpcSpecialType.ValueTask)
 		{
 			writer.WriteLine($"{this.CancellationTokenExpression}.ThrowIfCancellationRequested();");
 		}
@@ -134,15 +135,22 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 
 					async {{this.ReturnType}} InvokeAsync()
 					{
-						using (ProxyRental rental = await this.RentProxyAsync({{cancellationToken}}).ConfigureAwait(false))
-						{
 					""");
-				writer.Indentation += 2;
+				writer.Indentation++;
+				if (this.CancellationTokenExpression is not null)
+				{
+					writer.WriteLine($"{this.CancellationTokenExpression}.ThrowIfCancellationRequested();");
+				}
+
+				writer.WriteLine($"using (ProxyRental rental = await this.RentProxyAsync({cancellationToken}).ConfigureAwait(false))");
+				writer.WriteLine("{");
+				writer.Indentation++;
 				string returnKeyword = this.ReturnTypeArg is null ? string.Empty : "return ";
 				writer.WriteLine($"{returnKeyword}await (({this.DeclaringInterfaceName})rental.Proxy).{this.Name}({arguments}).ConfigureAwait(false);");
-				writer.Indentation -= 2;
+				writer.Indentation--;
+				writer.WriteLine("}");
+				writer.Indentation--;
 				writer.WriteLine("""
-						}
 					}
 					""");
 				break;
@@ -171,7 +179,8 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 		bool isObserverSubscription = returnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask
 			&& method.ReturnType is INamedTypeSymbol { TypeArguments: [ITypeSymbol subscriptionType] }
 			&& SymbolEqualityComparer.Default.Equals(subscriptionType, symbols.IDisposable)
-			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver);
+			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver)
+			&& parameters is [.., { SpecialType: RpcSpecialType.CancellationToken }];
 		return new MethodModel(
 			method.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
 			method.Name,

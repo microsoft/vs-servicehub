@@ -13,24 +13,16 @@ namespace Microsoft.ServiceHub.Framework.Reflection;
 public abstract class ResilientProxyBase : IResilientServiceProxy
 {
 	private static readonly object DisposedSentinel = new();
-	private static readonly HashSet<Type> BuiltInProxyInterfaces =
-	[
-		typeof(IResilientServiceProxy),
-		typeof(IDisposableObservable),
-		typeof(INotifyDisposable),
-		typeof(IDisposable),
-		typeof(IAsyncDisposable),
-	];
+	private static readonly HashSet<Type> BuiltInProxyInterfaces = [.. typeof(ResilientProxyBase).GetInterfaces()];
 
-	private EventHandler? availabilityChangedHandlers;
+	private EventHandler<ResilientServiceProxyChangedEventArgs>? backingServiceChangedHandlers;
 	private object? disposedHandlers;
-	private EventHandler<ResilientServiceProxyInvalidatedEventArgs>? invalidatedHandlers;
 
 	/// <inheritdoc />
-	public event EventHandler? AvailabilityChanged
+	public event EventHandler<ResilientServiceProxyChangedEventArgs>? BackingServiceChanged
 	{
-		add => UpdateEventHandlers(ref this.availabilityChangedHandlers, value, add: true);
-		remove => UpdateEventHandlers(ref this.availabilityChangedHandlers, value, add: false);
+		add => UpdateEventHandlers(ref this.backingServiceChangedHandlers, value, add: true);
+		remove => UpdateEventHandlers(ref this.backingServiceChangedHandlers, value, add: false);
 	}
 
 	/// <inheritdoc />
@@ -45,13 +37,6 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		}
 
 		remove => TryUpdateDisposedHandlers(ref this.disposedHandlers, value, combine: false);
-	}
-
-	/// <inheritdoc />
-	public event EventHandler<ResilientServiceProxyInvalidatedEventArgs>? Invalidated
-	{
-		add => UpdateEventHandlers(ref this.invalidatedHandlers, value, add: true);
-		remove => UpdateEventHandlers(ref this.invalidatedHandlers, value, add: false);
 	}
 
 	/// <summary>
@@ -148,42 +133,18 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 	protected abstract ValueTask<bool> InitializeAsync(CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Raises <see cref="AvailabilityChanged"/>.
-	/// </summary>
-	protected void OnAvailabilityChanged()
-	{
-		EventHandler? handlers = this.availabilityChangedHandlers;
-		if (handlers is null)
-		{
-			return;
-		}
-
-		foreach (EventHandler handler in handlers.GetInvocationList())
-		{
-			try
-			{
-				handler(this, EventArgs.Empty);
-			}
-			catch (Exception ex)
-			{
-				this.TraceEventHandlerFailure(ex);
-			}
-		}
-	}
-
-	/// <summary>
-	/// Raises <see cref="Invalidated"/>.
+	/// Raises <see cref="BackingServiceChanged"/>.
 	/// </summary>
 	/// <param name="args">The event arguments.</param>
-	protected void OnInvalidated(ResilientServiceProxyInvalidatedEventArgs args)
+	protected void OnBackingServiceChanged(ResilientServiceProxyChangedEventArgs args)
 	{
-		EventHandler<ResilientServiceProxyInvalidatedEventArgs>? handlers = this.invalidatedHandlers;
+		EventHandler<ResilientServiceProxyChangedEventArgs>? handlers = this.backingServiceChangedHandlers;
 		if (handlers is null)
 		{
 			return;
 		}
 
-		foreach (EventHandler<ResilientServiceProxyInvalidatedEventArgs> handler in handlers.GetInvocationList())
+		foreach (EventHandler<ResilientServiceProxyChangedEventArgs> handler in handlers.GetInvocationList())
 		{
 			try
 			{

@@ -61,6 +61,22 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				throw this.ExceptionHelper(ex);
 			}
 		}
+		
+		async global::System.Threading.Tasks.Task<global::System.IDisposable> global::IMyRpc.ObserveWithoutCancellationAsync(global::System.IObserver<double> observer)
+		{
+			global::IMyRpc target = (global::IMyRpc)this.Target;
+			if (target is null) throw new global::System.ObjectDisposedException(this.GetType().FullName);
+			try
+			{
+				return await target.ObserveWithoutCancellationAsync(
+					observer
+					);
+			}
+			catch (global::System.Exception ex)
+			{
+				throw this.ExceptionHelper(ex);
+			}
+		}
 	}
 	
 	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.ServiceHub.Analyzers.CSharp", "x.x.x.x")]
@@ -78,14 +94,25 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 		global::System.Threading.Tasks.Task<global::System.IDisposable> global::IMyRpc.ObserveAsync(global::System.Threading.CancellationToken filterToken, global::System.IObserver<int> observer, object __resilientTarget, object __resilientCancellationToken, global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return this.InvokeTaskSubscriptionAsync(__resilientTarget_ => ((global::IMyRpc)__resilientTarget_).ObserveAsync(filterToken, observer, __resilientTarget, __resilientCancellationToken, cancellationToken), (__resilientTarget_, __resilientCancellationToken_) => ((global::IMyRpc)__resilientTarget_).ObserveAsync(filterToken, observer, __resilientTarget, __resilientCancellationToken, __resilientCancellationToken_), cancellationToken);
 		}
 		
 		global::System.Threading.Tasks.ValueTask<global::System.IDisposable> global::IMyRpc.ObserveValueAsync(global::System.IObserver<string> observer, global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return this.InvokeValueTaskSubscriptionAsync(__resilientTarget => ((global::IMyRpc)__resilientTarget).ObserveValueAsync(observer, cancellationToken), (__resilientTarget, __resilientCancellationToken) => ((global::IMyRpc)__resilientTarget).ObserveValueAsync(observer, __resilientCancellationToken), cancellationToken);
+		}
+		
+		global::System.Threading.Tasks.Task<global::System.IDisposable> global::IMyRpc.ObserveWithoutCancellationAsync(global::System.IObserver<double> observer)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task<global::System.IDisposable> InvokeAsync()
+			{
+				using (ProxyRental rental = await this.RentProxyAsync(default).ConfigureAwait(false))
+				{
+					return await ((global::IMyRpc)rental.Proxy).ObserveWithoutCancellationAsync(observer).ConfigureAwait(false);
+				}
+			}
 		}
 	}
 }

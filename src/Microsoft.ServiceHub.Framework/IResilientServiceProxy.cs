@@ -9,21 +9,30 @@ namespace Microsoft.ServiceHub.Framework;
 public interface IResilientServiceProxy : IDisposableObservable, INotifyDisposable, IDisposable, IAsyncDisposable
 {
 	/// <summary>
-	/// Occurs when the proxy gains or loses a backing service.
+	/// Occurs when the proxy gains, loses, or replaces its backing service.
 	/// </summary>
 	/// <remarks>
-	/// Inspect <see cref="IsAvailable"/> when handling this event to determine the new state.
+	/// <para>
+	/// Each change is reported as exactly one mutually exclusive <see cref="ResilientServiceProxyChangeKind"/>
+	/// value. In particular, replacing one backing service with another raises only
+	/// <see cref="ResilientServiceProxyChangeKind.Replaced"/>, not separate
+	/// <see cref="ResilientServiceProxyChangeKind.Lost"/> and
+	/// <see cref="ResilientServiceProxyChangeKind.Gained"/> events.
+	/// </para>
+	/// <para>
+	/// A loss is reported after the current replacement attempt completes without acquiring a service.
+	/// While that attempt is in progress, <see cref="IsAvailable"/> is <see langword="false"/>, but no
+	/// transition has been reported yet because the outcome may be <see cref="ResilientServiceProxyChangeKind.Replaced"/>.
+	/// </para>
+	/// <para>
+	/// Clients can use <see cref="ResilientServiceProxyChangeKind.Gained"/> and
+	/// <see cref="ResilientServiceProxyChangeKind.Lost"/> to enable or suspend operations that require an
+	/// available service. Clients can use <see cref="ResilientServiceProxyChangeKind.Replaced"/> to rebuild
+	/// mutable state associated with the prior service generation. Contract event handlers and observer
+	/// subscriptions are transferred to replacements automatically.
+	/// </para>
 	/// </remarks>
-	event EventHandler? AvailabilityChanged;
-
-	/// <summary>
-	/// Occurs when the underlying service proxy has been invalidated.
-	/// </summary>
-	/// <remarks>
-	/// Contract event handlers are automatically applied to the replacement proxy.
-	/// Clients should use this event to rebuild any other mutable state held by the service instance.
-	/// </remarks>
-	event EventHandler<ResilientServiceProxyInvalidatedEventArgs>? Invalidated;
+	event EventHandler<ResilientServiceProxyChangedEventArgs>? BackingServiceChanged;
 
 	/// <summary>
 	/// Gets a value indicating whether the proxy currently has a backing service.

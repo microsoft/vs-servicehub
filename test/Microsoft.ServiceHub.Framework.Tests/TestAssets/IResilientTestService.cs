@@ -14,6 +14,8 @@ public partial interface IResilientTestService : IAsyncDisposable
 
 	Task<int> GetGenerationAsync(CancellationToken cancellationToken);
 
+	ValueTask<int> GetValueGenerationAsync(CancellationToken cancellationToken);
+
 	IAsyncEnumerable<int> StreamAsync(CancellationToken cancellationToken);
 
 	void Notify(int value);

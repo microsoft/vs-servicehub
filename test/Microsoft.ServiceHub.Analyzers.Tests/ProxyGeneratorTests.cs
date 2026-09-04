@@ -108,6 +108,7 @@ public class ProxyGeneratorTests
 			{
 				Task<IDisposable> ObserveAsync(CancellationToken filterToken, IObserver<int> observer, object __resilientTarget, object __resilientCancellationToken, CancellationToken cancellationToken);
 				ValueTask<IDisposable> ObserveValueAsync(IObserver<string> observer, CancellationToken cancellationToken);
+				Task<IDisposable> ObserveWithoutCancellationAsync(IObserver<double> observer);
 			}
 			""");
 	}

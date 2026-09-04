@@ -59,11 +59,11 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 		global::System.Threading.Tasks.Task global::OuterClass.IMyRpc.JustCancellationAsync(global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return InvokeAsync();
 			
 			async global::System.Threading.Tasks.Task InvokeAsync()
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
 				{
 					await ((global::OuterClass.IMyRpc)rental.Proxy).JustCancellationAsync(cancellationToken).ConfigureAwait(false);

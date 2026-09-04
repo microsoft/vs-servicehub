@@ -178,11 +178,11 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 		global::System.Threading.Tasks.Task global::IMyRpc.JustCancellationAsync(global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return InvokeAsync();
 			
 			async global::System.Threading.Tasks.Task InvokeAsync()
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
 				{
 					await ((global::IMyRpc)rental.Proxy).JustCancellationAsync(cancellationToken).ConfigureAwait(false);
@@ -192,11 +192,11 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 		global::System.Threading.Tasks.ValueTask global::IMyRpc.AnArgAndCancellationAsync(int arg, global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return InvokeAsync();
 			
 			async global::System.Threading.Tasks.ValueTask InvokeAsync()
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
 				{
 					await ((global::IMyRpc)rental.Proxy).AnArgAndCancellationAsync(arg, cancellationToken).ConfigureAwait(false);
@@ -219,11 +219,11 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		
 		global::System.Threading.Tasks.Task<int> global::IMyRpc.AddAsync(int a, int b, global::System.Threading.CancellationToken cancellationToken)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
 			return InvokeAsync();
 			
 			async global::System.Threading.Tasks.Task<int> InvokeAsync()
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
 				{
 					return await ((global::IMyRpc)rental.Proxy).AddAsync(a, b, cancellationToken).ConfigureAwait(false);
