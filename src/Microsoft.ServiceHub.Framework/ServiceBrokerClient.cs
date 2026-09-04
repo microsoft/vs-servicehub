@@ -159,6 +159,12 @@ public class ServiceBrokerClient : IDisposableObservable
 						if (proxy is StreamJsonRpc.IJsonRpcClientProxy localProxy)
 						{
 							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnProxyDisconnected((serviceRpcDescriptor.Moniker, typeof(T)), clientLazy!);
+							localProxy.JsonRpc.Completion.ContinueWith(
+								(_, state) => ((ServiceBrokerClient)state!).OnProxyDisconnected((serviceRpcDescriptor.Moniker, typeof(T)), clientLazy!),
+								this,
+								CancellationToken.None,
+								TaskContinuationOptions.ExecuteSynchronously,
+								TaskScheduler.Default).Forget();
 						}
 
 						return proxy;

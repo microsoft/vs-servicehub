@@ -70,10 +70,8 @@ namespace Microsoft.ServiceHub.Framework.Generated
 	{
 		private global::System.EventHandler? VanillaEventHandlers;
 		private readonly ResilientEvent<global::System.EventHandler> VanillaEventSubscription;
-		private readonly object VanillaEventSyncObject = new object();
 		private global::System.EventHandler<global::MyEventArgs>? MyEventHandlers;
 		private readonly ResilientEvent<global::System.EventHandler<global::MyEventArgs>> MyEventSubscription;
-		private readonly object MyEventSyncObject = new object();
 		
 		public IMyRpcWithEvent_Proxy_ResilientProxy(
 			global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
@@ -83,10 +81,12 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			this.VanillaEventSubscription = this.CreateEvent<global::System.EventHandler>(
 				(sender, args) => this.VanillaEventHandlers?.Invoke(this, args),
+				() => this.VanillaEventHandlers is not null,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent += handler,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).VanillaEvent -= handler);
 			this.MyEventSubscription = this.CreateEvent<global::System.EventHandler<global::MyEventArgs>>(
 				(sender, args) => this.MyEventHandlers?.Invoke(this, args),
+				() => this.MyEventHandlers is not null,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent += handler,
 				(proxy, handler) => ((global::IMyRpcWithEvent)proxy).MyEvent -= handler);
 		}
@@ -95,20 +95,14 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				lock (this.VanillaEventSyncObject)
-				{
-					bool active = UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: true);
-					this.VanillaEventSubscription.SetActive(active);
-				}
+				UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: true);
+				this.VanillaEventSubscription.UpdateActiveState();
 			}
 		
 			remove
 			{
-				lock (this.VanillaEventSyncObject)
-				{
-					bool active = UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: false);
-					this.VanillaEventSubscription.SetActive(active);
-				}
+				UpdateEventHandlers(ref this.VanillaEventHandlers, value, add: false);
+				this.VanillaEventSubscription.UpdateActiveState();
 			}
 		}
 		
@@ -116,20 +110,14 @@ namespace Microsoft.ServiceHub.Framework.Generated
 		{
 			add
 			{
-				lock (this.MyEventSyncObject)
-				{
-					bool active = UpdateEventHandlers(ref this.MyEventHandlers, value, add: true);
-					this.MyEventSubscription.SetActive(active);
-				}
+				UpdateEventHandlers(ref this.MyEventHandlers, value, add: true);
+				this.MyEventSubscription.UpdateActiveState();
 			}
 		
 			remove
 			{
-				lock (this.MyEventSyncObject)
-				{
-					bool active = UpdateEventHandlers(ref this.MyEventHandlers, value, add: false);
-					this.MyEventSubscription.SetActive(active);
-				}
+				UpdateEventHandlers(ref this.MyEventHandlers, value, add: false);
+				this.MyEventSubscription.UpdateActiveState();
 			}
 		}
 	}

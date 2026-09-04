@@ -36,6 +36,24 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
+	public async Task GetProxyAsync_ActivationFailureIsNotMaskedByCleanupFailure()
+	{
+		var innerBroker = new ResilientTestBroker
+		{
+			GetProxyCallback = cancellationToken =>
+			{
+				cancellationToken.Register(() => throw new InvalidOperationException("Cleanup failed."));
+				throw new ServiceCompositionException("Activation failed.");
+			},
+		};
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+
+		ServiceCompositionException exception = await Assert.ThrowsAsync<ServiceCompositionException>(
+			() => broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken).AsTask());
+		Assert.Equal("Activation failed.", exception.Message);
+	}
+
+	[Fact]
 	public async Task Proxy_RefreshesAndRaisesInvalidated()
 	{
 		var first = new ResilientTestService(1);
@@ -162,6 +180,68 @@ public class ResilientServiceBrokerTests : TestBase
 
 		Assert.Equal(2, eventCount);
 		Assert.Same(proxy, lastSender);
+	}
+
+	[Fact]
+	public async Task AvailabilityChanged_HandlerCanWaitForContractEventRemoval()
+	{
+		var first = new ResilientTestService(1);
+		var second = new ResilientTestService(2);
+		var innerBroker = new ResilientTestBroker { CurrentService = first };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+		EventHandler handler = (sender, args) => { };
+		proxy.Changed += handler;
+		proxyLifetime.AvailabilityChanged += (sender, args) =>
+		{
+			if (!proxyLifetime.IsAvailable)
+			{
+				Task.Run(() => proxy.Changed -= handler).GetAwaiter().GetResult();
+			}
+		};
+
+		innerBroker.CurrentService = second;
+		await Task.Run(innerBroker.RaiseAvailabilityChanged, TestContext.Current.CancellationToken).WithCancellation(this.TimeoutToken);
+
+		Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
+	}
+
+	[Fact]
+	public async Task ContractEventAddedWhileReplacementIsPublishingIsAttached()
+	{
+		var first = new ResilientTestService(1);
+		var second = new ResilientTestService(2);
+		var changedAddStarted = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var completeChangedAdd = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var innerBroker = new ResilientTestBroker { CurrentService = first };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+		proxy.Changed += (sender, args) => { };
+		second.AddChangedCallback = () =>
+		{
+			changedAddStarted.TrySetResult(null);
+			completeChangedAdd.Task.GetAwaiter().GetResult();
+		};
+
+		innerBroker.CurrentService = second;
+		Task refresh = Task.Run(innerBroker.RaiseAvailabilityChanged, TestContext.Current.CancellationToken);
+		await changedAddStarted.Task.WithCancellation(this.TimeoutToken);
+		int eventCount = 0;
+		proxy.EarlierChanged += (sender, args) => eventCount++;
+		completeChangedAdd.TrySetResult(null);
+		await refresh.WithCancellation(this.TimeoutToken);
+		Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
+
+		second.RaiseEarlierChanged();
+		Assert.Equal(1, eventCount);
 	}
 
 	[Fact]
@@ -775,10 +855,29 @@ public class ResilientServiceBrokerTests : TestBase
 	{
 		private readonly List<IObserver<int>> observers = [];
 		private readonly TaskCompletionSource<object?> disposal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		private EventHandler? changed;
+		private EventHandler? earlierChanged;
 
-		public event EventHandler? Changed;
+		public event EventHandler? Changed
+		{
+			add
+			{
+				this.AddChangedCallback?.Invoke();
+				this.changed += value;
+			}
+
+			remove => this.changed -= value;
+		}
+
+		public event EventHandler? EarlierChanged
+		{
+			add => this.earlierChanged += value;
+			remove => this.earlierChanged -= value;
+		}
 
 		internal TaskCompletionSource<int> Notification { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		internal Action? AddChangedCallback { get; set; }
 
 		internal Func<int>? GetGenerationCallback { get; set; }
 
@@ -869,7 +968,9 @@ public class ResilientServiceBrokerTests : TestBase
 			});
 		}
 
-		internal void RaiseChanged() => this.Changed?.Invoke(this, EventArgs.Empty);
+		internal void RaiseChanged() => this.changed?.Invoke(this, EventArgs.Empty);
+
+		internal void RaiseEarlierChanged() => this.earlierChanged?.Invoke(this, EventArgs.Empty);
 
 		internal void Publish(int value)
 		{

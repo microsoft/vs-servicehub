@@ -36,6 +36,7 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 		writer.WriteLine($$"""
 			this.{{this.Name}}Subscription = this.CreateEvent<{{this.DelegateType}}>(
 				(sender, args) => this.{{this.Name}}Handlers?.Invoke(this, args),
+				() => this.{{this.Name}}Handlers is not null,
 				(proxy, handler) => (({{this.DeclaringType}})proxy).{{this.Name}} += handler,
 				(proxy, handler) => (({{this.DeclaringType}})proxy).{{this.Name}} -= handler);
 			""");
@@ -49,20 +50,14 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 			{
 				add
 				{
-					lock (this.{{this.Name}}SyncObject)
-					{
-						bool active = UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: true);
-						this.{{this.Name}}Subscription.SetActive(active);
-					}
+					UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: true);
+					this.{{this.Name}}Subscription.UpdateActiveState();
 				}
 
 				remove
 				{
-					lock (this.{{this.Name}}SyncObject)
-					{
-						bool active = UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: false);
-						this.{{this.Name}}Subscription.SetActive(active);
-					}
+					UpdateEventHandlers(ref this.{{this.Name}}Handlers, value, add: false);
+					this.{{this.Name}}Subscription.UpdateActiveState();
 				}
 			}
 			""");
@@ -73,7 +68,6 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 		writer.WriteLine($$"""
 			private {{this.DelegateType}}? {{this.Name}}Handlers;
 			private readonly ResilientEvent<{{this.DelegateType}}> {{this.Name}}Subscription;
-			private readonly object {{this.Name}}SyncObject = new object();
 			""");
 	}
 

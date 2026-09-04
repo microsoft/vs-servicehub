@@ -2,10 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
+using Nerdbank.Streams;
+using StreamJsonRpc;
 
 public class ServiceBrokerClientTests : TestBase
 {
@@ -285,6 +288,23 @@ public class ServiceBrokerClientTests : TestBase
 	}
 
 	[Fact]
+	public async Task GetProxyAsync_DoesNotCacheProxyThatDisconnectedBeforeRegistration()
+	{
+		var serviceBroker = new PreDisconnectedProxyServiceBroker();
+		this.client = new ServiceBrokerClient(serviceBroker);
+
+		using (ServiceBrokerClient.Rental<ICalculator> rental = await this.client.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken))
+		{
+			Assert.NotNull(rental.Proxy);
+			await Assert.IsAssignableFrom<IJsonRpcClientProxy>(rental.Proxy).JsonRpc.Completion.WithCancellation(this.TimeoutToken);
+		}
+
+		using ServiceBrokerClient.Rental<ICalculator> replacement = await this.client.GetProxyAsync<ICalculator>(TestServices.Calculator, this.TimeoutToken);
+		Assert.Equal(2, serviceBroker.RequestCount);
+		Assert.Equal(3, await Assert.IsAssignableFrom<ICalculator>(replacement.Proxy).AddAsync(1, 2));
+	}
+
+	[Fact]
 	public async Task Invalidate_WhileProxiesUsed()
 	{
 		Calculator underlyingService;
@@ -364,5 +384,35 @@ public class ServiceBrokerClientTests : TestBase
 	private void InvalidateServices(params ServiceMoniker[] monikers)
 	{
 		this.serviceBroker.OnAvailabilityChanged(new BrokeredServicesChangedEventArgs(monikers.ToImmutableHashSet(), otherServicesImpacted: false));
+	}
+
+	private sealed class PreDisconnectedProxyServiceBroker : IServiceBroker
+	{
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+		{
+			add { }
+			remove { }
+		}
+
+		internal int RequestCount { get; private set; }
+
+		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			=> default;
+
+		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+		{
+			this.RequestCount++;
+			if (this.RequestCount > 1)
+			{
+				return (T)(object)new Calculator();
+			}
+
+			(Stream client, Stream server) = FullDuplexStream.CreatePair();
+			T proxy = ((ServiceJsonRpcDescriptor)serviceDescriptor).ConstructRpc<T>(client.UsePipe(cancellationToken: cancellationToken));
+			server.Dispose();
+			await ((IJsonRpcClientProxy)proxy).JsonRpc.Completion.WithCancellation(cancellationToken);
+			return proxy;
+		}
 	}
 }

@@ -118,7 +118,22 @@ public abstract class ResilientProxyBase : IResilientServiceProxy
 		}
 		catch
 		{
-			await proxy.DisposeAsync().ConfigureAwait(false);
+			try
+			{
+				await proxy.DisposeAsync().ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				try
+				{
+					proxy.TraceEventHandlerFailure(ex);
+				}
+				catch
+				{
+					// Preserve the activation failure even when cleanup diagnostics fail.
+				}
+			}
+
 			throw;
 		}
 

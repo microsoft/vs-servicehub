@@ -23,7 +23,6 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	where T : class
 {
 	private readonly object syncObject = new();
-	private readonly object eventTransitionSyncObject = new();
 	private readonly IServiceBroker serviceBroker;
 	private readonly ServiceRpcDescriptor serviceDescriptor;
 	private readonly ServiceActivationOptions options;
@@ -66,7 +65,8 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// Attaches the event to an inner proxy.
 		/// </summary>
 		/// <param name="generation">The inner proxy generation.</param>
-		void Attach(Generation generation);
+		/// <param name="refreshVersion">The refresh version that must still own publication, or <see langword="null"/> for an installed generation.</param>
+		void Attach(Generation generation, long? refreshVersion = null);
 
 		/// <summary>
 		/// Detaches the event from an inner proxy.
@@ -349,13 +349,18 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// </summary>
 	/// <typeparam name="THandler">The event handler type.</typeparam>
 	/// <param name="handler">The forwarding handler to apply to each inner proxy.</param>
+	/// <param name="isActive">Determines whether the contract event currently has subscribers.</param>
 	/// <param name="addHandler">Adds the forwarding handler to an inner proxy.</param>
 	/// <param name="removeHandler">Removes the forwarding handler from an inner proxy.</param>
 	/// <returns>The event registration.</returns>
-	protected ResilientEvent<THandler> CreateEvent<THandler>(THandler handler, Action<T, THandler> addHandler, Action<T, THandler> removeHandler)
+	protected ResilientEvent<THandler> CreateEvent<THandler>(
+		THandler handler,
+		Func<bool> isActive,
+		Action<T, THandler> addHandler,
+		Action<T, THandler> removeHandler)
 		where THandler : Delegate
 	{
-		var resilientEvent = new ResilientEvent<THandler>(this, handler, addHandler, removeHandler);
+		var resilientEvent = new ResilientEvent<THandler>(this, handler, isActive, addHandler, removeHandler);
 		lock (this.syncObject)
 		{
 			this.resilientAttachments.Add(resilientEvent);
@@ -536,64 +541,100 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		var synchronizedSubscriptions = new HashSet<ResilientSubscription>();
 		while (true)
 		{
-			if (candidateGeneration is not null)
+			bool candidateValid;
+			lock (this.syncObject)
+			{
+				candidateValid = !this.disposed
+					&& version == this.refreshVersion
+					&& this.currentGeneration is null
+					&& candidateGeneration is not null
+					&& !candidateGeneration.IsDisconnected;
+			}
+
+			if (candidateValid)
 			{
 				await Task.WhenAll(attachments.OfType<ResilientSubscription>()
 					.Where(synchronizedSubscriptions.Add)
-					.Select(subscription => subscription.AttachAsync(candidateGeneration, reportFailure: true, refreshCancellationToken))).ConfigureAwait(false);
+					.Select(subscription => subscription.AttachAsync(candidateGeneration!, reportFailure: true, refreshCancellationToken, version))).ConfigureAwait(false);
 			}
 
 			bool retryWithNewSubscriptions = false;
-			lock (this.eventTransitionSyncObject)
+			lock (this.syncObject)
 			{
-				lock (this.syncObject)
-				{
-					IResilientAttachment[] latestAttachments = [.. this.resilientAttachments];
-					retryWithNewSubscriptions = candidateGeneration is not null
-						&& latestAttachments.OfType<ResilientSubscription>().Any(subscription => !synchronizedSubscriptions.Contains(subscription));
-					attachments = latestAttachments;
-				}
+				candidateValid = !this.disposed
+					&& version == this.refreshVersion
+					&& this.currentGeneration is null
+					&& candidateGeneration is not null
+					&& !candidateGeneration.IsDisconnected;
+				IResilientAttachment[] latestAttachments = [.. this.resilientAttachments];
+				retryWithNewSubscriptions = candidateValid
+					&& latestAttachments.OfType<ResilientSubscription>().Any(subscription => !synchronizedSubscriptions.Contains(subscription));
+				attachments = latestAttachments;
+			}
 
+			if (retryWithNewSubscriptions)
+			{
+				continue;
+			}
+
+			if (candidateValid)
+			{
+				foreach (IResilientAttachment attachment in attachments)
+				{
+					if (attachment is not ResilientSubscription)
+					{
+						attachment.Attach(candidateGeneration!, version);
+					}
+				}
+			}
+
+			lock (this.syncObject)
+			{
+				candidateValid = !this.disposed
+					&& version == this.refreshVersion
+					&& this.currentGeneration is null
+					&& candidateGeneration is not null
+					&& !candidateGeneration.IsDisconnected;
+				IResilientAttachment[] latestAttachments = [.. this.resilientAttachments];
+				retryWithNewSubscriptions = candidateValid
+					&& latestAttachments.OfType<ResilientSubscription>().Any(subscription => !synchronizedSubscriptions.Contains(subscription));
+				attachments = latestAttachments;
 				if (!retryWithNewSubscriptions)
 				{
-					if (candidateGeneration is not null)
+					if (ReferenceEquals(this.refreshTask, refreshSource.Task))
 					{
-						foreach (IResilientAttachment attachment in attachments)
-						{
-							if (attachment is not ResilientSubscription)
-							{
-								attachment.Attach(candidateGeneration);
-							}
-						}
+						this.refreshTask = null;
 					}
 
-					lock (this.syncObject)
+					superseded = !this.disposed && (version != this.refreshVersion || this.currentGeneration is not null);
+					if (!this.disposed && !superseded && candidateGeneration is not null && !candidateGeneration.IsDisconnected)
 					{
-						if (ReferenceEquals(this.refreshTask, refreshSource.Task))
-						{
-							this.refreshTask = null;
-						}
-
-						superseded = !this.disposed && (version != this.refreshVersion || this.currentGeneration is not null);
-						if (!this.disposed && !superseded && candidateGeneration is not null && !candidateGeneration.IsDisconnected)
-						{
-							this.currentGeneration = candidateGeneration;
-							availabilityChangedToSignal = this.availabilityChanged;
-							installed = true;
-						}
-					}
-
-					if (installed)
-					{
-						this.OnAvailabilityChanged();
+						this.currentGeneration = candidateGeneration;
+						availabilityChangedToSignal = this.availabilityChanged;
+						installed = true;
 					}
 				}
 			}
 
-			if (!retryWithNewSubscriptions)
+			if (retryWithNewSubscriptions)
 			{
-				break;
+				continue;
 			}
+
+			if (installed)
+			{
+				foreach (IResilientAttachment attachment in attachments)
+				{
+					if (attachment is not ResilientSubscription)
+					{
+						attachment.Attach(candidateGeneration!);
+					}
+				}
+
+				this.OnAvailabilityChanged();
+			}
+
+			break;
 		}
 
 		if (installed)
@@ -740,30 +781,27 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		bool needsRefreshReconciliation = false;
 		try
 		{
-			lock (this.eventTransitionSyncObject)
+			Generation? currentGeneration;
+			lock (this.syncObject)
 			{
-				Generation? currentGeneration;
-				lock (this.syncObject)
+				ownerDisposed = this.disposed;
+				currentGeneration = this.currentGeneration;
+				if (!ownerDisposed)
 				{
-					ownerDisposed = this.disposed;
-					currentGeneration = this.currentGeneration;
-					if (!ownerDisposed)
-					{
-						this.resilientAttachments.Add(subscription);
-					}
+					this.resilientAttachments.Add(subscription);
 				}
+			}
 
-				if (!ownerDisposed && !ReferenceEquals(currentGeneration, rental.Generation))
+			if (!ownerDisposed && !ReferenceEquals(currentGeneration, rental.Generation))
+			{
+				((IResilientAttachment)subscription).Detach(rental.Generation);
+				if (currentGeneration is not null)
 				{
-					((IResilientAttachment)subscription).Detach(rental.Generation);
-					if (currentGeneration is not null)
-					{
-						reattachTask = subscription.AttachAsync(currentGeneration, reportFailure: true, CancellationToken.None);
-					}
-					else
-					{
-						needsRefreshReconciliation = true;
-					}
+					reattachTask = subscription.AttachAsync(currentGeneration, reportFailure: true, CancellationToken.None);
+				}
+				else
+				{
+					needsRefreshReconciliation = true;
 				}
 			}
 		}
@@ -885,52 +923,48 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		CancellationTokenSource? refreshCancellationSource = null;
 		TaskCompletionSource<object?>? oldAvailabilityChanged = null;
 		TaskCompletionSource<object?>? publicationGate = null;
-		lock (this.eventTransitionSyncObject)
+		lock (this.syncObject)
 		{
-			lock (this.syncObject)
+			if (this.disposed)
 			{
-				if (this.disposed)
-				{
-					return;
-				}
+				return;
+			}
 
-				generation = this.currentGeneration;
-				if (expectedGeneration is not null && !ReferenceEquals(generation, expectedGeneration))
-				{
-					return;
-				}
-
-				if (generation is not null)
-				{
-					this.currentGeneration = null;
-					publicationGate = CreateTaskCompletionSource();
-					this.refreshPublicationGate = publicationGate.Task;
-				}
-
-				this.refreshVersion++;
-				this.refreshTask = null;
-				refreshCancellationSource = this.refreshCancellationSource;
-				this.refreshCancellationSource = null;
-				oldAvailabilityChanged = this.availabilityChanged;
-				this.availabilityChanged = CreateTaskCompletionSource();
-				attachments = [.. this.resilientAttachments];
+			generation = this.currentGeneration;
+			if (expectedGeneration is not null && !ReferenceEquals(generation, expectedGeneration))
+			{
+				return;
 			}
 
 			if (generation is not null)
 			{
-				if (this.DetachGeneration(generation, attachments) is Exception detachException)
-				{
-					this.TraceEventHandlerFailure(detachException);
-				}
-
-				this.OnAvailabilityChanged();
-				this.OnInvalidated(new ResilientServiceProxyInvalidatedEventArgs(this.serviceDescriptor.Moniker, generation.Number));
-				publicationGate!.TrySetResult(null);
+				this.currentGeneration = null;
+				publicationGate = CreateTaskCompletionSource();
+				this.refreshPublicationGate = publicationGate.Task;
 			}
 
-			publicationGate?.TrySetResult(null);
-			oldAvailabilityChanged.TrySetResult(null);
+			this.refreshVersion++;
+			this.refreshTask = null;
+			refreshCancellationSource = this.refreshCancellationSource;
+			this.refreshCancellationSource = null;
+			oldAvailabilityChanged = this.availabilityChanged;
+			this.availabilityChanged = CreateTaskCompletionSource();
+			attachments = [.. this.resilientAttachments];
 		}
+
+		if (generation is not null)
+		{
+			if (this.DetachGeneration(generation, attachments) is Exception detachException)
+			{
+				this.TraceEventHandlerFailure(detachException);
+			}
+
+			this.OnAvailabilityChanged();
+			this.OnInvalidated(new ResilientServiceProxyInvalidatedEventArgs(this.serviceDescriptor.Moniker, generation.Number));
+		}
+
+		publicationGate?.TrySetResult(null);
+		oldAvailabilityChanged.TrySetResult(null);
 
 		try
 		{
@@ -985,18 +1019,15 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	private Exception? DetachGeneration(Generation generation, IResilientAttachment[] attachments)
 	{
 		Exception? firstException = null;
-		lock (this.eventTransitionSyncObject)
+		foreach (IResilientAttachment attachment in attachments)
 		{
-			foreach (IResilientAttachment attachment in attachments)
+			try
 			{
-				try
-				{
-					attachment.Detach(generation);
-				}
-				catch (Exception ex)
-				{
-					firstException ??= ex;
-				}
+				attachment.Detach(generation);
+			}
+			catch (Exception ex)
+			{
+				firstException ??= ex;
 			}
 		}
 
@@ -1035,14 +1066,6 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		lock (this.syncObject)
 		{
 			this.resilientAttachments.Remove(attachment);
-		}
-	}
-
-	private bool IsCurrent(Generation generation)
-	{
-		lock (this.syncObject)
-		{
-			return ReferenceEquals(this.currentGeneration, generation);
 		}
 	}
 
@@ -1106,82 +1129,64 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		private readonly object syncObject = new();
 		private readonly ResilientProxyBase<T> owner;
 		private readonly THandler handler;
+		private readonly Func<bool> isActive;
 		private readonly Action<T, THandler> addHandler;
 		private readonly Action<T, THandler> removeHandler;
 
-		private bool active;
 		private Generation? attachedGeneration;
+		private Generation? desiredGeneration;
+		private bool reconciliationInProgress;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="ResilientEvent{THandler}"/> class.
 		/// </summary>
 		/// <param name="owner">The resilient proxy.</param>
 		/// <param name="handler">The forwarding handler.</param>
+		/// <param name="isActive">Determines whether the contract event currently has subscribers.</param>
 		/// <param name="addHandler">Attaches the forwarding handler.</param>
 		/// <param name="removeHandler">Detaches the forwarding handler.</param>
-		internal ResilientEvent(ResilientProxyBase<T> owner, THandler handler, Action<T, THandler> addHandler, Action<T, THandler> removeHandler)
+		internal ResilientEvent(
+			ResilientProxyBase<T> owner,
+			THandler handler,
+			Func<bool> isActive,
+			Action<T, THandler> addHandler,
+			Action<T, THandler> removeHandler)
 		{
 			this.owner = owner;
 			this.handler = handler;
+			this.isActive = isActive;
 			this.addHandler = addHandler;
 			this.removeHandler = removeHandler;
 		}
 
 		/// <summary>
-		/// Sets whether the forwarding handler should be attached.
+		/// Reconciles whether the forwarding handler should be attached with the latest contract event handlers.
 		/// </summary>
-		/// <param name="value"><see langword="true"/> when the contract event has subscribers.</param>
-		public void SetActive(bool value)
+		public void UpdateActiveState()
 		{
-			lock (this.owner.eventTransitionSyncObject)
+			ProxyRental rental = default;
+			bool hasRental = this.owner.TryRentCurrentProxy(expectedProxy: null, out rental);
+
+			try
 			{
 				lock (this.syncObject)
 				{
-					this.active = value;
-					if (value && this.attachedGeneration is null)
-					{
-						if (this.owner.TryRentCurrentProxy(expectedProxy: null, out ProxyRental rental))
-						{
-							try
-							{
-								this.addHandler(rental.Proxy, this.handler);
-								this.attachedGeneration = rental.Generation;
-								if (!this.owner.IsCurrent(rental.Generation))
-								{
-									this.removeHandler(rental.Proxy, this.handler);
-									this.attachedGeneration = null;
-								}
-							}
-							catch (Exception ex)
-							{
-								this.attachedGeneration = null;
-								this.owner.TraceEventHandlerFailure(ex);
-							}
-							finally
-							{
-								rental.Dispose();
-							}
-						}
-					}
-					else if (!value && this.attachedGeneration is not null)
-					{
-						try
-						{
-							this.removeHandler(this.attachedGeneration.Proxy, this.handler);
-						}
-						catch (Exception ex)
-						{
-							this.owner.TraceEventHandlerFailure(ex);
-						}
+					this.desiredGeneration = this.isActive() && hasRental ? rental.Generation : null;
+				}
 
-						this.attachedGeneration = null;
-					}
+				this.Reconcile();
+			}
+			finally
+			{
+				if (hasRental)
+				{
+					rental.Dispose();
 				}
 			}
 		}
 
 		/// <inheritdoc />
-		void IResilientAttachment.Attach(Generation generation) => this.Attach(generation);
+		void IResilientAttachment.Attach(Generation generation, long? refreshVersion) => this.Attach(generation, refreshVersion);
 
 		/// <inheritdoc />
 		void IResilientAttachment.Detach(Generation generation) => this.Detach(generation);
@@ -1189,42 +1194,45 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// <inheritdoc />
 		void IResilientAttachment.Dispose()
 		{
-		}
-
-		private void Attach(Generation generation)
-		{
 			lock (this.syncObject)
 			{
-				if (!this.active || ReferenceEquals(this.attachedGeneration, generation))
-				{
-					return;
-				}
+				this.desiredGeneration = null;
+			}
 
-				if (!generation.TryAddReference())
-				{
-					return;
-				}
+			this.Reconcile();
+		}
 
-				try
+		private void Attach(Generation generation, long? refreshVersion)
+		{
+			if (!generation.TryAddReference())
+			{
+				return;
+			}
+
+			try
+			{
+				lock (this.owner.syncObject)
 				{
-					if (this.attachedGeneration is not null)
+					if (this.owner.disposed
+						|| generation.IsDisconnected
+						|| (refreshVersion is long requiredVersion
+							? requiredVersion != this.owner.refreshVersion || this.owner.currentGeneration is not null
+							: !ReferenceEquals(this.owner.currentGeneration, generation)))
 					{
-						this.removeHandler(this.attachedGeneration.Proxy, this.handler);
-						this.attachedGeneration = null;
+						return;
 					}
 
-					this.addHandler(generation.Proxy, this.handler);
-					this.attachedGeneration = generation;
+					lock (this.syncObject)
+					{
+						this.desiredGeneration = this.isActive() ? generation : null;
+					}
 				}
-				catch (Exception ex)
-				{
-					this.attachedGeneration = null;
-					this.owner.TraceEventHandlerFailure(ex);
-				}
-				finally
-				{
-					generation.Release();
-				}
+
+				this.Reconcile();
+			}
+			finally
+			{
+				generation.Release();
 			}
 		}
 
@@ -1232,21 +1240,112 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		{
 			lock (this.syncObject)
 			{
-				if (!ReferenceEquals(this.attachedGeneration, generation))
+				if (ReferenceEquals(this.desiredGeneration, generation))
+				{
+					this.desiredGeneration = null;
+				}
+			}
+
+			this.Reconcile();
+		}
+
+		private void Reconcile()
+		{
+			lock (this.syncObject)
+			{
+				if (this.reconciliationInProgress)
 				{
 					return;
 				}
 
+				this.reconciliationInProgress = true;
+			}
+
+			while (true)
+			{
+				Generation? attached;
+				Generation? desired;
+				lock (this.syncObject)
+				{
+					attached = this.attachedGeneration;
+					desired = this.desiredGeneration;
+					if (ReferenceEquals(attached, desired))
+					{
+						this.reconciliationInProgress = false;
+						return;
+					}
+				}
+
+				if (attached is not null)
+				{
+					try
+					{
+						this.removeHandler(attached.Proxy, this.handler);
+					}
+					catch (Exception ex)
+					{
+						this.owner.TraceEventHandlerFailure(ex);
+					}
+
+					lock (this.syncObject)
+					{
+						if (ReferenceEquals(this.attachedGeneration, attached))
+						{
+							this.attachedGeneration = null;
+						}
+					}
+
+					continue;
+				}
+
 				try
 				{
-					this.removeHandler(generation.Proxy, this.handler);
+					this.addHandler(desired!.Proxy, this.handler);
 				}
 				catch (Exception ex)
 				{
+					bool retry;
+					lock (this.syncObject)
+					{
+						retry = !ReferenceEquals(this.desiredGeneration, desired);
+						if (!retry)
+						{
+							this.desiredGeneration = null;
+							this.reconciliationInProgress = false;
+						}
+					}
+
 					this.owner.TraceEventHandlerFailure(ex);
+					if (!retry)
+					{
+						return;
+					}
+
+					continue;
 				}
 
-				this.attachedGeneration = null;
+				bool removeAddedHandler;
+				lock (this.syncObject)
+				{
+					removeAddedHandler = !ReferenceEquals(this.desiredGeneration, desired)
+						|| this.attachedGeneration is not null;
+					if (!removeAddedHandler)
+					{
+						this.attachedGeneration = desired;
+					}
+				}
+
+				if (removeAddedHandler)
+				{
+					try
+					{
+						this.removeHandler(desired!.Proxy, this.handler);
+					}
+					catch (Exception ex)
+					{
+						this.owner.TraceEventHandlerFailure(ex);
+					}
+				}
 			}
 		}
 	}
@@ -1300,8 +1399,8 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		}
 #pragma warning restore SA1204
 
-		internal Task AttachAsync(Generation generation, bool reportFailure, CancellationToken cancellationToken = default)
-			=> this.AttachCoreAsync(generation, reportFailure, cancellationToken);
+		internal Task AttachAsync(Generation generation, bool reportFailure, CancellationToken cancellationToken = default, long? refreshVersion = null)
+			=> this.AttachCoreAsync(generation, reportFailure, cancellationToken, refreshVersion);
 
 		internal void SetInitial(Generation generation, IDisposable subscription)
 		{
@@ -1334,7 +1433,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			throw new ServiceUnavailableException("The observer subscription could not be attached to the current service proxy.");
 		}
 
-		void IResilientAttachment.Attach(Generation generation)
+		void IResilientAttachment.Attach(Generation generation, long? refreshVersion)
 		{
 			throw new NotSupportedException();
 		}
@@ -1386,29 +1485,26 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		{
 			CancellationTokenSource? cancellationSource;
 			IDisposable? subscription;
-			lock (this.owner.eventTransitionSyncObject)
+			lock (this.syncObject)
 			{
-				lock (this.syncObject)
+				if (this.disposed)
 				{
-					if (this.disposed)
-					{
-						return;
-					}
-
-					this.disposed = true;
-					this.attachmentVersion++;
-					this.attachmentFailure = null;
-					this.invocation = null;
-					this.attachedGeneration = null;
-					this.attachingGeneration = null;
-					cancellationSource = this.attachmentCancellationSource;
-					this.attachmentCancellationSource = null;
-					subscription = this.innerSubscription;
-					this.innerSubscription = null;
+					return;
 				}
 
-				this.owner.RemoveAttachment(this);
+				this.disposed = true;
+				this.attachmentVersion++;
+				this.attachmentFailure = null;
+				this.invocation = null;
+				this.attachedGeneration = null;
+				this.attachingGeneration = null;
+				cancellationSource = this.attachmentCancellationSource;
+				this.attachmentCancellationSource = null;
+				subscription = this.innerSubscription;
+				this.innerSubscription = null;
 			}
+
+			this.owner.RemoveAttachment(this);
 
 			Exception? cleanupException = CancelAndDispose(cancellationSource);
 			try
@@ -1426,7 +1522,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			}
 		}
 
-		private async Task AttachCoreAsync(Generation generation, bool reportFailure, CancellationToken cancellationToken)
+		private async Task AttachCoreAsync(Generation generation, bool reportFailure, CancellationToken cancellationToken, long? refreshVersion)
 		{
 			if (!generation.TryAddReference())
 			{
@@ -1445,25 +1541,37 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				CancellationTokenSource? previousCancellationSource;
 				IDisposable? previousSubscription;
 				long version;
-				lock (this.syncObject)
+				lock (this.owner.syncObject)
 				{
-					if (this.disposed
-						|| ReferenceEquals(this.attachedGeneration, generation)
-						|| ReferenceEquals(this.attachingGeneration, generation))
+					if (refreshVersion is long requiredVersion
+						&& (this.owner.disposed
+							|| requiredVersion != this.owner.refreshVersion
+							|| this.owner.currentGeneration is not null
+							|| generation.IsDisconnected))
 					{
 						return;
 					}
 
-					subscriptionFactory = this.invocation;
-					version = ++this.attachmentVersion;
-					this.attachmentFailure = null;
-					this.attachedGeneration = null;
-					this.attachingGeneration = generation;
-					previousCancellationSource = this.attachmentCancellationSource;
-					attachmentCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.owner.disposalCancellationToken, cancellationToken);
-					this.attachmentCancellationSource = attachmentCancellationSource;
-					previousSubscription = this.innerSubscription;
-					this.innerSubscription = null;
+					lock (this.syncObject)
+					{
+						if (this.disposed
+							|| ReferenceEquals(this.attachedGeneration, generation)
+							|| ReferenceEquals(this.attachingGeneration, generation))
+						{
+							return;
+						}
+
+						subscriptionFactory = this.invocation;
+						version = ++this.attachmentVersion;
+						this.attachmentFailure = null;
+						this.attachedGeneration = null;
+						this.attachingGeneration = generation;
+						previousCancellationSource = this.attachmentCancellationSource;
+						attachmentCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.owner.disposalCancellationToken, cancellationToken);
+						this.attachmentCancellationSource = attachmentCancellationSource;
+						previousSubscription = this.innerSubscription;
+						this.innerSubscription = null;
+					}
 				}
 
 				if (CancelAndDispose(previousCancellationSource) is Exception cancellationException)
@@ -1668,6 +1776,17 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 					this.owner.Invalidate(this);
 				};
 				jsonRpcProxy.JsonRpc.Disconnected += this.disconnectedHandler;
+				jsonRpcProxy.JsonRpc.Completion.ContinueWith(
+					(_, state) =>
+					{
+						var generation = (Generation)state!;
+						Volatile.Write(ref generation.disconnected, 1);
+						generation.owner.Invalidate(generation);
+					},
+					this,
+					CancellationToken.None,
+					TaskContinuationOptions.ExecuteSynchronously,
+					TaskScheduler.Default).Forget();
 			}
 		}
 

@@ -8,6 +8,8 @@ using StreamJsonRpc;
 [GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
 public partial interface IResilientTestService : IAsyncDisposable
 {
+	event EventHandler EarlierChanged;
+
 	event EventHandler Changed;
 
 	Task<int> GetGenerationAsync(CancellationToken cancellationToken);
