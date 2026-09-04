@@ -622,7 +622,10 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 						this.refreshTask = null;
 					}
 
-					superseded = !this.disposed && (version != this.refreshVersion || this.currentGeneration is not null);
+					superseded = !this.disposed
+						&& (version != this.refreshVersion
+							|| this.currentGeneration is not null
+							|| (candidateGeneration is not null && candidateGeneration.IsDisconnected));
 					if (!this.disposed && !superseded && candidateGeneration is not null && !candidateGeneration.IsDisconnected)
 					{
 						this.currentGeneration = candidateGeneration;
@@ -1751,7 +1754,8 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				return;
 			}
 
-			if (Volatile.Read(ref this.preferAsyncDisposal) != 0 && this.Proxy is System.IAsyncDisposable)
+			// A disconnected RPC proxy cannot dispatch its remote asynchronous disposal, so close its local proxy synchronously instead.
+			if (Volatile.Read(ref this.preferAsyncDisposal) != 0 && this.Proxy is System.IAsyncDisposable && !this.IsDisconnected)
 			{
 				this.DisposeProxyAsync(reportFailure: true).Forget();
 				return;

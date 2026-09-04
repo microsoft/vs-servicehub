@@ -6,6 +6,7 @@ using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Microsoft.ServiceHub.Framework;
 using Microsoft.VisualStudio.Threading;
+using Nerdbank.Streams;
 using StreamJsonRpc;
 
 public class ResilientServiceBrokerTests : TestBase
@@ -93,6 +94,60 @@ public class ResilientServiceBrokerTests : TestBase
 		await resilientProxy.DisposeAsync();
 		Assert.True(resilientProxy.IsDisposed);
 		Assert.True(second.IsDisposed);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task RpcProxyDisconnect_AcquiresReplacement(bool disconnectBeforeRegistration)
+	{
+		(Stream firstClientStream, Stream firstServerStream) = FullDuplexStream.CreatePair();
+		(Stream secondClientStream, Stream secondServerStream) = FullDuplexStream.CreatePair();
+		using (firstServerStream)
+		using (secondServerStream)
+		{
+			Descriptor.ConstructRpc(new ResilientTestService(1), firstServerStream.UsePipe(cancellationToken: this.TimeoutToken));
+			Descriptor.ConstructRpc(new ResilientTestService(2), secondServerStream.UsePipe(cancellationToken: this.TimeoutToken));
+			IResilientTestService first = Descriptor.ConstructRpc<IResilientTestService>(firstClientStream.UsePipe(cancellationToken: this.TimeoutToken));
+			IResilientTestService second = Descriptor.ConstructRpc<IResilientTestService>(secondClientStream.UsePipe(cancellationToken: this.TimeoutToken));
+			JsonRpc firstJsonRpc = Assert.IsAssignableFrom<IJsonRpcClientProxy>(first).JsonRpc;
+			int requestCount = 0;
+			var innerBroker = new ResilientTestBroker
+			{
+				GetProxyCallback = async cancellationToken =>
+				{
+					if (Interlocked.Increment(ref requestCount) == 1)
+					{
+						if (disconnectBeforeRegistration)
+						{
+							firstServerStream.Dispose();
+							await firstJsonRpc.Completion.WithCancellation(cancellationToken);
+						}
+
+						return first;
+					}
+
+					return second;
+				},
+			};
+			IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+			using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+				await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+			var proxy = (IResilientTestService)proxyLifetime;
+
+			if (!disconnectBeforeRegistration)
+			{
+				Assert.Equal(1, await proxy.GetGenerationAsync(this.TimeoutToken));
+				firstServerStream.Dispose();
+				await firstJsonRpc.Completion.WithCancellation(this.TimeoutToken);
+			}
+
+			Assert.Equal(2, await proxy.GetGenerationAsync(this.TimeoutToken));
+			Assert.Equal(2, requestCount);
+			Assert.True(proxyLifetime.IsAvailable);
+		}
 	}
 
 	[Fact]
