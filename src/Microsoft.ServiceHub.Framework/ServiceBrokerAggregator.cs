@@ -50,6 +50,17 @@ public static class ServiceBrokerAggregator
 	public static IServiceBroker NonDisposable(IServiceBroker serviceBroker) => new NonDisposingServiceBroker(Requires.NotNull(serviceBroker));
 
 	/// <summary>
+	/// Creates a new <see cref="IServiceBroker"/> that returns stable proxies which reconnect when their underlying service proxy is invalidated.
+	/// </summary>
+	/// <param name="serviceBroker">The inner service broker.</param>
+	/// <returns>The resilient service broker.</returns>
+	/// <remarks>
+	/// The returned broker does not own <paramref name="serviceBroker"/>.
+	/// Resilient proxies must be disposed when they are no longer needed.
+	/// </remarks>
+	public static IServiceBroker Resilient(IServiceBroker serviceBroker) => new ResilientServiceBroker(Requires.NotNull(serviceBroker));
+
+	/// <summary>
 	/// Creates an <see cref="IServiceBroker"/> that will lazily create the inner broker when it is first needed.
 	/// </summary>
 	/// <param name="lazyServiceBroker">The factory for the inner <see cref="IServiceBroker"/>.</param>
@@ -372,4 +383,18 @@ public static class ServiceBrokerAggregator
 	}
 
 	private class NonDisposingServiceBroker(IServiceBroker inner) : DelegatingServiceBroker(inner);
+
+	/// <summary>
+	/// A broker that wraps requested service proxies with a stable resilient proxy.
+	/// </summary>
+	private sealed class ResilientServiceBroker(IServiceBroker inner) : DelegatingServiceBroker(inner)
+	{
+		/// <inheritdoc />
+		public override ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options, CancellationToken cancellationToken)
+			where T : class
+		{
+			Requires.NotNull(serviceDescriptor);
+			return Reflection.ResilientProxyBase.CreateAsync<T>(this.Inner, serviceDescriptor, options, cancellationToken);
+		}
+	}
 }
