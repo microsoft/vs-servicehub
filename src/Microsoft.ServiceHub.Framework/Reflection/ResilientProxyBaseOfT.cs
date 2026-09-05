@@ -116,7 +116,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// <inheritdoc />
 	public override void Dispose()
 	{
-		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out _))
+		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out _, out _))
 		{
 			return;
 		}
@@ -182,7 +182,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// <inheritdoc />
 	public override async ValueTask DisposeAsync()
 	{
-		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out Task[] refreshTasks))
+		if (!this.TryBeginDispose(out Generation? generation, out Generation? pendingGeneration, out IResilientAttachment[] attachments, out TaskCompletionSource<object?> availabilityChanged, out Task lifecyclePublication, out Task[] refreshTasks, out bool disposingFromLifecycleHandler))
 		{
 			return;
 		}
@@ -219,11 +219,13 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		}
 
 #pragma warning disable VSTHRD003 // These tasks represent proxy disposal initiated below.
-		Task[] proxyDisposals = new[] { generation, pendingGeneration }
-			.Where(candidate => candidate is not null)
-			.Select(candidate => candidate!.ProxyDisposal)
-			.Distinct()
-			.ToArray();
+		Task[] proxyDisposals = disposingFromLifecycleHandler
+			? []
+			: new[] { generation, pendingGeneration }
+				.Where(candidate => candidate is not null)
+				.Select(candidate => candidate!.ProxyDisposal)
+				.Distinct()
+				.ToArray();
 #pragma warning restore VSTHRD003
 		Task generationDisposal = Task.CompletedTask;
 		try
@@ -350,14 +352,56 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		Requires.NotNull(invocation);
 		cancellationToken.ThrowIfCancellationRequested();
 
-		TaskCompletionSource<object?> dispatchGate = CreateTaskCompletionSource();
+		Generation? generation = null;
+		TaskCompletionSource<object?>? dispatchGate = null;
+		TaskCompletionSource<object?>? directDispatchCompletion = null;
 		lock (this.syncObject)
 		{
 			Verify.NotDisposed(!this.disposed, this);
-			this.notificationTail = this.InvokeNotificationAsync(dispatchGate.Task, this.notificationTail, invocation, cancellationToken);
+			if (this.notificationTail.IsCompleted
+				&& this.currentGeneration is Generation currentGeneration
+				&& (this.currentGenerationPublished || this.IsActiveLifecyclePublisher())
+				&& currentGeneration.TryAddReference())
+			{
+				generation = currentGeneration;
+				directDispatchCompletion = CreateTaskCompletionSource();
+				this.notificationTail = directDispatchCompletion.Task;
+			}
+			else
+			{
+				dispatchGate = CreateTaskCompletionSource();
+				this.notificationTail = this.InvokeNotificationAsync(dispatchGate.Task, this.notificationTail, invocation, cancellationToken);
+			}
 		}
 
-		dispatchGate.TrySetResult(null);
+		if (generation is not null)
+		{
+			try
+			{
+				invocation(generation.Proxy);
+			}
+			catch (Exception ex)
+			{
+				this.serviceDescriptor.TraceSource?.TraceEvent(TraceEventType.Error, 0, "A resilient proxy notification failed: {0}", ex);
+			}
+			finally
+			{
+				try
+				{
+					generation.Release();
+				}
+				catch (Exception ex)
+				{
+					this.serviceDescriptor.TraceSource?.TraceEvent(TraceEventType.Error, 0, "A resilient proxy notification cleanup failed: {0}", ex);
+				}
+
+				directDispatchCompletion!.TrySetResult(null);
+			}
+		}
+		else
+		{
+			dispatchGate!.TrySetResult(null);
+		}
 	}
 
 	/// <summary>
@@ -1311,7 +1355,8 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		out IResilientAttachment[] attachments,
 		out TaskCompletionSource<object?> availabilityChanged,
 		out Task lifecyclePublication,
-		out Task[] refreshTasks)
+		out Task[] refreshTasks,
+		out bool disposingFromLifecycleHandler)
 	{
 		lock (this.syncObject)
 		{
@@ -1323,6 +1368,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				availabilityChanged = this.availabilityChanged;
 				lifecyclePublication = Task.CompletedTask;
 				refreshTasks = [];
+				disposingFromLifecycleHandler = false;
 				return false;
 			}
 
@@ -1340,7 +1386,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			attachments = [.. this.resilientAttachments];
 			availabilityChanged = this.availabilityChanged;
 			LifecyclePublicationContext? publication = ActiveLifecyclePublication.Value;
-			bool disposingFromLifecycleHandler = publication is { IsActive: true, Owner: { } owner } && ReferenceEquals(owner, this);
+			disposingFromLifecycleHandler = publication is { IsActive: true, Owner: { } owner } && ReferenceEquals(owner, this);
 			lifecyclePublication = disposingFromLifecycleHandler ? Task.CompletedTask : this.lifecyclePublication;
 			Task? publicationRefreshCleanup = null;
 			if (publication is not null)

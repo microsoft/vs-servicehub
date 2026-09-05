@@ -481,6 +481,35 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
+	public async Task BackingServiceChangedLossHandlerCanSynchronouslyWaitForDisposeAsync()
+	{
+		var service = new ResilientTestService(1);
+		var innerBroker = new ResilientTestBroker { CurrentService = service };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+#pragma warning disable ISB001 // Disposed by the lifecycle handler.
+		IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var disposalCompleted = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		proxyLifetime.BackingServiceChanged += (sender, args) =>
+		{
+			if (args.ChangeKind == ResilientServiceProxyChangeKind.Lost)
+			{
+				proxyLifetime.DisposeAsync().AsTask().GetAwaiter().GetResult();
+				disposalCompleted.TrySetResult(null);
+			}
+		};
+
+		innerBroker.CurrentService = null;
+		Task refresh = Task.Run(innerBroker.RaiseAvailabilityChanged, TestContext.Current.CancellationToken);
+
+		await disposalCompleted.Task.WithCancellation(this.TimeoutToken);
+		await refresh.WithCancellation(this.TimeoutToken);
+		Assert.True(proxyLifetime.IsDisposed);
+		Assert.True(service.IsDisposed);
+	}
+
+	[Fact]
 	public async Task ContractEventAddedWhileReplacementIsPublishingIsAttached()
 	{
 		var first = new ResilientTestService(1);
@@ -1130,6 +1159,112 @@ public class ResilientServiceBrokerTests : TestBase
 
 		Assert.Equal(2, await service.Notification.Task.WithCancellation(this.TimeoutToken));
 		Assert.Equal(2, service.NotificationCount);
+	}
+
+	[Fact]
+	public async Task Notification_AvailableServiceDispatchesBeforeSubsequentCall()
+	{
+		var order = new List<string>();
+		var service = new ResilientTestService(1)
+		{
+			NotificationCallback = value => order.Add("notification"),
+			GetGenerationCallback = () =>
+			{
+				order.Add("call");
+				return 1;
+			},
+		};
+		var innerBroker = new ResilientTestBroker { CurrentService = service };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+
+		proxy.Notify(42);
+		Assert.Equal(1, await proxy.GetGenerationAsync(this.TimeoutToken));
+
+		Assert.Equal(["notification", "call"], order);
+	}
+
+	[Fact]
+	public async Task Notification_LifecycleHandlerDispatchesBeforeSubsequentCall()
+	{
+		var order = new List<string>();
+		var first = new ResilientTestService(1);
+		var second = new ResilientTestService(2)
+		{
+			NotificationCallback = value => order.Add("notification"),
+			GetGenerationCallback = () =>
+			{
+				order.Add("call");
+				return 2;
+			},
+		};
+		var innerBroker = new ResilientTestBroker { CurrentService = first };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+		var handlerCompleted = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		proxyLifetime.BackingServiceChanged += (sender, args) =>
+		{
+			proxy.Notify(42);
+			Assert.Equal(2, proxy.GetGenerationAsync(this.TimeoutToken).GetAwaiter().GetResult());
+			handlerCompleted.TrySetResult(null);
+		};
+
+		innerBroker.CurrentService = second;
+		innerBroker.RaiseAvailabilityChanged();
+		await handlerCompleted.Task.WithCancellation(this.TimeoutToken);
+
+		Assert.Equal(["notification", "call"], order);
+	}
+
+	[Fact]
+	public async Task Notification_AvailableServiceSerializesConcurrentNotifications()
+	{
+		var order = new List<int>();
+		var firstNotificationStarted = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var releaseFirstNotification = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var secondNotificationDispatched = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var service = new ResilientTestService(1)
+		{
+			NotificationCallback = value =>
+			{
+				order.Add(value);
+				if (value == 1)
+				{
+					firstNotificationStarted.TrySetResult(null);
+					releaseFirstNotification.Task.GetAwaiter().GetResult();
+				}
+				else
+				{
+					secondNotificationDispatched.TrySetResult(null);
+				}
+			},
+		};
+		var innerBroker = new ResilientTestBroker { CurrentService = service };
+		IServiceBroker broker = ServiceBrokerAggregator.Resilient(innerBroker);
+		using IResilientServiceProxy proxyLifetime = Assert.IsAssignableFrom<IResilientServiceProxy>(
+#pragma warning disable ISB001 // Disposed by the using statement.
+			await broker.GetProxyAsync<IResilientTestService>(Descriptor, this.TimeoutToken));
+#pragma warning restore ISB001
+		var proxy = (IResilientTestService)proxyLifetime;
+
+		Task firstNotification = Task.Run(() => proxy.Notify(1), TestContext.Current.CancellationToken);
+		await firstNotificationStarted.Task.WithCancellation(this.TimeoutToken);
+		Task secondNotification = Task.Run(() => proxy.Notify(2), TestContext.Current.CancellationToken);
+		await secondNotification.WithCancellation(this.TimeoutToken);
+		Assert.Equal([1], order);
+
+		releaseFirstNotification.TrySetResult(null);
+		await firstNotification.WithCancellation(this.TimeoutToken);
+		await secondNotificationDispatched.Task.WithCancellation(this.TimeoutToken);
+		Assert.Equal([1, 2], order);
 	}
 
 	[Fact]
