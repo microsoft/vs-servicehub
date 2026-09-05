@@ -33,6 +33,9 @@ internal class KnownSymbols(Compilation compilation)
 
 	public INamedTypeSymbol IDisposable => this.Required(ref this.idisposable, "System.IDisposable");
 
+	/// <summary>
+	/// Gets the optional <c>System.IAsyncDisposable</c> symbol.
+	/// </summary>
 	public INamedTypeSymbol? IAsyncDisposable => this.Optional(ref this.iasyncDisposable, "System.IAsyncDisposable");
 
 	public INamedTypeSymbol Task => this.Required(ref this.task, "System.Threading.Tasks.Task");
@@ -45,6 +48,9 @@ internal class KnownSymbols(Compilation compilation)
 
 	public INamedTypeSymbol IAsyncEnumerableOfT => this.Required(ref this.iasyncEnumerableOfT, "System.Collections.Generic.IAsyncEnumerable`1");
 
+	/// <summary>
+	/// Gets the <c>System.IObserver&lt;T&gt;</c> symbol.
+	/// </summary>
 	public INamedTypeSymbol IObserverOfT => this.Required(ref this.iobserverOfT, "System.IObserver`1");
 
 	public INamedTypeSymbol CancellationToken => this.Required(ref this.cancellationToken, "System.Threading.CancellationToken");

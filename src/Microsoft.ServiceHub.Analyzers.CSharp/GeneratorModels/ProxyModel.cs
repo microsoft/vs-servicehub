@@ -69,6 +69,9 @@ internal record ProxyModel : FormattableModel
 
 	internal bool HasInvalidInterfaces { get; }
 
+	/// <summary>
+	/// Gets a value indicating whether any interface member prevents resilient proxy generation.
+	/// </summary>
 	internal bool HasInvalidResilientInterfaces { get; }
 
 	internal bool HasOptionalInterfaces { get; init; }

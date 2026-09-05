@@ -305,6 +305,25 @@ public class ServiceBrokerClientTests : TestBase
 	}
 
 	[Fact]
+	public async Task GetProxyAsync_CanceledBeforeDisconnectedFactoryCompletes_DisposesLateProxy()
+	{
+		var serviceBroker = new DelayedPreDisconnectedProxyServiceBroker();
+		this.client = new ServiceBrokerClient(serviceBroker);
+		using var cancellationSource = new CancellationTokenSource();
+		Task<ServiceBrokerClient.Rental<ICalculator>> rentalTask = this.client.GetProxyAsync<ICalculator>(
+			TestServices.Calculator,
+			cancellationSource.Token).AsTask();
+		await serviceBroker.ReadyToReturn.Task.WithCancellation(this.TimeoutToken);
+
+		cancellationSource.Cancel();
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rentalTask);
+		serviceBroker.AllowReturn.TrySetResult(null);
+
+		await serviceBroker.Proxy!.Disposed.Task.WithCancellation(this.TimeoutToken);
+		Assert.Equal(1, serviceBroker.Proxy.DisposeCount);
+	}
+
+	[Fact]
 	public async Task Invalidate_WhileProxiesUsed()
 	{
 		Calculator underlyingService;
@@ -413,6 +432,80 @@ public class ServiceBrokerClientTests : TestBase
 			server.Dispose();
 			await ((IJsonRpcClientProxy)proxy).JsonRpc.Completion.WithCancellation(cancellationToken);
 			return proxy;
+		}
+	}
+
+	private sealed class DelayedPreDisconnectedProxyServiceBroker : IServiceBroker
+	{
+		public event EventHandler<BrokeredServicesChangedEventArgs>? AvailabilityChanged
+		{
+			add { }
+			remove { }
+		}
+
+		/// <summary>
+		/// Gets a signal that the disconnected proxy is ready to return.
+		/// </summary>
+		internal TaskCompletionSource<object?> ReadyToReturn { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		/// <summary>
+		/// Gets a signal that permits the disconnected proxy factory to complete.
+		/// </summary>
+		internal TaskCompletionSource<object?> AllowReturn { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		/// <summary>
+		/// Gets the proxy created by the delayed factory.
+		/// </summary>
+		internal DisposableDisconnectedCalculator? Proxy { get; private set; }
+
+		public ValueTask<IDuplexPipe?> GetPipeAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			=> default;
+
+		public async ValueTask<T?> GetProxyAsync<T>(ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options = default, CancellationToken cancellationToken = default)
+			where T : class
+		{
+			(Stream client, Stream server) = FullDuplexStream.CreatePair();
+			this.Proxy = new DisposableDisconnectedCalculator(client);
+			server.Dispose();
+			await this.Proxy.JsonRpc.Completion;
+			this.ReadyToReturn.TrySetResult(null);
+			await this.AllowReturn.Task;
+			return (T)(object)this.Proxy;
+		}
+	}
+
+	private sealed class DisposableDisconnectedCalculator : ICalculator, IJsonRpcClientProxy, IDisposable
+	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="DisposableDisconnectedCalculator"/> class.
+		/// </summary>
+		/// <param name="stream">The RPC stream.</param>
+		internal DisposableDisconnectedCalculator(Stream stream)
+		{
+			this.JsonRpc = JsonRpc.Attach(stream);
+		}
+
+		public JsonRpc JsonRpc { get; }
+
+		/// <summary>
+		/// Gets a signal that completes when the proxy is disposed.
+		/// </summary>
+		internal TaskCompletionSource<object?> Disposed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		/// <summary>
+		/// Gets the number of disposal calls.
+		/// </summary>
+		internal int DisposeCount { get; private set; }
+
+		public Task<int> AddAsync(int a, int b) => Task.FromResult(a + b);
+
+		public bool Is(Type type) => type.IsInstanceOfType(this);
+
+		public void Dispose()
+		{
+			this.DisposeCount++;
+			this.JsonRpc.Dispose();
+			this.Disposed.TrySetResult(null);
 		}
 	}
 }

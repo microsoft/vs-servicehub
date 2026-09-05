@@ -5,6 +5,9 @@ namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
 internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters, bool IsAsyncDispose, bool IsObserverSubscription) : FormattableModel
 {
+	/// <summary>
+	/// Gets a value indicating whether this method has a shape supported by resilient proxy generation.
+	/// </summary>
 	internal bool SupportsResilientProxy => this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask or RpcSpecialType.IAsyncEnumerable or RpcSpecialType.Void
 		|| this.IsObserverSubscription;
 

@@ -240,15 +240,6 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				{
 					cleanupException ??= ex;
 				}
-
-				try
-				{
-					await Task.WhenAll(proxyDisposals).ConfigureAwait(false);
-				}
-				catch (Exception ex)
-				{
-					cleanupException ??= ex;
-				}
 			}
 
 			if (pendingGeneration is not null)
@@ -261,6 +252,15 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				{
 					cleanupException ??= ex;
 				}
+			}
+
+			try
+			{
+				await Task.WhenAll(proxyDisposals).ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				cleanupException ??= ex;
 			}
 
 			Exception? attachmentException = this.DisposeAttachments(attachments);
