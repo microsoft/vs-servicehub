@@ -2,6 +2,7 @@ packages:
   - .
 
 allowBuilds:
+  '@parcel/watcher': true
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - baseline-browser-mapping
