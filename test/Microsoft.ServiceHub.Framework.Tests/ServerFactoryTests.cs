@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,10 +11,21 @@ using Microsoft.VisualStudio.Threading;
 
 public class ServerFactoryTests : TestBase
 {
+	private const string WindowsHasNoSocketPathLimit = "Windows named pipes are not backed by unix domain sockets, so no path length limit applies.";
+
 	public ServerFactoryTests(ITestOutputHelper logger)
 		: base(logger)
 	{
 	}
+
+	/// <summary>
+	/// Gets the maximum length (in UTF-8 bytes) that this operating system allows for the path to a unix domain socket.
+	/// </summary>
+	/// <remarks>
+	/// Linux allows 107 bytes and macOS allows 103, in both cases one less than the size of the
+	/// <c>sockaddr_un.sun_path</c> buffer, which must also hold a null terminator.
+	/// </remarks>
+	private static int MaxSocketPathLength => RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? 103 : 107;
 
 	private static PipeOptions CurrentUserOnlyPipeOption
 	{
@@ -322,6 +334,97 @@ public class ServerFactoryTests : TestBase
 		}
 
 		await server.Completion.WithCancellation(this.TimeoutToken);
+	}
+
+	[Fact]
+	public void Create_ThrowsWhenSocketPathExceedsPlatformLimit()
+	{
+		Assert.SkipWhen(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), WindowsHasNoSocketPathLimit);
+
+		int limit = MaxSocketPathLength;
+		string pipeName = CreateSocketPathWithByteLength(limit + 1);
+
+		PathTooLongException ex = Assert.Throws<PathTooLongException>(
+			() => ServerFactory.Create(DisposeStreamAsync, new ServerFactory.ServerOptions { Name = pipeName }));
+		this.Logger.WriteLine(ex.Message);
+
+		Assert.Contains(pipeName, ex.Message);
+		Assert.Contains((limit + 1).ToString(CultureInfo.InvariantCulture), ex.Message);
+		Assert.Contains(limit.ToString(CultureInfo.InvariantCulture), ex.Message);
+	}
+
+	[Fact]
+	public async Task Create_AllowsSocketPathAtPlatformLimit()
+	{
+		Assert.SkipWhen(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), WindowsHasNoSocketPathLimit);
+
+		string pipeName = CreateSocketPathWithByteLength(MaxSocketPathLength);
+		this.Logger.WriteLine($"Creating a server at a path of {MaxSocketPathLength} bytes: {pipeName}");
+
+		IIpcServer server = ServerFactory.Create(DisposeStreamAsync, new ServerFactory.ServerOptions { Name = pipeName });
+		await server.DisposeAsync();
+	}
+
+	[Fact]
+	public void Create_CountsSocketPathLengthInBytesRatherThanCharacters()
+	{
+		Assert.SkipWhen(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), WindowsHasNoSocketPathLimit);
+
+		// 'é' occupies two bytes when encoded as UTF-8, so this path is within the limit when measured
+		// in characters but one byte beyond it when measured the way the operating system measures it.
+		string pipeName = CreateSocketPathWithByteLength(MaxSocketPathLength - 1) + "é";
+		Assert.True(pipeName.Length <= MaxSocketPathLength, "The test path should be within the limit when measured in characters.");
+
+		PathTooLongException ex = Assert.Throws<PathTooLongException>(
+			() => ServerFactory.Create(DisposeStreamAsync, new ServerFactory.ServerOptions { Name = pipeName }));
+		this.Logger.WriteLine(ex.Message);
+	}
+
+	[Fact]
+	public async Task Create_AllowsLongPipeNamesOnWindows()
+	{
+		Assert.SkipUnless(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "This test verifies that the unix domain socket path limit is not applied to Windows named pipes.");
+
+		// Comfortably longer than any unix domain socket path limit, but still a valid Windows pipe name.
+		string pipeName = "servicehub-" + new string('a', 200);
+
+		IIpcServer server = ServerFactory.Create(DisposeStreamAsync, new ServerFactory.ServerOptions { Name = pipeName });
+		await server.DisposeAsync();
+	}
+
+	[Fact]
+	public async Task ConnectAsync_ThrowsWhenSocketPathExceedsPlatformLimit()
+	{
+		Assert.SkipWhen(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), WindowsHasNoSocketPathLimit);
+
+		string pipeName = CreateSocketPathWithByteLength(MaxSocketPathLength + 1);
+
+		PathTooLongException ex = await Assert.ThrowsAsync<PathTooLongException>(
+			() => ServerFactory.ConnectAsync(pipeName, this.TimeoutToken));
+		this.Logger.WriteLine(ex.Message);
+
+		Assert.Contains(pipeName, ex.Message);
+	}
+
+	private static Task DisposeStreamAsync(Stream stream)
+	{
+		stream.Dispose();
+		return Task.CompletedTask;
+	}
+
+	/// <summary>
+	/// Creates an absolute unix domain socket path of an exact length in UTF-8 bytes.
+	/// </summary>
+	/// <param name="byteLength">The required length of the path, in UTF-8 bytes.</param>
+	/// <returns>A rooted path made up entirely of ASCII characters.</returns>
+	/// <remarks>
+	/// The path is rooted at <c>/tmp</c> rather than <see cref="Path.GetTempPath()"/> so that the test
+	/// controls the total length regardless of how long the temporary directory happens to be.
+	/// </remarks>
+	private static string CreateSocketPathWithByteLength(int byteLength)
+	{
+		const string Prefix = "/tmp/servicehub-";
+		return Prefix + new string('a', byteLength - Prefix.Length);
 	}
 
 	private static PipeOptions GetPipeOptions(Stream pipeStream)
