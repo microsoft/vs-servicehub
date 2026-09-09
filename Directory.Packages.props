@@ -32,10 +32,10 @@
     <PackageVersion Include="Microsoft.VisualStudioEng.MicroBuild.Core" Version="1.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="$(VSThreadingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(VSThreadingVersion)" />
-    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.321" />
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.333" />
     <PackageVersion Include="Nerdbank.Streams" Version="2.13.16" />
     <PackageVersion Include="NuGet.Protocol" Version="7.9.0" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.26.66" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.97" />
     <PackageVersion Include="System.Collections.Immutable" Version="10.0.10" />
     <PackageVersion Include="System.CommandLine" Version="2.0.2" />
     <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
@@ -54,7 +54,7 @@
     <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.26424.7" />
+    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.26453.10" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
     <GlobalPackageReference Include="CSharpIsNullAnalyzer" Version="0.2.19" />

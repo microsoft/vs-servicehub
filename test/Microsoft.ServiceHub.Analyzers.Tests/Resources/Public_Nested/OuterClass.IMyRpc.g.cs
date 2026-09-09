@@ -7,6 +7,7 @@
 partial class OuterClass
 {
 	[global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.OuterClass_IMyRpc_Proxy))]
+	[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.OuterClass_IMyRpc_Proxy_ResilientProxy))]
 	partial interface IMyRpc
 	{
 	}
@@ -39,6 +40,34 @@ namespace Microsoft.ServiceHub.Framework.Generated
 			catch (global::System.Exception ex)
 			{
 				throw this.ExceptionHelper(ex);
+			}
+		}
+	}
+	
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.ServiceHub.Analyzers.CSharp", "x.x.x.x")]
+	internal class OuterClass_IMyRpc_Proxy_ResilientProxy : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::OuterClass.IMyRpc>
+		, global::OuterClass.IMyRpc
+	{
+		
+		public OuterClass_IMyRpc_Proxy_ResilientProxy(
+			global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
+			global::Microsoft.ServiceHub.Framework.ServiceRpcDescriptor serviceDescriptor,
+			global::Microsoft.ServiceHub.Framework.ServiceActivationOptions options)
+			: base(serviceBroker, serviceDescriptor, options)
+		{
+		}
+		
+		global::System.Threading.Tasks.Task global::OuterClass.IMyRpc.JustCancellationAsync(global::System.Threading.CancellationToken cancellationToken)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task InvokeAsync()
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
+				{
+					await ((global::OuterClass.IMyRpc)rental.Proxy).JustCancellationAsync(cancellationToken).ConfigureAwait(false);
+				}
 			}
 		}
 	}

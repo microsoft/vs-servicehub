@@ -84,4 +84,32 @@ public class ProxyGeneratorTests
 			}
 			""");
 	}
+
+	[Fact]
+	public async Task UnsupportedResilientMembers_StillGenerateLocalProxy()
+	{
+		await VerifyCS.RunDefaultAsync("""
+			public delegate void CustomEventHandler(int value);
+
+			[JsonRpcContract]
+			public partial interface IMyRpc
+			{
+				event CustomEventHandler Changed;
+			}
+			""");
+	}
+
+	[Fact]
+	public async Task ObserverSubscriptions()
+	{
+		await VerifyCS.RunDefaultAsync("""
+			[JsonRpcContract]
+			public partial interface IMyRpc
+			{
+				Task<IDisposable> ObserveAsync(CancellationToken filterToken, IObserver<int> observer, object __resilientTarget, object __resilientCancellationToken, CancellationToken cancellationToken);
+				ValueTask<IDisposable> ObserveValueAsync(IObserver<string> observer, CancellationToken cancellationToken);
+				Task<IDisposable> ObserveWithoutCancellationAsync(IObserver<double> observer);
+			}
+			""");
+	}
 }

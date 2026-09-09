@@ -3,8 +3,14 @@
 
 namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
-internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters) : FormattableModel
+internal record MethodModel(string DeclaringInterfaceName, string Name, string ReturnType, RpcSpecialType ReturnSpecialType, string? ReturnTypeArg, ImmutableEquatableArray<ParameterModel> Parameters, bool IsAsyncDispose, bool IsObserverSubscription) : FormattableModel
 {
+	/// <summary>
+	/// Gets a value indicating whether this method has a shape supported by resilient proxy generation.
+	/// </summary>
+	internal bool SupportsResilientProxy => this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask or RpcSpecialType.IAsyncEnumerable or RpcSpecialType.Void
+		|| this.IsObserverSubscription;
+
 	internal bool TakesCancellationToken => this.Parameters.Length > 0 && this.Parameters[^1].SpecialType == RpcSpecialType.CancellationToken;
 
 	internal ParameterModel? CancellationToken => this.TakesCancellationToken ? this.Parameters[^1] : null;
@@ -90,14 +96,113 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 			""");
 	}
 
+	internal override void WriteResilientMethods(SourceWriter writer)
+	{
+		if (this.IsAsyncDispose)
+		{
+			return;
+		}
+
+		string cancellationToken = this.CancellationToken?.Name ?? "default";
+		string arguments = string.Join(", ", this.Parameters.Select(p => p.Name));
+		writer.WriteLine($$"""
+
+			{{this.ReturnType}} {{this.DeclaringInterfaceName}}.{{this.Name}}({{string.Join(", ", this.Parameters.Select(p => $"{p.Type} {p.Name}"))}})
+			{
+			""");
+		writer.Indentation++;
+
+		if (this.CancellationTokenExpression is not null
+			&& this.ReturnSpecialType is not RpcSpecialType.Task and not RpcSpecialType.ValueTask)
+		{
+			writer.WriteLine($"{this.CancellationTokenExpression}.ThrowIfCancellationRequested();");
+		}
+
+		switch (this.ReturnSpecialType)
+		{
+			case RpcSpecialType.Task:
+			case RpcSpecialType.ValueTask:
+				if (this.IsObserverSubscription)
+				{
+					string helperName = this.ReturnSpecialType == RpcSpecialType.Task ? "InvokeTaskSubscriptionAsync" : "InvokeValueTaskSubscriptionAsync";
+					string targetName = this.GetUniqueParameterName("__resilientTarget");
+					string reattachCancellationTokenName = this.GetUniqueParameterName("__resilientCancellationToken");
+					string reattachArguments = string.Join(", ", this.Parameters.Select(
+						(parameter, index) => this.TakesCancellationToken && index == this.Parameters.Length - 1 ? reattachCancellationTokenName : parameter.Name));
+					writer.WriteLine($"return this.{helperName}({targetName} => (({this.DeclaringInterfaceName}){targetName}).{this.Name}({arguments}), ({targetName}, {reattachCancellationTokenName}) => (({this.DeclaringInterfaceName}){targetName}).{this.Name}({reattachArguments}), {cancellationToken});");
+					break;
+				}
+
+				writer.WriteLine($$"""
+					return InvokeAsync();
+
+					async {{this.ReturnType}} InvokeAsync()
+					{
+					""");
+				writer.Indentation++;
+				if (this.CancellationTokenExpression is not null)
+				{
+					writer.WriteLine($"{this.CancellationTokenExpression}.ThrowIfCancellationRequested();");
+				}
+
+				writer.WriteLine($"using (ProxyRental rental = await this.RentProxyAsync({cancellationToken}).ConfigureAwait(false))");
+				writer.WriteLine("{");
+				writer.Indentation++;
+				string returnKeyword = this.ReturnTypeArg is null ? string.Empty : "return ";
+				writer.WriteLine($"{returnKeyword}await (({this.DeclaringInterfaceName})rental.Proxy).{this.Name}({arguments}).ConfigureAwait(false);");
+				writer.Indentation--;
+				writer.WriteLine("}");
+				writer.Indentation--;
+				writer.WriteLine("""
+					}
+					""");
+				break;
+			case RpcSpecialType.IAsyncEnumerable:
+				writer.WriteLine($"return this.InvokeAsyncEnumerableAsync(target => (({this.DeclaringInterfaceName})target).{this.Name}({arguments}), {cancellationToken});");
+				break;
+			case RpcSpecialType.Void:
+				writer.WriteLine($"this.InvokeNotification(target => (({this.DeclaringInterfaceName})target).{this.Name}({arguments}), {cancellationToken});");
+				break;
+			default:
+				writer.WriteLine("""throw new global::System.NotSupportedException("Resilient proxies require asynchronous RPC contract methods.");""");
+				break;
+		}
+
+		writer.Indentation--;
+		writer.WriteLine("}");
+	}
+
 	internal static MethodModel Create(IMethodSymbol method, KnownSymbols symbols)
 	{
+		var parameters = new ImmutableEquatableArray<ParameterModel>([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]);
+		RpcSpecialType returnSpecialType = ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols);
+		string? returnTypeArg = method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] }
+			? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
+			: null;
+		bool isObserverSubscription = returnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask
+			&& method.ReturnType is INamedTypeSymbol { TypeArguments: [ITypeSymbol subscriptionType] }
+			&& SymbolEqualityComparer.Default.Equals(subscriptionType, symbols.IDisposable)
+			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver)
+			&& parameters is [.., { SpecialType: RpcSpecialType.CancellationToken }];
 		return new MethodModel(
 			method.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
 			method.Name,
 			method.ReturnType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
-			ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols),
-			method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] } ? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat) : null,
-			new([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]));
+			returnSpecialType,
+			returnTypeArg,
+			parameters,
+			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable),
+			isObserverSubscription);
+	}
+
+	private string GetUniqueParameterName(string baseName)
+	{
+		string name = baseName;
+		while (this.Parameters.Any(parameter => parameter.Name == name))
+		{
+			name += "_";
+		}
+
+		return name;
 	}
 }
