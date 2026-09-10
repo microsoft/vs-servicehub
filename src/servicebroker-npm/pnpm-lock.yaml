@@ -122,8 +122,8 @@ importers:
         specifier: 2.13.6
         version: 2.13.6
       nerdbank-gitversioning:
-        specifier: 3.10.91
-        version: 3.10.91
+        specifier: 3.10.94
+        version: 3.10.94
       nyc:
         specifier: 18.0.0
         version: 18.0.0(supports-color@8.1.1)
@@ -1665,8 +1665,8 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha1-tKr7k+OustgXTKU88WOrfXMIMF8=}
 
-  nerdbank-gitversioning@3.10.91:
-    resolution: {integrity: sha1-wOFKXyS8qD0Rblp13ilfy57glLM=}
+  nerdbank-gitversioning@3.10.94:
+    resolution: {integrity: sha1-gngTHc4NLCqFwo/uBhXzdixSn2U=}
     hasBin: true
 
   nerdbank-streams@2.13.31:
@@ -3977,7 +3977,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  nerdbank-gitversioning@3.10.91: {}
+  nerdbank-gitversioning@3.10.94: {}
 
   nerdbank-streams@2.13.31:
     dependencies:
