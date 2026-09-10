@@ -665,8 +665,8 @@ public class ResilientServiceBrokerTests : TestBase
 
 		innerBroker.GetProxyCallback = cancellationToken => default;
 		innerBroker.RaiseAvailabilityChanged();
-		await Assert.ThrowsAsync<ServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
-		await Assert.ThrowsAsync<ServiceUnavailableException>(() => proxy.ObserveAsync(new TestObserver<int>(), this.TimeoutToken));
+		await Assert.ThrowsAsync<BrokeredServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
+		await Assert.ThrowsAsync<BrokeredServiceUnavailableException>(() => proxy.ObserveAsync(new TestObserver<int>(), this.TimeoutToken));
 	}
 
 	[Fact]
@@ -938,7 +938,7 @@ public class ResilientServiceBrokerTests : TestBase
 		innerBroker.CurrentService = null;
 		innerBroker.RaiseAvailabilityChanged();
 		proxy.Notify(42);
-		await Assert.ThrowsAsync<ServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
+		await Assert.ThrowsAsync<BrokeredServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
 
 		var second = new ResilientTestService(2);
 		innerBroker.CurrentService = second;
@@ -960,7 +960,7 @@ public class ResilientServiceBrokerTests : TestBase
 
 		innerBroker.CurrentService = null;
 		innerBroker.RaiseAvailabilityChanged();
-		await Assert.ThrowsAsync<ServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
+		await Assert.ThrowsAsync<BrokeredServiceUnavailableException>(() => proxy.GetGenerationAsync(this.TimeoutToken));
 
 		innerBroker.CurrentService = new ResilientTestService(2);
 		innerBroker.RaiseAvailabilityChanged();
@@ -1142,7 +1142,7 @@ public class ResilientServiceBrokerTests : TestBase
 			{
 				if (value == 1)
 				{
-					throw new ServiceUnavailableException("The notification failed.");
+					throw new BrokeredServiceUnavailableException("The notification failed.");
 				}
 			},
 		};

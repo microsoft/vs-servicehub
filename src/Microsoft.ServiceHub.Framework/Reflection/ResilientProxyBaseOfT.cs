@@ -300,7 +300,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// </summary>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>A lease that keeps the inner proxy alive for the invocation.</returns>
-	/// <exception cref="ServiceUnavailableException">Thrown when the service is temporarily unavailable.</exception>
+	/// <exception cref="BrokeredServiceUnavailableException">Thrown when the service is temporarily unavailable.</exception>
 	protected async ValueTask<ProxyRental> RentProxyAsync(CancellationToken cancellationToken)
 	{
 		while (true)
@@ -318,7 +318,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 			if (await this.GetOrStartRefreshTaskAsync().WithCancellation(cancellationToken).ConfigureAwait(false) is null)
 			{
-				throw new ServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
+				throw new BrokeredServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
 			}
 		}
 	}
@@ -1065,7 +1065,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			if (needsRefreshReconciliation
 				&& await this.GetOrStartRefreshTaskAsync().WithCancellation(cancellationToken).ConfigureAwait(false) is null)
 			{
-				throw new ServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
+				throw new BrokeredServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
 			}
 
 			Generation? currentGeneration;
@@ -1077,7 +1077,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 
 			if (currentGeneration is null)
 			{
-				throw new ServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
+				throw new BrokeredServiceUnavailableException($"Brokered service '{this.serviceDescriptor.Moniker}' is temporarily unavailable.");
 			}
 
 			subscription.ThrowIfNotAttached(currentGeneration);
@@ -1107,7 +1107,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				{
 					rental = await this.RentProxyAsync(linkedCancellationSource.Token).ConfigureAwait(false);
 				}
-				catch (ServiceUnavailableException)
+				catch (BrokeredServiceUnavailableException)
 				{
 					Task availabilityTask;
 					lock (this.syncObject)
@@ -1889,7 +1889,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 				failure.Throw();
 			}
 
-			throw new ServiceUnavailableException("The observer subscription could not be attached to the current service proxy.");
+			throw new BrokeredServiceUnavailableException("The observer subscription could not be attached to the current service proxy.");
 		}
 
 		void IResilientAttachment.Attach(Generation generation, long? refreshVersion)
@@ -1987,7 +1987,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 			{
 				if (!reportFailure)
 				{
-					throw new ServiceUnavailableException("The service proxy was invalidated before the subscription could be created.");
+					throw new BrokeredServiceUnavailableException("The service proxy was invalidated before the subscription could be created.");
 				}
 
 				return;
