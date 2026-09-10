@@ -30,7 +30,7 @@
 		"cancellationtoken": "^2.2.0",
 		"caught": "^0.1.3",
 		"immutable": "^5.0.0",
-		"msgpack-lite": "^0.1.26",
+		"msgpack-lite": "^0.2.0",
 		"nerdbank-streams": "^2.13.16",
 		"strict-event-emitter-types": "^2.0.0",
 		"string-hash": "^1.1.3",
