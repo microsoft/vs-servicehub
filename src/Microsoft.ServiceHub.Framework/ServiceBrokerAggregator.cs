@@ -57,8 +57,13 @@ public static class ServiceBrokerAggregator
 	/// <remarks>
 	/// The returned broker does not own <paramref name="serviceBroker"/>.
 	/// Resilient proxies must be disposed when they are no longer needed.
+	/// When <paramref name="serviceBroker"/> is already a resilient broker, it is returned unchanged.
 	/// </remarks>
-	public static IServiceBroker Resilient(IServiceBroker serviceBroker) => new ResilientServiceBroker(Requires.NotNull(serviceBroker));
+	public static IServiceBroker Resilient(IServiceBroker serviceBroker)
+	{
+		Requires.NotNull(serviceBroker);
+		return serviceBroker is ResilientServiceBroker ? serviceBroker : new ResilientServiceBroker(serviceBroker);
+	}
 
 	/// <summary>
 	/// Creates an <see cref="IServiceBroker"/> that will lazily create the inner broker when it is first needed.
