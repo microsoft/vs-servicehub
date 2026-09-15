@@ -202,7 +202,7 @@ THE SOFTWARE.
 
 ---------------------------------------------------------
 
-event-lite 0.1.3 - MIT
+event-lite 0.1.3, 1.0.0 - MIT
 https://github.com/kawanet/event-lite
 
 copyright Yusuke Kawasaki
@@ -268,7 +268,7 @@ SOFTWARE.
 
 ---------------------------------------------------------
 
-int64-buffer 0.1.10 - MIT
+int64-buffer 0.1.10, 1.1.1 - MIT
 https://github.com/kawanet/int64-buffer
 
 Copyright (c) 2015-2016 Yusuke Kawasaki
@@ -302,7 +302,7 @@ SOFTWARE.
 
 ---------------------------------------------------------
 
-isarray 1.0.0 - MIT
+isarray 1.0.0, 2.0.5 - MIT
 https://github.com/juliangruber/isarray
 
 Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
@@ -321,7 +321,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---------------------------------------------------------
 
-msgpack-lite 0.1.26 - MIT
+msgpack-lite 0.1.26, 0.2.1 - MIT
 https://github.com/kawanet/msgpack-lite
 
 Copyright (c) 2015 Yusuke Kawasaki
