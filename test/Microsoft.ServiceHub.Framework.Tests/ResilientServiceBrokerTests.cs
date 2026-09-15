@@ -28,6 +28,14 @@ public class ResilientServiceBrokerTests : TestBase
 	}
 
 	[Fact]
+	public void Resilient_ResilientBrokerReturnsSameInstance()
+	{
+		IServiceBroker resilientBroker = ServiceBrokerAggregator.Resilient(new ResilientTestBroker());
+
+		Assert.Same(resilientBroker, ServiceBrokerAggregator.Resilient(resilientBroker));
+	}
+
+	[Fact]
 	public async Task GetProxyAsync_InitiallyUnavailableReturnsNull()
 	{
 		var innerBroker = new ResilientTestBroker();
