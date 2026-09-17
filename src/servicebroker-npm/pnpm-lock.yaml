@@ -30,7 +30,7 @@ overrides:
   '@sinclair/typebox': 0.34.52
   '@types/estree': 1.0.9
   '@ungap/structured-clone': 1.4.0
-  '@humanfs/core': 0.19.2
+  '@humanfs/core': 0.20.0
   '@humanfs/node': 0.16.8
   acorn: 8.18.0
   ajv: 8.20.0
@@ -356,9 +356,9 @@ packages:
     resolution: {integrity: sha1-Swli8/LHzovJiz7P40UlwJ0styk=}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
 
-  '@humanfs/core@0.19.2':
-    resolution: {integrity: sha1-qCcsoDsqz0kmcCIrIyC2xCG/3mA=}
-    engines: {node: '>=18.18.0'}
+  '@humanfs/core@0.20.0':
+    resolution: {integrity: sha512-Orgc4b+pAZ2xUypBhpKoV8n8BFEXYDVPACi8FAthjWuL4J5mg00I5CmhbQu93Zrmchbu6Icy7nST3rZjqh5eUA==}
+    engines: {node: '>=24.0.0'}
 
   '@humanfs/node@0.16.8':
     resolution: {integrity: sha1-j4AMzME/T4zTEW4tnAqUk52j4+0=}
@@ -367,6 +367,10 @@ packages:
   '@humanfs/types@0.15.0':
     resolution: {integrity: sha1-8qCfYgEjkLK/8/xvskjd7IwJoJA=}
     engines: {node: '>=18.18.0'}
+
+  '@humanfs/types@0.16.0':
+    resolution: {integrity: sha512-tqHbCVTrg67GX3oOFPwSv+lpjyEX7B6kCr1he9EB8w9fy5LSs5SFBpqPUSYoZGtbg6O/+NVVJVlVKwEIP4YbWw==}
+    engines: {node: '>=24.0.0'}
 
   '@humanwhocodes/module-importer@1.0.1':
     resolution: {integrity: sha1-r1smkaIrRL6EewyoFkHF+2rQFyw=}
@@ -2412,17 +2416,19 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@humanfs/core@0.19.2':
+  '@humanfs/core@0.20.0':
     dependencies:
-      '@humanfs/types': 0.15.0
+      '@humanfs/types': 0.16.0
 
   '@humanfs/node@0.16.8':
     dependencies:
-      '@humanfs/core': 0.19.2
+      '@humanfs/core': 0.20.0
       '@humanfs/types': 0.15.0
       '@humanwhocodes/retry': 0.4.3
 
   '@humanfs/types@0.15.0': {}
+
+  '@humanfs/types@0.16.0': {}
 
   '@humanwhocodes/module-importer@1.0.1': {}
 
