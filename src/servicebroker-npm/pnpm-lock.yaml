@@ -73,8 +73,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.1
       nerdbank-streams:
-        specifier: ^2.13.16
-        version: 2.13.31
+        specifier: ^2.14.354
+        version: 2.14.354
       strict-event-emitter-types:
         specifier: ^2.0.0
         version: 2.0.0
@@ -694,6 +694,18 @@ packages:
     os: [linux]
     libc: [musl]
 
+  '@unrs/resolver-binding-linux-loong64-gnu@1.12.2':
+    resolution: {integrity: sha1-8B0i4JG64TAW9GNmmNncu9p3XD4=}
+    cpu: [loong64]
+    os: [linux]
+    libc: [glibc]
+
+  '@unrs/resolver-binding-linux-loong64-musl@1.12.2':
+    resolution: {integrity: sha1-fSPvy5it8Ha/vOzCe0ISw2qmaX0=}
+    cpu: [loong64]
+    os: [linux]
+    libc: [musl]
+
   '@unrs/resolver-binding-linux-ppc64-gnu@1.12.2':
     resolution: {integrity: sha1-HzXx6qMi8zzy2W2sJ/BiapP/4vY=}
     cpu: [ppc64]
@@ -729,6 +741,11 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [musl]
+
+  '@unrs/resolver-binding-openharmony-arm64@1.12.2':
+    resolution: {integrity: sha1-zgfE9ee0L3v85F52KbhlkGOu/v4=}
+    cpu: [arm64]
+    os: [openharmony]
 
   '@unrs/resolver-binding-wasm32-wasi@1.12.2':
     resolution: {integrity: sha1-glFPBQbPr2Xxf+FglfktRQ5IcYM=}
@@ -1143,9 +1160,6 @@ packages:
     resolution: {integrity: sha1-dNLrTeC42hKTcRkQ1Qd1ubcQ72Q=}
     engines: {node: '>=0.10.0'}
 
-  event-lite@0.1.3:
-    resolution: {integrity: sha1-Pf4BFE6AisRkSPDBm0q2jkA6kB0=}
-
   event-lite@1.0.0:
     resolution: {integrity: sha1-dOjfKg1if5qS/kZFaQLH4Ap8Ih0=}
 
@@ -1329,9 +1343,6 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha1-D6LGT5MpF8NDOg3tVTY6rjdBa3w=}
 
-  int64-buffer@0.1.10:
-    resolution: {integrity: sha1-J3siiofZWtd30HwTgyAiQGpHNCM=}
-
   int64-buffer@1.1.1:
     resolution: {integrity: sha1-2UMX/1uHhK1rNBT824SQcymyjHM=}
 
@@ -1367,9 +1378,6 @@ packages:
 
   isarray@0.0.1:
     resolution: {integrity: sha1-ihis/Kmo9Bd+Cav8YDiTmwXR7t8=}
-
-  isarray@1.0.0:
-    resolution: {integrity: sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=}
 
   isarray@2.0.5:
     resolution: {integrity: sha1-ivHkwSISRMxiRZ+vOJQNTmRKVyM=}
@@ -1659,10 +1667,6 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha1-V0yBOM4dK1hh8LRFedut1gxmFbI=}
 
-  msgpack-lite@0.1.26:
-    resolution: {integrity: sha1-3TxQsm8FnyXn7e42REGDWOKprYk=}
-    hasBin: true
-
   msgpack-lite@0.2.1:
     resolution: {integrity: sha1-pZ7rEQ4BnTtroHhsgYzWsWg9O6g=}
     hasBin: true
@@ -1682,8 +1686,8 @@ packages:
     resolution: {integrity: sha1-wOFKXyS8qD0Rblp13ilfy57glLM=}
     hasBin: true
 
-  nerdbank-streams@2.13.31:
-    resolution: {integrity: sha1-b4tL8OAU5e+Kr1ftHsUK8yBCH04=}
+  nerdbank-streams@2.14.354:
+    resolution: {integrity: sha1-V7rNvAOCoBrrx2/M6SFM6RYrSIk=}
 
   node-int64@0.4.0:
     resolution: {integrity: sha1-h6kGXNs1XTGC2PlM4RGIuCXGijs=}
@@ -2881,6 +2885,12 @@ snapshots:
   '@unrs/resolver-binding-linux-arm64-musl@1.12.2':
     optional: true
 
+  '@unrs/resolver-binding-linux-loong64-gnu@1.12.2':
+    optional: true
+
+  '@unrs/resolver-binding-linux-loong64-musl@1.12.2':
+    optional: true
+
   '@unrs/resolver-binding-linux-ppc64-gnu@1.12.2':
     optional: true
 
@@ -2897,6 +2907,9 @@ snapshots:
     optional: true
 
   '@unrs/resolver-binding-linux-x64-musl@1.12.2':
+    optional: true
+
+  '@unrs/resolver-binding-openharmony-arm64@1.12.2':
     optional: true
 
   '@unrs/resolver-binding-wasm32-wasi@1.12.2':
@@ -3297,8 +3310,6 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  event-lite@0.1.3: {}
-
   event-lite@1.0.0: {}
 
   execa@5.1.1:
@@ -3480,8 +3491,6 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  int64-buffer@0.1.10: {}
-
   int64-buffer@1.1.1: {}
 
   is-arrayish@0.2.1: {}
@@ -3503,8 +3512,6 @@ snapshots:
   is-windows@1.0.2: {}
 
   isarray@0.0.1: {}
-
-  isarray@1.0.0: {}
 
   isarray@2.0.5: {}
 
@@ -3983,13 +3990,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msgpack-lite@0.1.26:
-    dependencies:
-      event-lite: 0.1.3
-      ieee754: 1.2.1
-      int64-buffer: 0.1.10
-      isarray: 1.0.0
-
   msgpack-lite@0.2.1:
     dependencies:
       event-lite: 1.0.0
@@ -4005,12 +4005,12 @@ snapshots:
 
   nerdbank-gitversioning@3.10.91: {}
 
-  nerdbank-streams@2.13.31:
+  nerdbank-streams@2.14.354:
     dependencies:
       await-semaphore: 0.1.3
       cancellationtoken: 2.2.0
       caught: 0.1.3
-      msgpack-lite: 0.1.26
+      msgpack-lite: 0.2.1
 
   node-int64@0.4.0: {}
 
@@ -4408,12 +4408,15 @@ snapshots:
       '@unrs/resolver-binding-linux-arm-musleabihf': 1.12.2
       '@unrs/resolver-binding-linux-arm64-gnu': 1.12.2
       '@unrs/resolver-binding-linux-arm64-musl': 1.12.2
+      '@unrs/resolver-binding-linux-loong64-gnu': 1.12.2
+      '@unrs/resolver-binding-linux-loong64-musl': 1.12.2
       '@unrs/resolver-binding-linux-ppc64-gnu': 1.12.2
       '@unrs/resolver-binding-linux-riscv64-gnu': 1.12.2
       '@unrs/resolver-binding-linux-riscv64-musl': 1.12.2
       '@unrs/resolver-binding-linux-s390x-gnu': 1.12.2
       '@unrs/resolver-binding-linux-x64-gnu': 1.12.2
       '@unrs/resolver-binding-linux-x64-musl': 1.12.2
+      '@unrs/resolver-binding-openharmony-arm64': 1.12.2
       '@unrs/resolver-binding-wasm32-wasi': 1.12.2
       '@unrs/resolver-binding-win32-arm64-msvc': 1.12.2
       '@unrs/resolver-binding-win32-ia32-msvc': 1.12.2
