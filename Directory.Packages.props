@@ -7,7 +7,7 @@
     <MicrosoftTestingPlatformVersion>2.4.1</MicrosoftTestingPlatformVersion>
 
     <MicroBuildVersion>2.0.257</MicroBuildVersion>
-    <CodeAnalysisVersion>5.10.0-1.26431.1</CodeAnalysisVersion>
+    <CodeAnalysisVersion>5.10.0-1.26467.6</CodeAnalysisVersion>
     <CodefixTestingVersion>1.1.2</CodefixTestingVersion>
     <VSThreadingVersion>18.7.57</VSThreadingVersion>
   </PropertyGroup>
@@ -54,7 +54,7 @@
     <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.26453.10" />
+    <GlobalPackageReference Include="Microsoft.CodeAnalysis.ResxSourceGenerator" Version="3.12.0-beta1.26463.2" />
   </ItemGroup>
   <ItemGroup Label="Library.Template">
     <GlobalPackageReference Include="CSharpIsNullAnalyzer" Version="0.2.19" />
