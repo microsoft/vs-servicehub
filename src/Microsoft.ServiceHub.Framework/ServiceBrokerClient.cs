@@ -29,6 +29,16 @@ public class ServiceBrokerClient : IDisposableObservable
 	private readonly Dictionary<AsyncLazy<object?>, int> rentedProxies = new Dictionary<AsyncLazy<object?>, int>();
 
 	/// <summary>
+	/// Factories evicted before completion whose eventual proxy must be disposed.
+	/// </summary>
+	private readonly HashSet<AsyncLazy<object?>> proxiesAwaitingDisposal = new HashSet<AsyncLazy<object?>>();
+
+	/// <summary>
+	/// Proxy values produced before their <see cref="AsyncLazy{T}"/> factory task completes.
+	/// </summary>
+	private readonly Dictionary<AsyncLazy<object?>, object> producedProxies = new Dictionary<AsyncLazy<object?>, object>();
+
+	/// <summary>
 	/// A flag indicating whether the <see cref="ServiceBroker_AvailabilityChanged(object?, BrokeredServicesChangedEventArgs)"/>
 	/// handler has been wired up to the <see cref="IServiceBroker.AvailabilityChanged"/> event on
 	/// <see cref="serviceBroker"/> already.
@@ -156,9 +166,37 @@ public class ServiceBrokerClient : IDisposableObservable
 						Verify.NotDisposed(this);
 						GC.KeepAlive(typeof(ValueTask<T>)); // workaround CLR bug https://dev.azure.com/devdiv/DevDiv/_workitems/edit/1358442
 						T? proxy = await this.serviceBroker.GetProxyAsync<T>(serviceRpcDescriptor, options).ConfigureAwait(false);
+						bool disposeUnrentedProxy;
+						lock (this.syncObject)
+						{
+							disposeUnrentedProxy = (!this.clientCache.TryGetValue((serviceRpcDescriptor.Moniker, typeof(T)), out AsyncLazy<object?>? cachedProxy)
+									|| !ReferenceEquals(cachedProxy, clientLazy))
+								&& !this.rentedProxies.ContainsKey(clientLazy!);
+							if (disposeUnrentedProxy)
+							{
+								this.proxiesAwaitingDisposal.Remove(clientLazy!);
+							}
+							else if (proxy is not null)
+							{
+								this.producedProxies[clientLazy!] = proxy;
+							}
+						}
+
+						if (disposeUnrentedProxy)
+						{
+							(proxy as IDisposable)?.Dispose();
+							return proxy;
+						}
+
 						if (proxy is StreamJsonRpc.IJsonRpcClientProxy localProxy)
 						{
-							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnInvalidated(new BrokeredServicesChangedEventArgs(ImmutableHashSet.Create(serviceRpcDescriptor.Moniker)));
+							localProxy.JsonRpc.Disconnected += (sender, e) => this.OnProxyDisconnected((serviceRpcDescriptor.Moniker, typeof(T)), clientLazy!);
+							localProxy.JsonRpc.Completion.ContinueWith(
+								(_, state) => ((ServiceBrokerClient)state!).OnProxyDisconnected((serviceRpcDescriptor.Moniker, typeof(T)), clientLazy!),
+								this,
+								CancellationToken.None,
+								TaskContinuationOptions.ExecuteSynchronously,
+								TaskScheduler.Default).Forget();
 						}
 
 						return proxy;
@@ -309,6 +347,37 @@ public class ServiceBrokerClient : IDisposableObservable
 	}
 
 	/// <summary>
+	/// Invalidates a cached proxy after its RPC connection is lost.
+	/// </summary>
+	/// <param name="key">The key for the disconnected proxy.</param>
+	/// <param name="disconnectedProxy">The disconnected proxy.</param>
+	private void OnProxyDisconnected((ServiceMoniker Moniker, Type ClientType) key, AsyncLazy<object?> disconnectedProxy)
+	{
+		BrokeredServicesChangedEventArgs args = new(ImmutableHashSet.Create(key.Moniker));
+		List<IDisposable>? disposableProxies;
+		lock (this.syncObject)
+		{
+			if (this.IsDisposed
+				|| !this.clientCache.TryGetValue(key, out AsyncLazy<object?>? currentProxy)
+				|| !ReferenceEquals(currentProxy, disconnectedProxy))
+			{
+				return;
+			}
+
+			disposableProxies = this.InvalidateProxies(args);
+		}
+
+		try
+		{
+			this.DisposeOldProxies(disposableProxies);
+		}
+		finally
+		{
+			this.OnInvalidated(args);
+		}
+	}
+
+	/// <summary>
 	/// Releases a rental and disposes of the client proxy if appropriate.
 	/// </summary>
 	/// <param name="clientProxy">The shared client proxy with its lazy wrapper.</param>
@@ -317,7 +386,8 @@ public class ServiceBrokerClient : IDisposableObservable
 	{
 		Requires.NotNull(clientProxy, nameof(clientProxy));
 
-		bool disposeProxy = false;
+		IDisposable? proxyToDispose = null;
+		bool disposeWhenFactoryCompletes = false;
 		lock (this.syncObject)
 		{
 			if (this.rentedProxies.TryGetValue(clientProxy, out int oldCount))
@@ -329,7 +399,20 @@ public class ServiceBrokerClient : IDisposableObservable
 					// We are the last active rental for this proxy. If it is a stale proxy, dispose of it now.
 					if (this.staleRentedProxies.Contains(clientProxy))
 					{
-						disposeProxy = true;
+						if (proxy is IDisposable disposableProxy)
+						{
+							proxyToDispose = disposableProxy;
+						}
+						else if (this.producedProxies.TryGetValue(clientProxy, out object? producedProxy))
+						{
+							proxyToDispose = producedProxy as IDisposable;
+						}
+						else
+						{
+							disposeWhenFactoryCompletes = this.proxiesAwaitingDisposal.Add(clientProxy);
+						}
+
+						this.producedProxies.Remove(clientProxy);
 						this.staleRentedProxies = this.staleRentedProxies.Remove(clientProxy);
 					}
 				}
@@ -340,9 +423,13 @@ public class ServiceBrokerClient : IDisposableObservable
 			}
 		}
 
-		if (disposeProxy)
+		if (proxyToDispose is not null)
 		{
-			(proxy as IDisposable)?.Dispose();
+			proxyToDispose.Dispose();
+		}
+		else if (disposeWhenFactoryCompletes)
+		{
+			this.DisposeProxyWhenFactoryCompletesAsync(clientProxy).Forget();
 		}
 	}
 
@@ -374,6 +461,16 @@ public class ServiceBrokerClient : IDisposableObservable
 					// This stale proxy is currently being rented, so we will dispose it when the rentals are all returned.
 					staleRentedProxies.Add(clientProxy);
 				}
+				else if (this.producedProxies.TryGetValue(clientProxy, out object? producedProxy))
+				{
+					this.producedProxies.Remove(clientProxy);
+					this.proxiesAwaitingDisposal.Remove(clientProxy);
+					if (producedProxy is IDisposable disposableClientProxy)
+					{
+						unusedStaleProxies ??= new List<IDisposable>();
+						unusedStaleProxies.Add(disposableClientProxy);
+					}
+				}
 				else if (clientProxy.IsValueFactoryCompleted)
 				{
 					Task valueFactoryTask = clientProxy.GetValueAsync();
@@ -390,6 +487,14 @@ public class ServiceBrokerClient : IDisposableObservable
 
 						unusedStaleProxies.Add(disposableClientProxy);
 					}
+					else if (!valueFactoryTask.IsCompleted && this.proxiesAwaitingDisposal.Add(clientProxy))
+					{
+						this.DisposeProxyWhenFactoryCompletesAsync(clientProxy).Forget();
+					}
+				}
+				else if (this.proxiesAwaitingDisposal.Add(clientProxy))
+				{
+					this.DisposeProxyWhenFactoryCompletesAsync(clientProxy).Forget();
 				}
 
 				this.staleRentedProxies = staleRentedProxies.ToImmutable();
@@ -402,6 +507,40 @@ public class ServiceBrokerClient : IDisposableObservable
 		}
 
 		return unusedStaleProxies;
+	}
+
+	/// <summary>
+	/// Disposes a proxy produced after its cache entry and final rental were removed.
+	/// </summary>
+	/// <param name="clientProxy">The evicted proxy factory.</param>
+	/// <returns>A task that completes after the factory settles and any proxy is disposed.</returns>
+	private async Task DisposeProxyWhenFactoryCompletesAsync(AsyncLazy<object?> clientProxy)
+	{
+		await TaskScheduler.Default.SwitchTo(alwaysYield: true);
+		object? proxy = null;
+		try
+		{
+			proxy = await clientProxy.GetValueAsync().ConfigureAwait(false);
+		}
+		catch
+		{
+		}
+		finally
+		{
+			bool ownsDisposal;
+			lock (this.syncObject)
+			{
+				ownsDisposal = this.proxiesAwaitingDisposal.Remove(clientProxy);
+				this.producedProxies.Remove(clientProxy);
+			}
+
+			if (!ownsDisposal)
+			{
+				proxy = null;
+			}
+		}
+
+		(proxy as IDisposable)?.Dispose();
 	}
 
 	/// <summary>

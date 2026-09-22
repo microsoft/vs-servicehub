@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text;
 using Windows.Win32.Foundation;
 using static Windows.Win32.PInvoke;
 
@@ -23,6 +24,35 @@ public static class ServerFactory
 
 	private const int ConnectRetryIntervalMs = 50;
 	private const int MaxRetryAttemptsForFileNotFoundException = 3;
+
+	/// <summary>
+	/// The maximum length (in UTF-8 bytes) of the path to a unix domain socket on most unix-like operating systems.
+	/// </summary>
+	/// <remarks>
+	/// Linux declares <c>sockaddr_un.sun_path</c> as a 108 byte buffer, which leaves 107 bytes for the path
+	/// once the required null terminator is accounted for.
+	/// </remarks>
+	private const int MaxUnixDomainSocketPathLength = 107;
+
+	/// <summary>
+	/// The maximum length (in UTF-8 bytes) of the path to a unix domain socket on macOS.
+	/// </summary>
+	/// <remarks>
+	/// The BSD-derived <c>sockaddr_un.sun_path</c> buffer that macOS uses is only 104 bytes,
+	/// which leaves 103 bytes for the path once the required null terminator is accounted for.
+	/// </remarks>
+	private const int MaxMacDomainSocketPathLength = 103;
+
+	/// <summary>
+	/// The prefix that .NET prepends to a <em>relative</em> pipe name when deriving the path of the
+	/// unix domain socket that backs the pipe.
+	/// </summary>
+	/// <remarks>
+	/// This value is fixed in .NET itself, since changing it would prevent processes running on different
+	/// versions of .NET from connecting to each other.
+	/// </remarks>
+	private const string DotNetPipeFilePrefix = "CoreFxPipe_";
+
 	private static readonly string PipePrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\\.\pipe" : Path.GetTempPath();
 
 	/// <summary>
@@ -86,6 +116,7 @@ public static class ServerFactory
 		PipeOptions fullPipeOptions = StandardPipeOptions;
 		PipeOptions pipeOptions = StandardPipeOptions;
 		var name = TrimWindowsPrefixForDotNet(pipeName);
+		ThrowIfSocketPathTooLong(name);
 		var maxRetries = options.FailFast ? 0 : int.MaxValue;
 
 		// A server creates its pipe before it hands out the name, so when the caller obtained the name from the
@@ -138,6 +169,48 @@ public static class ServerFactory
 		return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && fullyQualifiedPipeName.StartsWith(WindowsPipePrefix, StringComparison.OrdinalIgnoreCase)
 			? fullyQualifiedPipeName.Substring(WindowsPipePrefix.Length)
 			: fullyQualifiedPipeName;
+	}
+
+	/// <summary>
+	/// Throws an exception when the unix domain socket that will back a named pipe would have a path
+	/// that is too long for the operating system to bind or connect to.
+	/// </summary>
+	/// <param name="pipeName">The pipe name that will be handed to <see cref="NamedPipeServerStream"/> or <see cref="NamedPipeClientStream"/>.</param>
+	/// <exception cref="PathTooLongException">Thrown when the socket path exceeds the limit imposed by the operating system.</exception>
+	/// <remarks>
+	/// <para>
+	/// On unix-like operating systems .NET backs a named pipe with a unix domain socket, whose path must fit within the
+	/// fixed-size <c>sockaddr_un.sun_path</c> buffer. Because <see cref="PrependPipePrefix(string)"/> roots pipe names at
+	/// <see cref="Path.GetTempPath()"/>, which honors the <c>TMPDIR</c> environment variable and is itself long by default
+	/// on macOS, that limit can be exceeded without the caller doing anything unusual.
+	/// </para>
+	/// <para>
+	/// Without this check the failure surfaces deep inside the socket layer with nothing to indicate that the length of the
+	/// path was the cause, and on the server it faults <see cref="IIpcServer.Completion"/> rather than the call that created
+	/// the server, so it typically presents as a client that cannot connect to a server that appeared to start successfully.
+	/// </para>
+	/// </remarks>
+	internal static void ThrowIfSocketPathTooLong(string pipeName)
+	{
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+		{
+			// Windows named pipes are not backed by unix domain sockets, so no comparable limit applies.
+			return;
+		}
+
+		// Mirror how .NET derives the socket path from the pipe name so that the exception describes the path that would actually fail.
+		string socketPath = Path.IsPathRooted(pipeName)
+			? pipeName
+			: Path.Combine(Path.GetTempPath(), DotNetPipeFilePrefix) + pipeName;
+
+		// Assume the more generous limit for platforms we don't specifically recognize, so that this check
+		// never rejects a path that the operating system would in fact have accepted.
+		int maxLength = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? MaxMacDomainSocketPathLength : MaxUnixDomainSocketPathLength;
+		int actualLength = Encoding.UTF8.GetByteCount(socketPath);
+		if (actualLength > maxLength)
+		{
+			throw new PathTooLongException($"The path '{socketPath}' is {actualLength} UTF-8 bytes long, which exceeds the {maxLength} byte limit that this operating system imposes on the unix domain socket that backs a named pipe. Use a shorter pipe name, or set the TMPDIR environment variable to a shorter path.");
+		}
 	}
 
 	private static IpcServer CreateCore(Func<Stream, Task> onConnectedCallback, ServerOptions options)

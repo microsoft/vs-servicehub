@@ -34,13 +34,13 @@ overrides:
   '@humanfs/node': 0.16.8
   acorn: 8.18.0
   ajv: 8.20.0
-  baseline-browser-mapping: 2.11.20
-  brace-expansion@1: 1.1.18
+  baseline-browser-mapping: 2.11.23
+  brace-expansion@1: 1.1.21
   brace-expansion@2: 2.1.4
-  brace-expansion@5: 5.0.9
+  brace-expansion@5: 5.0.12
   browserslist: 4.28.8
   caniuse-lite: 1.0.30001810
-  electron-to-chromium: 1.5.416
+  electron-to-chromium: 1.5.427
   get-east-asian-width: 1.6.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
@@ -122,8 +122,8 @@ importers:
         specifier: 2.13.6
         version: 2.13.6
       nerdbank-gitversioning:
-        specifier: 3.10.91
-        version: 3.10.91
+        specifier: 3.10.94
+        version: 3.10.94
       nyc:
         specifier: 18.0.0
         version: 18.0.0(supports-color@8.1.1)
@@ -864,19 +864,19 @@ packages:
     resolution: {integrity: sha1-v7EGYv7tgZaixi58aOF3IMJ0F5o=}
     engines: {node: 18 || 20 || >=22}
 
-  baseline-browser-mapping@2.11.20:
-    resolution: {integrity: sha1-JgeMeksIKZZW6n3c6uvslV3EQwM=}
+  baseline-browser-mapping@2.11.23:
+    resolution: {integrity: sha512-le521dGVfxM7yRX0EikCoSz+rOK+hHzdDt/E7mG1jOJB/6WAAUuwVroLwaB7ApaUsz5Q0kFlDXLSA9MheUIfRQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  brace-expansion@1.1.18:
-    resolution: {integrity: sha1-POdNiYhRNr4VNTQfjD1EJcKaXKs=}
+  brace-expansion@1.1.21:
+    resolution: {integrity: sha512-9zeA+KLZNNzglF2TPKRQEDyx6Yby7daAkuy8MiPzpXPsYDWi/DRM8jmwUDxokQjYqBpv5DgPiwD4h4ZZSy1Ujw==}
 
   brace-expansion@2.1.4:
     resolution: {integrity: sha1-WJ2rEcABjQNmvmTNi/Esjb7MgyY=}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha1-fHJDiAm1+lur9UGZofHCgaaYT88=}
+  brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
   browserslist@4.28.8:
@@ -1053,8 +1053,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha1-aWzi7Aqg5uqTo5f/zySqeEDIJ8s=}
 
-  electron-to-chromium@1.5.416:
-    resolution: {integrity: sha1-0+/GQlKZBeD9dQB0nRij6INHvho=}
+  electron-to-chromium@1.5.427:
+    resolution: {integrity: sha512-n14zb3FdsChZ2BNobqNHAJMcP3ifFv4paox2LvCrfVAQcqGiSURgbJl+PfMpHVCNFkStnNc+RRVtPBTVW5PDgw==}
 
   emittery@0.13.1:
     resolution: {integrity: sha1-wEuMNFdJDghHrlH87Tr1LTOOPa0=}
@@ -1682,8 +1682,8 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha1-tKr7k+OustgXTKU88WOrfXMIMF8=}
 
-  nerdbank-gitversioning@3.10.91:
-    resolution: {integrity: sha1-wOFKXyS8qD0Rblp13ilfy57glLM=}
+  nerdbank-gitversioning@3.10.94:
+    resolution: {integrity: sha512-P2Hu93wiRPw2w81K6pQ1zdw15lqdevvp5x/U3p3Z1yZu5H+08pQiaz5uyQwKJChebREuVqb/e8zO1cKLIcsbNQ==}
     hasBin: true
 
   nerdbank-streams@2.14.354:
@@ -3041,9 +3041,9 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  baseline-browser-mapping@2.11.20: {}
+  baseline-browser-mapping@2.11.23: {}
 
-  brace-expansion@1.1.18:
+  brace-expansion@1.1.21:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
@@ -3052,15 +3052,15 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
 
   browserslist@4.28.8:
     dependencies:
-      baseline-browser-mapping: 2.11.20
+      baseline-browser-mapping: 2.11.23
       caniuse-lite: 1.0.30001810
-      electron-to-chromium: 1.5.416
+      electron-to-chromium: 1.5.427
       node-releases: 2.0.54
       update-browserslist-db: 1.3.1(browserslist@4.28.8)
 
@@ -3205,7 +3205,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  electron-to-chromium@1.5.416: {}
+  electron-to-chromium@1.5.427: {}
 
   emittery@0.13.1: {}
 
@@ -3970,15 +3970,15 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimatch@3.0.8:
     dependencies:
-      brace-expansion: 1.1.18
+      brace-expansion: 1.1.21
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.18
+      brace-expansion: 1.1.21
 
   minimatch@9.0.9:
     dependencies:
@@ -4003,7 +4003,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  nerdbank-gitversioning@3.10.91: {}
+  nerdbank-gitversioning@3.10.94: {}
 
   nerdbank-streams@2.14.354:
     dependencies:
