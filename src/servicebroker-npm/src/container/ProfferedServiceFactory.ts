@@ -83,6 +83,7 @@ export class ProfferedServiceFactory extends (EventEmitter as new () => ServiceB
 			if (service) {
 				connection.addLocalRpcTarget(service)
 				connection.startListening()
+				pipePair.second.once('finish', () => connection.dispose())
 				return pipePair.second
 			} else {
 				connection.dispose()
