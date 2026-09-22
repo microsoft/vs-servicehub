@@ -37,7 +37,7 @@ overrides:
   baseline-browser-mapping: 2.11.20
   brace-expansion@1: 1.1.18
   brace-expansion@2: 2.1.4
-  brace-expansion@5: 5.0.9
+  brace-expansion@5: 5.0.12
   browserslist: 4.28.8
   caniuse-lite: 1.0.30001810
   electron-to-chromium: 1.5.427
@@ -858,8 +858,8 @@ packages:
   brace-expansion@2.1.4:
     resolution: {integrity: sha1-WJ2rEcABjQNmvmTNi/Esjb7MgyY=}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha1-fHJDiAm1+lur9UGZofHCgaaYT88=}
+  brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
   browserslist@4.28.8:
@@ -1666,7 +1666,7 @@ packages:
     resolution: {integrity: sha1-tKr7k+OustgXTKU88WOrfXMIMF8=}
 
   nerdbank-gitversioning@3.10.94:
-    resolution: {integrity: sha1-gngTHc4NLCqFwo/uBhXzdixSn2U=}
+    resolution: {integrity: sha512-P2Hu93wiRPw2w81K6pQ1zdw15lqdevvp5x/U3p3Z1yZu5H+08pQiaz5uyQwKJChebREuVqb/e8zO1cKLIcsbNQ==}
     hasBin: true
 
   nerdbank-streams@2.13.31:
@@ -3026,7 +3026,7 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
 
@@ -3944,7 +3944,7 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimatch@3.0.8:
     dependencies:
