@@ -55,7 +55,9 @@ internal class IpcServer : IDisposable, IIpcServer
 	public string Name { get; }
 
 	/// <inheritdoc/>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 	public Task Completion => this.listeningTask;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 	/// <summary>
 	/// Gets a trace source used for logging.
