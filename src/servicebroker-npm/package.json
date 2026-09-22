@@ -37,7 +37,7 @@
 		"vscode-jsonrpc": "^9.0.0"
 	},
 	"devDependencies": {
-		"@microsoft/tsdoc": "0.16.0",
+		"@microsoft/tsdoc": "0.17.0",
 		"@tsconfig/node20": "20.1.10",
 		"@types/jest": "30.0.0",
 		"@types/msgpack-lite": "0.1.12",
