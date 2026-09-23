@@ -37,7 +37,7 @@ overrides:
   '@types/estree': 1.0.9
   '@ungap/structured-clone': 1.4.0
   '@humanfs/core': 0.19.2
-  '@humanfs/node': 0.16.8
+  '@humanfs/node': 0.17.0
   acorn: 8.18.0
   ajv: 8.20.0
   baseline-browser-mapping: 2.11.24
