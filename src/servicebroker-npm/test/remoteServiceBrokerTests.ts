@@ -520,6 +520,7 @@ describe('Service Broker tests', function () {
 			// should close both pipes
 			await firstCompletion
 			await secondCompletion
+			s.dispose()
 		})
 
 		it('Should fail if handshake fails for pipe server', async function () {
@@ -559,6 +560,7 @@ describe('Service Broker tests', function () {
 			const pipe = await broker.getPipe({ name: 'does not exist' }, undefined, defaultToken)
 			assert.strictEqual(pipe, null, 'Pipe to non-existant service should be undefined')
 			broker.dispose()
+			s.dispose()
 		})
 
 		it('Should return undefined object if requesting a non-existant proxy service', async function () {
@@ -570,6 +572,7 @@ describe('Service Broker tests', function () {
 			const proxy = await broker.getProxy(nonexistantDescriptor, undefined, defaultToken)
 			assert.strictEqual(proxy, null, 'Should return undefined proxy to fake service')
 			broker.dispose()
+			s.dispose()
 		})
 
 		it('Should return proxy to service over named pipe', async function () {
@@ -589,6 +592,7 @@ describe('Service Broker tests', function () {
 			broker.dispose()
 
 			await expect(() => broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)).rejects.toThrow()
+			s.dispose()
 		})
 
 		it('Should emit and listen for availabilityChanged event', async function () {
