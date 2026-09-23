@@ -47,6 +47,7 @@ overrides:
   lru-cache@11: 11.5.2
   node-releases: 2.0.55
   picomatch@4: 4.0.7
+  '@jest/react-is-19': npm:react-is@19.3.0
   react-is: 19.3.0
   react-is-19: npm:react-is@19.3.0
   synckit: 0.11.13
@@ -1953,11 +1954,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha1-6DVX3BLq5jqZ4AOkY4ix3LtE234=}
 
-  react-is@19.2.8:
-    resolution: {integrity: sha1-CYJvn7wYe8Zo4+XGLtwAH4BNUBg=}
-
   react-is@19.3.0:
-    resolution: {integrity: sha1-cWAo1n6Zk9I6LTU8bQijwe8rvrQ=}
+    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
 
   readable-stream@1.1.14:
     resolution: {integrity: sha1-fPTFTvZI44EwhMY23SB54WbAgdk=}
@@ -4411,7 +4409,7 @@ snapshots:
   pretty-format@30.5.1:
     dependencies:
       '@jest/react-is-18': react-is@18.3.1
-      '@jest/react-is-19': react-is@19.2.8
+      '@jest/react-is-19': react-is@19.3.0
       '@jest/schemas': 30.5.0
       ansi-styles: 5.2.0
 
@@ -4422,8 +4420,6 @@ snapshots:
   pure-rand@7.0.1: {}
 
   react-is@18.3.1: {}
-
-  react-is@19.2.8: {}
 
   react-is@19.3.0: {}
 
