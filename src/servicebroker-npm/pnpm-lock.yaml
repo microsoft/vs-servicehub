@@ -47,8 +47,8 @@ overrides:
   lru-cache@11: 11.5.2
   node-releases: 2.0.55
   picomatch@4: 4.0.7
-  react-is: 19.2.8
-  react-is-19: npm:react-is@19.2.8
+  react-is: 19.3.0
+  react-is-19: npm:react-is@19.3.0
   synckit: 0.11.13
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
@@ -514,7 +514,7 @@ packages:
     resolution: {integrity: sha1-ZTT9WTOlO6fL86F2FeJzoNEnP/k=}
 
   '@microsoft/tsdoc@0.17.0':
-    resolution: {integrity: sha1-YbSmP0i1g6PWDReTGEoaLNnRF14=}
+    resolution: {integrity: sha512-p68VexhnH7ojf3U27RdryUDqnKJgKaWUbCL96vJR7N0mqDuhKG5OIECk3sCPPdynxjk+yoVhRkScqtv5KQjzsw==}
 
   '@napi-rs/wasm-runtime@1.2.3':
     resolution: {integrity: sha1-l+PUXXQk3F2h1OMvO/OykvbBtEw=}
@@ -1955,6 +1955,9 @@ packages:
 
   react-is@19.2.8:
     resolution: {integrity: sha1-CYJvn7wYe8Zo4+XGLtwAH4BNUBg=}
+
+  react-is@19.3.0:
+    resolution: {integrity: sha1-cWAo1n6Zk9I6LTU8bQijwe8rvrQ=}
 
   readable-stream@1.1.14:
     resolution: {integrity: sha1-fPTFTvZI44EwhMY23SB54WbAgdk=}
@@ -4403,7 +4406,7 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.2.8
+      react-is-19: react-is@19.3.0
 
   pretty-format@30.5.1:
     dependencies:
@@ -4421,6 +4424,8 @@ snapshots:
   react-is@18.3.1: {}
 
   react-is@19.2.8: {}
+
+  react-is@19.3.0: {}
 
   readable-stream@1.1.14:
     dependencies:
