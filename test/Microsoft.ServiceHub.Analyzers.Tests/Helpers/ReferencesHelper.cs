@@ -25,9 +25,9 @@ internal static class ReferencesHelper
 #if NETFRAMEWORK
 			new PackageIdentity("Microsoft.Bcl.AsyncInterfaces", "10.0.10"),
 #endif
-			new PackageIdentity("System.ComponentModel.Composition", "10.0.9"),
+			new PackageIdentity("System.ComponentModel.Composition", "10.0.10"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
-			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.57"),
+			new PackageIdentity("Microsoft.VisualStudio.Threading", "18.7.127"),
 			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.19"),
 		]);
 

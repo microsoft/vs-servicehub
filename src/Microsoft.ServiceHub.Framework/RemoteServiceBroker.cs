@@ -114,7 +114,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <summary>
 	/// Gets a <see cref="Task"/> that completes when this instance is disposed or the underlying <see cref="Stream"/> it was created with (if applicable) is closed.
 	/// </summary>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 	public Task Completion => this.completionSource.Task;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 	/// <summary>
 	/// Gets or sets the <see cref="System.Diagnostics.TraceSource"/> this instance will use for trace messages.
