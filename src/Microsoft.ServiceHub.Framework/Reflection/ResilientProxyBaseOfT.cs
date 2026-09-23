@@ -2141,7 +2141,9 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 		/// <summary>
 		/// Gets a task that completes when the shared proxy instance is disposed.
 		/// </summary>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 		internal Task ProxyDisposal => this.proxyLifetime.Disposal;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 		/// <summary>
 		/// Retains the shared proxy lifetime while a refresh acquisition is outstanding.
