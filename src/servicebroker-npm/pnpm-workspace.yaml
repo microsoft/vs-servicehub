@@ -53,8 +53,8 @@ overrides:
   'lru-cache@11': 11.5.2
   node-releases: 2.0.55
   'picomatch@4': 4.0.7
-  react-is: 19.2.8
-  react-is-19: npm:react-is@19.2.8
+  react-is: 19.3.0
+  react-is-19: npm:react-is@19.3.0
   synckit: 0.11.13
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
