@@ -70,11 +70,11 @@ importers:
         specifier: 5.1.9
         version: 5.1.9
       msgpack-lite:
-        specifier: ^0.1.26
-        version: 0.1.26
+        specifier: ^0.2.1
+        version: 0.2.1
       nerdbank-streams:
-        specifier: ^2.13.16
-        version: 2.13.31
+        specifier: ^2.14.354
+        version: 2.14.354
       strict-event-emitter-types:
         specifier: ^2.0.0
         version: 2.0.0
@@ -1270,8 +1270,8 @@ packages:
     resolution: {integrity: sha1-dNLrTeC42hKTcRkQ1Qd1ubcQ72Q=}
     engines: {node: '>=0.10.0'}
 
-  event-lite@0.1.3:
-    resolution: {integrity: sha1-Pf4BFE6AisRkSPDBm0q2jkA6kB0=}
+  event-lite@1.0.0:
+    resolution: {integrity: sha1-dOjfKg1if5qS/kZFaQLH4Ap8Ih0=}
 
   execa@5.1.1:
     resolution: {integrity: sha1-+ArZy/Qpj3vR1MlVXCHpN0HEEd0=}
@@ -1452,8 +1452,8 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha1-D6LGT5MpF8NDOg3tVTY6rjdBa3w=}
 
-  int64-buffer@0.1.10:
-    resolution: {integrity: sha1-J3siiofZWtd30HwTgyAiQGpHNCM=}
+  int64-buffer@1.1.1:
+    resolution: {integrity: sha1-2UMX/1uHhK1rNBT824SQcymyjHM=}
 
   is-arrayish@0.2.1:
     resolution: {integrity: sha1-d8mYQFJ6qOyxqLppe4BkWnqSap0=}
@@ -1488,8 +1488,8 @@ packages:
   isarray@0.0.1:
     resolution: {integrity: sha1-ihis/Kmo9Bd+Cav8YDiTmwXR7t8=}
 
-  isarray@1.0.0:
-    resolution: {integrity: sha1-u5NdSFgsuhaMBoNJV6VKPgcSTxE=}
+  isarray@2.0.5:
+    resolution: {integrity: sha1-ivHkwSISRMxiRZ+vOJQNTmRKVyM=}
 
   isexe@2.0.0:
     resolution: {integrity: sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=}
@@ -1788,8 +1788,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha1-V0yBOM4dK1hh8LRFedut1gxmFbI=}
 
-  msgpack-lite@0.1.26:
-    resolution: {integrity: sha1-3TxQsm8FnyXn7e42REGDWOKprYk=}
+  msgpack-lite@0.2.1:
+    resolution: {integrity: sha1-pZ7rEQ4BnTtroHhsgYzWsWg9O6g=}
     hasBin: true
 
   napi-postinstall@0.3.4:
@@ -1807,8 +1807,8 @@ packages:
     resolution: {integrity: sha512-P2Hu93wiRPw2w81K6pQ1zdw15lqdevvp5x/U3p3Z1yZu5H+08pQiaz5uyQwKJChebREuVqb/e8zO1cKLIcsbNQ==}
     hasBin: true
 
-  nerdbank-streams@2.13.31:
-    resolution: {integrity: sha1-b4tL8OAU5e+Kr1ftHsUK8yBCH04=}
+  nerdbank-streams@2.14.354:
+    resolution: {integrity: sha1-V7rNvAOCoBrrx2/M6SFM6RYrSIk=}
 
   node-addon-api@7.1.1:
     resolution: {integrity: sha1-Grpmk7DyVSWKBJ1iEykykyKq1Vg=}
@@ -3515,7 +3515,7 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  event-lite@0.1.3: {}
+  event-lite@1.0.0: {}
 
   execa@5.1.1:
     dependencies:
@@ -3702,7 +3702,7 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  int64-buffer@0.1.10: {}
+  int64-buffer@1.1.1: {}
 
   is-arrayish@0.2.1: {}
 
@@ -3724,7 +3724,7 @@ snapshots:
 
   isarray@0.0.1: {}
 
-  isarray@1.0.0: {}
+  isarray@2.0.5: {}
 
   isexe@2.0.0: {}
 
@@ -4237,12 +4237,12 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msgpack-lite@0.1.26:
+  msgpack-lite@0.2.1:
     dependencies:
-      event-lite: 0.1.3
+      event-lite: 1.0.0
       ieee754: 1.2.1
-      int64-buffer: 0.1.10
-      isarray: 1.0.0
+      int64-buffer: 1.1.1
+      isarray: 2.0.5
 
   napi-postinstall@0.3.4: {}
 
@@ -4252,12 +4252,12 @@ snapshots:
 
   nerdbank-gitversioning@3.10.94: {}
 
-  nerdbank-streams@2.13.31:
+  nerdbank-streams@2.14.354:
     dependencies:
       await-semaphore: 0.1.3
       cancellationtoken: 2.2.0
       caught: 0.1.3
-      msgpack-lite: 0.1.26
+      msgpack-lite: 0.2.1
 
   node-addon-api@7.1.1: {}
 
