@@ -10,7 +10,7 @@
 		"clean": "node -e \"require('fs').rmSync('js', { recursive: true, force: true })\"",
 		"auth-install": "pnpm install --frozen-lockfile",
 		"watch": "tsc -w",
-		"test": "jest --detectOpenHandles --forceExit",
+		"test": "jest --forceExit",
 		"lint": "eslint src test"
 	},
 	"nyc": {

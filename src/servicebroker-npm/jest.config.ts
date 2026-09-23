@@ -11,6 +11,7 @@ const config: Config = {
 	],
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 	collectCoverage: true,
+	setupFilesAfterEnv: ['<rootDir>/test/testAssets/debugOpenHandles.ts'],
 }
 
 export default config
