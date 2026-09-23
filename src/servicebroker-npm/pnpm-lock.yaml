@@ -70,7 +70,7 @@ importers:
         specifier: 5.1.9
         version: 5.1.9
       msgpack-lite:
-        specifier: ^0.2.0
+        specifier: ^0.2.1
         version: 0.2.1
       nerdbank-streams:
         specifier: ^2.14.354
