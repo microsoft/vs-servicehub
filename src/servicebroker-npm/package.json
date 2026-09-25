@@ -46,7 +46,7 @@
 		"eslint": "10.10.0",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-prettier": "5.5.6",
-		"jest": "30.5.1",
+		"jest": "30.5.2",
 		"jest-util": "30.5.1",
 		"jshint": "2.13.6",
 		"nerdbank-gitversioning": "3.10.94",
