@@ -187,6 +187,8 @@ internal static class ServiceManagerReflectionHelpers
 	/// This method is invoked through reflection from Microsoft.ServiceHub.HostStub.ServiceManager.StartService.
 	/// Having a method specifically for this avoids us having to load Newtonsoft.Json explicitly through reflection.
 	/// </remarks>
+	[RequiresDynamicCode(Reasons.JsonSerialization)]
+	[RequiresUnreferencedCode(Reasons.JsonSerialization)]
 	internal static ServiceActivationOptions DeserializeServiceActivationOptions(string serializedServiceActivationOptions)
 	{
 		return JsonConvert.DeserializeObject<ServiceActivationOptions>(serializedServiceActivationOptions);

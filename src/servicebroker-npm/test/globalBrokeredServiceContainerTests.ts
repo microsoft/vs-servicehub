@@ -448,9 +448,24 @@ describe('GlobalBrokeredServiceContainer', function () {
 			})
 			it('service disposed when pipe completed', async function () {
 				const pipe = await view.getPipe(Descriptors.calculator.moniker)
-				expect(pipe).toBeTruthy()
-				pipe?.end()
+				assert(pipe && 'destroy' in pipe && typeof pipe.destroy === 'function')
+				const dispose = jest.spyOn(calcService!, 'dispose')
+				const closed = new Promise<void>(resolve => pipe.once('close', resolve))
+				pipe.end()
 				await calcService?.disposed
+				pipe.destroy()
+				await closed
+				expect(dispose).toHaveBeenCalledTimes(1)
+			})
+			it('service disposed once when pipe destroyed', async function () {
+				const pipe = await view.getPipe(Descriptors.calculator.moniker)
+				assert(pipe && 'destroy' in pipe && typeof pipe.destroy === 'function')
+				const dispose = jest.spyOn(calcService!, 'dispose')
+				const closed = new Promise<void>(resolve => pipe.once('close', resolve))
+				pipe.destroy()
+				await closed
+				await calcService?.disposed
+				expect(dispose).toHaveBeenCalledTimes(1)
 			})
 		})
 

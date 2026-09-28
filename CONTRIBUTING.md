@@ -43,10 +43,10 @@ The NPM package built from this repo restores its public dependencies from the A
 Then use the checked-in install script from the repo root:
 
 ```ps1
-corepack pnpm --dir src/servicebroker-npm run auth-install
+pnpm --dir src/servicebroker-npm run auth-install
 ```
 
-The `corepack` prefix is useful when `pnpm` is not already installed globally, because it activates the version pinned by this repo's `packageManager` field. If you already have that pnpm version active, `pnpm --dir src/servicebroker-npm run auth-install` works too.
+The root `init.ps1` script installs the pnpm version pinned by this repo's `packageManager` field.
 
 #### NPM/pnpm Maintenance
 
@@ -87,17 +87,6 @@ Use `nbgv tag` to create a tag for a particular commit that you mean to release.
 [Learn more about `nbgv` and its `tag` and `prepare-release` commands](https://dotnet.github.io/Nerdbank.GitVersioning/docs/nbgv-cli.html).
 
 Push the tag.
-
-### GitHub Actions
-
-When your repo is hosted by GitHub and you are using GitHub Actions, you should create a GitHub Release using the standard GitHub UI.
-Having previously used `nbgv tag` and pushing the tag will help you identify the precise commit and name to use for this release.
-
-After publishing the release, the `.github/workflows/release.yml` workflow will be automatically triggered, which will:
-
-1. Find the most recent `.github/workflows/build.yml` GitHub workflow run of the tagged release.
-1. Upload the `deployables` artifact from that workflow run to your GitHub Release.
-1. If you have `NUGET_API_KEY` defined as a secret variable for your repo or org, any nuget packages in the `deployables` artifact will be pushed to nuget.org.
 
 ### Azure Pipelines
 

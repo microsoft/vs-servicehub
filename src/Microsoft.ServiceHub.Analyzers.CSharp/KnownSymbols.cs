@@ -7,6 +7,7 @@ internal class KnownSymbols(Compilation compilation)
 {
 	private bool? hasRequiredReferences;
 
+	private Option<INamedTypeSymbol?> iasyncDisposable;
 	private Option<INamedTypeSymbol> idisposable;
 	private Option<INamedTypeSymbol> jsonRpcContractAttribute;
 	private Option<INamedTypeSymbol?> rpcMarshalableOptionalInterface;
@@ -17,6 +18,7 @@ internal class KnownSymbols(Compilation compilation)
 	private Option<INamedTypeSymbol> valueTask;
 	private Option<INamedTypeSymbol> valueTaskOfT;
 	private Option<INamedTypeSymbol> iasyncEnumerableOfT;
+	private Option<INamedTypeSymbol> iobserverOfT;
 	private Option<INamedTypeSymbol> cancellationToken;
 
 	public bool HasRequiredReferences => this.hasRequiredReferences ??= compilation.References.Any(r => r is PortableExecutableReference { FilePath: string path } && string.Equals(Path.GetFileNameWithoutExtension(path), "StreamJsonRpc", StringComparison.OrdinalIgnoreCase));
@@ -31,6 +33,11 @@ internal class KnownSymbols(Compilation compilation)
 
 	public INamedTypeSymbol IDisposable => this.Required(ref this.idisposable, "System.IDisposable");
 
+	/// <summary>
+	/// Gets the optional <c>System.IAsyncDisposable</c> symbol.
+	/// </summary>
+	public INamedTypeSymbol? IAsyncDisposable => this.Optional(ref this.iasyncDisposable, "System.IAsyncDisposable");
+
 	public INamedTypeSymbol Task => this.Required(ref this.task, "System.Threading.Tasks.Task");
 
 	public INamedTypeSymbol TaskOfT => this.Required(ref this.taskOfT, "System.Threading.Tasks.Task`1");
@@ -40,6 +47,11 @@ internal class KnownSymbols(Compilation compilation)
 	public INamedTypeSymbol ValueTaskOfT => this.Required(ref this.valueTaskOfT, "System.Threading.Tasks.ValueTask`1");
 
 	public INamedTypeSymbol IAsyncEnumerableOfT => this.Required(ref this.iasyncEnumerableOfT, "System.Collections.Generic.IAsyncEnumerable`1");
+
+	/// <summary>
+	/// Gets the <c>System.IObserver&lt;T&gt;</c> symbol.
+	/// </summary>
+	public INamedTypeSymbol IObserverOfT => this.Required(ref this.iobserverOfT, "System.IObserver`1");
 
 	public INamedTypeSymbol CancellationToken => this.Required(ref this.cancellationToken, "System.Threading.CancellationToken");
 

@@ -60,7 +60,9 @@ export class TestRemoteServiceBroker extends (EventEmitter as new () => ServiceB
 	}
 
 	public dispose(): void {
-		this.isDisposed = true
-		this.server.close()
+		if (!this.isDisposed) {
+			this.isDisposed = true
+			this.server.close()
+		}
 	}
 }

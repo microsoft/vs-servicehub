@@ -40,6 +40,10 @@ internal class IpcServer : IDisposable, IIpcServer
 		// And when we're running off Windows, we need to specify the path so that we can tell other platforms where the pipe is.
 		this.Name = options.Name;
 
+		// Validate the length here rather than where the pipe is actually created, since that happens in the listening task
+		// and would merely fault Completion long after this constructor appeared to succeed.
+		ServerFactory.ThrowIfSocketPathTooLong(this.Name);
+
 		this.TraceSource = options.TraceSource ?? new TraceSource("ServiceHub.Framework pipe server", SourceLevels.Off);
 		this.Options = options;
 		this.createAndConfigureService = createAndConfigureService;
@@ -51,7 +55,9 @@ internal class IpcServer : IDisposable, IIpcServer
 	public string Name { get; }
 
 	/// <inheritdoc/>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 	public Task Completion => this.listeningTask;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 	/// <summary>
 	/// Gets a trace source used for logging.

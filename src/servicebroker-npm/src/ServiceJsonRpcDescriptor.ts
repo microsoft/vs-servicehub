@@ -327,7 +327,9 @@ export class JsonRpcConnection extends RpcConnection {
 		this.messageConnection?.listen()
 	}
 
-	public dispose(): void {}
+	public dispose(): void {
+		this.messageConnection.dispose()
+	}
 }
 
 export interface IProxyTarget {

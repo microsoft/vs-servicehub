@@ -5,6 +5,7 @@
 #pragma warning disable // Disable all warnings so that [Experimental] APIs don't flag anything.
 
 [global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IMyRpc_Proxy))]
+[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IMyRpc_Proxy_ResilientProxy))]
 partial interface IMyRpc
 {
 }
@@ -159,6 +160,105 @@ namespace Microsoft.ServiceHub.Framework.Generated
 			{
 				throw this.ExceptionHelper(ex);
 			}
+		}
+	}
+	
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.ServiceHub.Analyzers.CSharp", "x.x.x.x")]
+	internal class IMyRpc_Proxy_ResilientProxy : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::IMyRpc>
+		, global::IMyRpc
+	{
+		
+		public IMyRpc_Proxy_ResilientProxy(
+			global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
+			global::Microsoft.ServiceHub.Framework.ServiceRpcDescriptor serviceDescriptor,
+			global::Microsoft.ServiceHub.Framework.ServiceActivationOptions options)
+			: base(serviceBroker, serviceDescriptor, options)
+		{
+		}
+		
+		global::System.Threading.Tasks.Task global::IMyRpc.JustCancellationAsync(global::System.Threading.CancellationToken cancellationToken)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task InvokeAsync()
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
+				{
+					await ((global::IMyRpc)rental.Proxy).JustCancellationAsync(cancellationToken).ConfigureAwait(false);
+				}
+			}
+		}
+		
+		global::System.Threading.Tasks.ValueTask global::IMyRpc.AnArgAndCancellationAsync(int arg, global::System.Threading.CancellationToken cancellationToken)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.ValueTask InvokeAsync()
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
+				{
+					await ((global::IMyRpc)rental.Proxy).AnArgAndCancellationAsync(arg, cancellationToken).ConfigureAwait(false);
+				}
+			}
+		}
+		
+		global::System.Threading.Tasks.ValueTask<int> global::IMyRpc.NoArgsOrCancellation()
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.ValueTask<int> InvokeAsync()
+			{
+				using (ProxyRental rental = await this.RentProxyAsync(default).ConfigureAwait(false))
+				{
+					return await ((global::IMyRpc)rental.Proxy).NoArgsOrCancellation().ConfigureAwait(false);
+				}
+			}
+		}
+		
+		global::System.Threading.Tasks.Task<int> global::IMyRpc.AddAsync(int a, int b, global::System.Threading.CancellationToken cancellationToken)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task<int> InvokeAsync()
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+				using (ProxyRental rental = await this.RentProxyAsync(cancellationToken).ConfigureAwait(false))
+				{
+					return await ((global::IMyRpc)rental.Proxy).AddAsync(a, b, cancellationToken).ConfigureAwait(false);
+				}
+			}
+		}
+		
+		global::System.Threading.Tasks.Task<int> global::IMyRpc.MultiplyAsync(int a, int b)
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task<int> InvokeAsync()
+			{
+				using (ProxyRental rental = await this.RentProxyAsync(default).ConfigureAwait(false))
+				{
+					return await ((global::IMyRpc)rental.Proxy).MultiplyAsync(a, b).ConfigureAwait(false);
+				}
+			}
+		}
+		
+		void global::IMyRpc.Start(string bah)
+		{
+			this.InvokeNotification(target => ((global::IMyRpc)target).Start(bah), default);
+		}
+		
+		void global::IMyRpc.StartCancelable(string bah, global::System.Threading.CancellationToken token)
+		{
+			token.ThrowIfCancellationRequested();
+			this.InvokeNotification(target => ((global::IMyRpc)target).StartCancelable(bah, token), token);
+		}
+		
+		global::System.Collections.Generic.IAsyncEnumerable<int> global::IMyRpc.CountAsync(int start, int count, global::System.Threading.CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			return this.InvokeAsyncEnumerableAsync(target => ((global::IMyRpc)target).CountAsync(start, count, cancellationToken), cancellationToken);
 		}
 	}
 }

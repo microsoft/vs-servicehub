@@ -379,5 +379,6 @@ describe('Remote Service Broker Service RPC Tests', function () {
 		await rpc.handshake(clientMetadata)
 		assert(localTarget.clientMetadata, 'Handshake request should have set client metadata')
 		rpc.dispose()
+		localTarget.dispose()
 	})
 })

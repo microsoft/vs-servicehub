@@ -18,9 +18,17 @@ import { calcDescriptorMsgPackBE32, calcDescriptorUtf8Http } from './testAssets/
 
 describe('IpcRelayServiceBroker', function () {
 	let innerServer: IServiceBroker
+	let remoteRelays: IpcRelayServiceBroker[]
 
 	beforeEach(function () {
 		innerServer = new MockServiceBroker()
+		remoteRelays = []
+	})
+
+	afterEach(function () {
+		for (const relay of remoteRelays) {
+			relay.dispose()
+		}
 	})
 
 	describe('handshake', function () {
@@ -226,6 +234,7 @@ describe('IpcRelayServiceBroker', function () {
 		const pair = FullDuplexStream.CreatePair()
 
 		const relay = new IpcRelayServiceBroker(innerServer)
+		remoteRelays.push(relay)
 		FrameworkServices.remoteServiceBroker.constructRpc(relay, pair.first)
 
 		const clientBrokerProxy = FrameworkServices.remoteServiceBroker.constructRpc<IRemoteServiceBroker>(pair.second)

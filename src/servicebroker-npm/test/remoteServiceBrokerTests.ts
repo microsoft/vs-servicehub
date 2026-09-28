@@ -38,7 +38,7 @@ import {
 import { Descriptors } from './testAssets/Descriptors'
 import { Calculator } from './testAssets/calculatorService'
 
-describe.skip(/*unstable*/ 'Service Broker tests', function () {
+describe('Service Broker tests', function () {
 	let defaultTokenSource: {
 		token: CancellationToken
 		cancel: (reason?: any) => void
@@ -332,29 +332,25 @@ describe.skip(/*unstable*/ 'Service Broker tests', function () {
 					const s = new MultiplexingRemoteServiceBroker(channel)
 					const broker = await RemoteServiceBroker.connectToMultiplexingRemoteServiceBroker(s, mx, defaultToken)
 					const proxy = await broker.getProxy<ICalculatorService>(calcDescriptorUtf8BE32, undefined, defaultToken)
-					await assert.rejects(
-						new Promise<number[]>(async (resolve, reject) => {
-							const values: number[] = []
-							const observer = new Observer<number>(
-								value => values.push(value),
-								error => {
-									if (error) {
-										reject(error)
-									} else {
-										resolve(values)
-									}
-								}
-							)
-							let disposed = false
-							const disposableObservable = observer as unknown as IDisposable
-							disposableObservable.dispose = () => {
-								disposed = true
-							}
-							await proxy?.observeNumbers(observer, 3, true)
-							assert(disposed)
-						})
-					)
-					broker.dispose()
+					try {
+						const collectedErrors: unknown[] = []
+						const collectedValues: number[] = []
+						const failObserver = new Observer<number>(
+							value => collectedValues.push(value),
+							error => { if (error) { collectedErrors.push(error) } } // only track errors; completion case not expected with failAtEnd=true
+						)
+						let wasDisposed = false
+						const disposableFailObserver = failObserver as unknown as IDisposable
+						disposableFailObserver.dispose = () => { wasDisposed = true }
+						assert(proxy)
+						await proxy.observeNumbers(failObserver, 3, true)
+						assert.deepEqual(collectedValues, [1, 2, 3], 'Expected all values to be received before the failure is reported')
+						assert(wasDisposed, 'The observer must be disposed after the call completes')
+						assert.strictEqual(collectedErrors.length, 1, 'Exactly one error should be received from the failed observer')
+					} finally {
+						proxy?.dispose()
+						broker.dispose()
+					}
 					await channel.completion
 				} finally {
 					mx?.dispose()
@@ -524,6 +520,7 @@ describe.skip(/*unstable*/ 'Service Broker tests', function () {
 			// should close both pipes
 			await firstCompletion
 			await secondCompletion
+			s.dispose()
 		})
 
 		it('Should fail if handshake fails for pipe server', async function () {
@@ -563,6 +560,7 @@ describe.skip(/*unstable*/ 'Service Broker tests', function () {
 			const pipe = await broker.getPipe({ name: 'does not exist' }, undefined, defaultToken)
 			assert.strictEqual(pipe, null, 'Pipe to non-existant service should be undefined')
 			broker.dispose()
+			s.dispose()
 		})
 
 		it('Should return undefined object if requesting a non-existant proxy service', async function () {
@@ -574,6 +572,7 @@ describe.skip(/*unstable*/ 'Service Broker tests', function () {
 			const proxy = await broker.getProxy(nonexistantDescriptor, undefined, defaultToken)
 			assert.strictEqual(proxy, null, 'Should return undefined proxy to fake service')
 			broker.dispose()
+			s.dispose()
 		})
 
 		it('Should return proxy to service over named pipe', async function () {
@@ -593,6 +592,7 @@ describe.skip(/*unstable*/ 'Service Broker tests', function () {
 			broker.dispose()
 
 			await expect(() => broker.getProxy(calcDescriptorUtf8Http, undefined, defaultToken)).rejects.toThrow()
+			s.dispose()
 		})
 
 		it('Should emit and listen for availabilityChanged event', async function () {

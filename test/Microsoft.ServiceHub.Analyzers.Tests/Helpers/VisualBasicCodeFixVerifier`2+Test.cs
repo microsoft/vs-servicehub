@@ -22,6 +22,7 @@ public static partial class VisualBasicCodeFixVerifier<TAnalyzer, TCodeFix>
 			{
 				var parseOptions = (VisualBasicParseOptions?)solution.GetProject(projectId)?.ParseOptions;
 				solution = solution.WithProjectParseOptions(projectId, parseOptions!.WithLanguageVersion(LanguageVersion.Latest));
+				solution = ReferencesHelper.UseCurrentImmutableCollections(solution, projectId);
 				if (this.IncludeServiceHubFrameworkReferences)
 				{
 					solution = solution.AddMetadataReference(projectId, MetadataReference.CreateFromFile(typeof(IServiceBroker).Assembly.Location));

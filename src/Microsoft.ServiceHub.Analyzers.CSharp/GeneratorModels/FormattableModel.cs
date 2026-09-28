@@ -28,4 +28,36 @@ internal abstract record FormattableModel
 	internal virtual void WriteNestedTypes(SourceWriter writer)
 	{
 	}
+
+	/// <summary>
+	/// Writes statements that initialize resilient-proxy members in the generated constructor.
+	/// </summary>
+	/// <param name="writer">The generated source writer.</param>
+	internal virtual void WriteResilientConstructorStatements(SourceWriter writer)
+	{
+	}
+
+	/// <summary>
+	/// Writes resilient-proxy event implementations.
+	/// </summary>
+	/// <param name="writer">The generated source writer.</param>
+	internal virtual void WriteResilientEvents(SourceWriter writer)
+	{
+	}
+
+	/// <summary>
+	/// Writes fields used by resilient-proxy members.
+	/// </summary>
+	/// <param name="writer">The generated source writer.</param>
+	internal virtual void WriteResilientFields(SourceWriter writer)
+	{
+	}
+
+	/// <summary>
+	/// Writes resilient-proxy method implementations.
+	/// </summary>
+	/// <param name="writer">The generated source writer.</param>
+	internal virtual void WriteResilientMethods(SourceWriter writer)
+	{
+	}
 }

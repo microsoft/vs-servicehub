@@ -272,7 +272,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 		};
 
 		JObject json = await this.GetDiagnosticsAsync(serviceAudience, cancellationToken).ConfigureAwait(false);
-		await json.WriteToAsync(jsonWriter).ConfigureAwait(false);
+		await json.WriteToAsync(jsonWriter, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>

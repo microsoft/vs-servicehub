@@ -19,6 +19,7 @@ public static partial class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 			{
 				var parseOptions = (CSharpParseOptions?)solution.GetProject(projectId)?.ParseOptions;
 				solution = solution.WithProjectParseOptions(projectId, parseOptions!.WithLanguageVersion(LanguageVersion.CSharp9));
+				solution = ReferencesHelper.UseCurrentImmutableCollections(solution, projectId);
 				if (this.IncludeServiceHubFrameworkReferences)
 				{
 					solution = solution.AddMetadataReference(projectId, MetadataReference.CreateFromFile(typeof(IServiceBroker).Assembly.Location));

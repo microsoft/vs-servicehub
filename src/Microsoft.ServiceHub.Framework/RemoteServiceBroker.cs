@@ -114,7 +114,9 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <summary>
 	/// Gets a <see cref="Task"/> that completes when this instance is disposed or the underlying <see cref="Stream"/> it was created with (if applicable) is closed.
 	/// </summary>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 	public Task Completion => this.completionSource.Task;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 	/// <summary>
 	/// Gets or sets the <see cref="System.Diagnostics.TraceSource"/> this instance will use for trace messages.
@@ -259,7 +261,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	{
 		Requires.NotNullOrEmpty(pipeName, nameof(pipeName));
 
-		IDuplexPipe pipe = await ConnectToPipeAsync(pipeName, cancellationToken).ConfigureAwait(false);
+		IDuplexPipe pipe = await ConnectToPipeAsync(pipeName, serverAlreadyListening: false, cancellationToken).ConfigureAwait(false);
 		IRemoteServiceBroker serviceBroker = FrameworkServices.RemoteServiceBroker
 			.WithTraceSource(traceSource)
 			.ConstructRpc<IRemoteServiceBroker>(pipe);
@@ -407,7 +409,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 					this.TraceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.RequestedServiceUnavailable, "Service \"{0}\" available over named pipe \"{1}\".", serviceMoniker, remoteConnectionInfo.PipeName);
 				}
 
-				return await ConnectToPipeAsync(remoteConnectionInfo.PipeName!, cancellationToken).ConfigureAwait(false);
+				return await ConnectToPipeAsync(remoteConnectionInfo.PipeName!, serverAlreadyListening: true, cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
@@ -496,7 +498,7 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 					this.TraceSource.TraceEvent(TraceEventType.Information, (int)TraceEvents.RequestedServiceUnavailable, "Service \"{0}\" available over named pipe \"{1}\".", serviceDescriptor.Moniker, remoteConnectionInfo.PipeName);
 				}
 
-				pipe = await ConnectToPipeAsync(remoteConnectionInfo.PipeName!, cancellationToken).ConfigureAwait(false);
+				pipe = await ConnectToPipeAsync(remoteConnectionInfo.PipeName!, serverAlreadyListening: true, cancellationToken).ConfigureAwait(false);
 			}
 			else if (remoteConnectionInfo.ClrActivation != null)
 			{
@@ -642,9 +644,10 @@ public class RemoteServiceBroker : IServiceBroker, IDisposable, System.IAsyncDis
 	/// <param name="args">Details regarding what changes have occurred.</param>
 	protected virtual void OnAvailabilityChanged(object? sender, BrokeredServicesChangedEventArgs args) => this.AvailabilityChanged?.Invoke(this, args);
 
-	private static async Task<IDuplexPipe> ConnectToPipeAsync(string pipeName, CancellationToken cancellationToken)
+	private static async Task<IDuplexPipe> ConnectToPipeAsync(string pipeName, bool serverAlreadyListening, CancellationToken cancellationToken)
 	{
-		return (await ServerFactory.ConnectAsync(pipeName, cancellationToken).ConfigureAwait(false))
+		ServerFactory.ClientOptions options = new() { ServerAlreadyListening = serverAlreadyListening };
+		return (await ServerFactory.ConnectAsync(pipeName, options, cancellationToken).ConfigureAwait(false))
 			.UsePipe(cancellationToken: CancellationToken.None);
 	}
 

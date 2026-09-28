@@ -5,6 +5,7 @@
 #pragma warning disable // Disable all warnings so that [Experimental] APIs don't flag anything.
 
 [global::Microsoft.ServiceHub.Framework.Reflection.LocalProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IApple_Proxy))]
+[global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyMappingAttribute(typeof(Microsoft.ServiceHub.Framework.Generated.IApple_Proxy_ResilientProxy))]
 partial interface IApple
 {
 }
@@ -34,6 +35,33 @@ namespace Microsoft.ServiceHub.Framework.Generated
 			catch (global::System.Exception ex)
 			{
 				throw this.ExceptionHelper(ex);
+			}
+		}
+	}
+	
+	[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.ServiceHub.Analyzers.CSharp", "x.x.x.x")]
+	internal class IApple_Proxy_ResilientProxy : global::Microsoft.ServiceHub.Framework.Reflection.ResilientProxyBase<global::IApple>
+		, global::IApple
+	{
+		
+		public IApple_Proxy_ResilientProxy(
+			global::Microsoft.ServiceHub.Framework.IServiceBroker serviceBroker,
+			global::Microsoft.ServiceHub.Framework.ServiceRpcDescriptor serviceDescriptor,
+			global::Microsoft.ServiceHub.Framework.ServiceActivationOptions options)
+			: base(serviceBroker, serviceDescriptor, options)
+		{
+		}
+		
+		global::System.Threading.Tasks.Task global::IApple.EatAppleAsync()
+		{
+			return InvokeAsync();
+			
+			async global::System.Threading.Tasks.Task InvokeAsync()
+			{
+				using (ProxyRental rental = await this.RentProxyAsync(default).ConfigureAwait(false))
+				{
+					await ((global::IApple)rental.Proxy).EatAppleAsync().ConfigureAwait(false);
+				}
 			}
 		}
 	}

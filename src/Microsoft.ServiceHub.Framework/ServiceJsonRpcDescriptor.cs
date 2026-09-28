@@ -680,7 +680,9 @@ public partial class ServiceJsonRpcDescriptor : ServiceRpcDescriptor, IEquatable
 		public JsonRpc JsonRpc { get; }
 
 		/// <inheritdoc/>
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
 		public override Task Completion => this.JsonRpc.Completion;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
 
 		/// <inheritdoc/>
 		public override void AddLocalRpcTarget(object rpcTarget)
