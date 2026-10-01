@@ -47,7 +47,7 @@ extends:
         steps:
         - task: NodeTool@0
           inputs:
-            versionSpec: 22.x
+            versionSpec: 24.x
           displayName: ⚙️️ Install Node.js
         - download: CI
           artifact: deployables-Windows
