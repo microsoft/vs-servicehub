@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>false</IsTestProject>
+    <NativeAOT>true</NativeAOT>
+    <RuntimeIdentifier>$(DefaultRuntimeIdentifier)</RuntimeIdentifier>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+
+  <Import Project="..\AOT.props" />
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Microsoft.ServiceHub.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
+  </ItemGroup>
+</Project>
