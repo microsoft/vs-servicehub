@@ -42,6 +42,11 @@ jobs:
             throw 'Failed to acquire an Azure DevOps access token.'
           }
           Write-Output "::add-mask::$accessToken"
+          $npmrcPath = 'src/servicebroker-npm/.npmrc'
+          $registry = & ./src/servicebroker-npm/Get-NpmRegistry.ps1 -NpmrcPath $npmrcPath
+          $scope = "$registry/" -replace '^https?:', ''
+          Add-Content -LiteralPath $npmrcPath -Encoding utf8 -Value "${scope}:_authToken=$accessToken"
+
           $nugetConfig = [xml](Get-Content -LiteralPath nuget.config -Raw)
           $sources = @($nugetConfig.configuration.packageSources.add | Where-Object {
             $_.value -match '^https://pkgs\.dev\.azure\.com/' -or $_.value -match '^https://[\w-]+\.pkgs\.visualstudio\.com/'

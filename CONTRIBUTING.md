@@ -93,7 +93,7 @@ For a specified RID, managed execution and native publishing can share the same 
 Test builds keep dynamic code, startup hooks, and event tracing enabled for managed code coverage.
 The `ConfigureNativeAOTTestFeatures` target disables those features only in the native compiler's publish-time inputs, without rewriting the managed runtime configuration.
 It preserves all other runtime feature options, including invariant globalization, so native compilation and linking use consistent settings.
-Test builds use invariant globalization and retain only English satellite resources; RID-specific builds are self-contained.
+NativeAOT test publishes use invariant globalization and retain only English satellite resources; managed test executions retain normal globalization settings. RID-specific builds are self-contained.
 Shipping libraries targeting .NET opt into NativeAOT compatibility analysis with `IsAotCompatible`.
 The `test/AotCompatibilityTest` project complements those analyzers by rooting the shipping assembly and passing it through the NativeAOT compiler during every traversal publish.
 Add each shipping assembly that must be validated as a `TrimmerRootAssembly`, and keep this project publishable in `test/dirs.proj`.
