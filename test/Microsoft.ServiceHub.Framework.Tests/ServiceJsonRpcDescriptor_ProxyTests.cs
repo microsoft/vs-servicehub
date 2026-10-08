@@ -3,6 +3,8 @@
 
 using System.Collections.Immutable;
 using System.ComponentModel;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Microsoft;
 using Microsoft.ServiceHub.Framework;
@@ -13,6 +15,20 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 	public ServiceJsonRpcDescriptor_ProxyTests(ITestOutputHelper logger)
 		: base(logger)
 	{
+	}
+
+	/// <summary>
+	/// A contract used to introduce a dynamically emitted type into a static interface's type graph.
+	/// </summary>
+	/// <typeparam name="T">The payload type.</typeparam>
+	public interface IServiceWithDynamicPayload<T>
+	{
+		/// <summary>
+		/// Returns the supplied value.
+		/// </summary>
+		/// <param name="value">The value to return.</param>
+		/// <returns>The supplied value.</returns>
+		T Echo(T value);
 	}
 
 	internal interface IServerWithVoidMethod : ISomeService
@@ -281,6 +297,43 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 		this.Logger.WriteLine($"Proxy type: {proxy.GetType().FullName}");
 	}
 
+	[Fact]
+	public void DynamicProxyTypeIsCachedAndForwardsCalls()
+	{
+		var firstTarget = new SomeService();
+		var secondTarget = new SomeService();
+		IServerWithVoidMethod firstProxy = this.CreateProxy<IServerWithVoidMethod>(firstTarget);
+		IServerWithVoidMethod secondProxy = this.CreateProxy<IServerWithVoidMethod>(secondTarget);
+
+		Assert.Same(firstProxy.GetType(), secondProxy.GetType());
+#if !NETFRAMEWORK
+		Assert.False(firstProxy.GetType().Assembly.IsCollectible);
+#endif
+
+		secondProxy.NoReturnValue();
+		Assert.False(firstTarget.NoReturnValue_Invoked);
+		Assert.True(secondTarget.NoReturnValue_Invoked);
+	}
+
+	[Theory]
+	[InlineData(AssemblyBuilderAccess.Run)]
+	[InlineData(AssemblyBuilderAccess.RunAndCollect)]
+	public void DynamicProxySupportsDynamicContractGraph(AssemblyBuilderAccess contractAssemblyAccess)
+	{
+		(Type contractType, object target, object value) = CreateDynamicService(contractAssemblyAccess);
+		Assert.False(contractType.Assembly.IsDynamic);
+		Assert.True(value.GetType().Assembly.IsDynamic);
+
+		MethodInfo constructLocalProxy = typeof(ServiceRpcDescriptor).GetMethod(nameof(ServiceRpcDescriptor.ConstructLocalProxy))!;
+		object proxy = constructLocalProxy.MakeGenericMethod(contractType).Invoke(this.SomeDescriptor, new[] { target })!;
+		MethodInfo echoMethod = contractType.GetMethod(nameof(IServiceWithDynamicPayload<object>.Echo))!;
+		Assert.Same(value, echoMethod.Invoke(proxy, new[] { value }));
+
+#if !NETFRAMEWORK
+		Assert.Equal(contractAssemblyAccess == AssemblyBuilderAccess.RunAndCollect, proxy.GetType().Assembly.IsCollectible);
+#endif
+	}
+
 	protected override T? CreateProxy<T>(T? target, ServiceRpcDescriptor descriptor)
 		where T : class
 	{
@@ -294,6 +347,33 @@ public class ServiceJsonRpcDescriptor_ProxyTests : ServiceRpcDescriptor_ProxyTes
 		=> ((ServiceJsonRpcDescriptor)descriptor).WithExceptionStrategy(strategy);
 
 	protected override string GetDisplayName(ServiceRpcDescriptor descriptor) => throw new NotSupportedException();
+
+	private static (Type ContractType, object Target, object Value) CreateDynamicService(AssemblyBuilderAccess assemblyAccess)
+	{
+		var assemblyName = new AssemblyName($"DynamicContract_{Guid.NewGuid():N}");
+		AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, assemblyAccess);
+		ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name!);
+
+		Type payloadType = moduleBuilder.DefineType("Payload", TypeAttributes.Public).CreateTypeInfo()!.AsType();
+		Type contractType = typeof(IServiceWithDynamicPayload<>).MakeGenericType(payloadType);
+
+		TypeBuilder targetTypeBuilder = moduleBuilder.DefineType("Target", TypeAttributes.Public);
+		targetTypeBuilder.AddInterfaceImplementation(contractType);
+		targetTypeBuilder.DefineDefaultConstructor(MethodAttributes.Public);
+		MethodInfo echoMethod = contractType.GetMethod(nameof(IServiceWithDynamicPayload<object>.Echo))!;
+		MethodBuilder echoMethodBuilder = targetTypeBuilder.DefineMethod(
+			echoMethod.Name,
+			MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual,
+			payloadType,
+			new[] { payloadType });
+		ILGenerator il = echoMethodBuilder.GetILGenerator();
+		il.Emit(OpCodes.Ldarg_1);
+		il.Emit(OpCodes.Ret);
+		targetTypeBuilder.DefineMethodOverride(echoMethodBuilder, echoMethod);
+
+		Type targetType = targetTypeBuilder.CreateTypeInfo()!.AsType();
+		return (contractType, Activator.CreateInstance(targetType)!, Activator.CreateInstance(payloadType)!);
+	}
 
 	private protected class SomeService : SomeNonDisposableService, IServerWithVoidMethod
 	{
