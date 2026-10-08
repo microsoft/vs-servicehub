@@ -81,6 +81,56 @@ You can use `dotnet test` to build and/or test the repo.
 
 There may be tests that are known to be unstable or have special requirements. These can be avoided by running tests using the [dotnet-test-cloud.ps1](tools/dotnet-test-cloud.ps1) script *after* running `dotnet build`.
 
+### Native and IPC regressions
+
+Before changing a P/Invoke declaration, locate the owning declaration and its callers, and verify the native signature, calling convention, structure layout, and pointer/value semantics.
+For example, the Windows pipe client declaration is `AsyncNamedPipeClientStream.CreateNamedPipeClient` in [AsyncNamedPipeClientStream.cs](src/Microsoft.ServiceHub.Framework/AsyncNamedPipeClientStream.cs); [ServerFactory.ConnectAsync](src/Microsoft.ServiceHub.Framework/ServerFactory.cs) selects different implementations on Windows and other operating systems.
+Record the actual runner OS, target framework, runtime, and test process architecture, not just the machine architecture or build configuration.
+A green x64 run does not establish x86 ABI compatibility, and a non-Windows pipe test does not exercise the Windows P/Invoke.
+
+A native regression needs a test that crosses the real native boundary: demonstrate that it fails with the old implementation and passes with the corrected implementation on the failing architecture.
+Keep the test and environment otherwise unchanged, and confirm that the test executed rather than being skipped.
+Mocked calls, signature inspection, and managed RPC tests alone do not establish native compatibility.
+
+#### Architecture-specific execution
+
+Follow the build prerequisites above and the agent bootstrap instructions in [AGENTS.md](AGENTS.md) when applicable.
+The [test runner configuration](global.json) uses Microsoft.Testing.Platform; use the runner filters documented in [AGENTS.md](AGENTS.md#running-tests), not VSTest `--filter` expressions.
+For example, pass `-- --filter-not-trait "TestCategory=FailsInCloudTest"` to exclude unstable tests, matching the cloud-test script.
+Choose a framework from the test project's current `TargetFrameworks`: [Microsoft.ServiceHub.Framework.Tests.csproj](test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj) targets `net8.0` and additionally `net472` on Windows.
+
+After building the matching configuration, the existing cloud-test script supports this Windows x86 invocation from the repository root:
+
+```ps1
+./tools/dotnet-test-cloud.ps1 -Configuration Release -x86
+```
+
+The script locates a 32-bit `dotnet.exe`; use its `-dotnet32` parameter to supply an explicit path to an already installed 32-bit SDK when necessary.
+Check the launched test process architecture as well: selecting a CLI executable or labeling a result "x86" is not evidence that the test host ran as x86.
+The script runs with `--no-build`, excludes `TestCategory=FailsInCloudTest` (and `WindowsOnly=true` on non-Windows systems), and collects TRX results, diagnostics, and hang/crash dumps.
+Its architecture parameters belong to the PowerShell script, not to `dotnet test`.
+Do not infer architecture coverage from the normal [CI invocation](azure-pipelines/dotnet.yml), which does not pass `-x86`.
+
+#### Isolate connection failures
+
+Separate a native/transport connection smoke test from higher-level RPC and callback assertions.
+Use [ServerFactoryTests.TestConnection](test/Microsoft.ServiceHub.Framework.Tests/ServerFactoryTests.cs) as existing transport-level prior art, then test RPC behavior after independently verifying connection establishment.
+Preserve the first native error before cleanup or subsequent native calls can overwrite it; `AsyncNamedPipeClientStream.TryConnect` already reads `Marshal.GetLastWin32Error()` before disposing an invalid handle.
+Distinguish that error from later cancellation or timeout instead of treating the final exception as the original cause.
+Do not mask a deterministic failure with retries or longer timeouts.
+
+Use existing diagnostics where appropriate: `ServerFactory.ClientOptions.FailFast` limits connection retries, and `ServerAlreadyListening` bounds retries for a missing pipe when the server is known to have started.
+`AsyncNamedPipeClientStream.ConnectAsync` includes native error counts in its timeout exception; cancellation can take a different path, so those counts are not a substitute for capturing the initial error.
+Existing tests use `TestBase.CreateTestTraceSource` and bounded cancellation tokens in [TestBase.cs](test/Microsoft.ServiceHub.Framework.Tests/TestBase.cs).
+
+#### Retain reproducible evidence
+
+Keep a complete, immutable artifact set for each before/after run: source revision, package identities, relevant manifests, tested binaries and symbols, runner configuration, results, and diagnostic attachments.
+Do not mix a manifest or package from one build with binaries from another, or overwrite the failing run's evidence with the passing run.
+The existing [test artifact collector](tools/artifacts/testResults.ps1) retains test logs and dump attachments; preserve the matching binaries and build identities alongside them.
+Unit and JIT-based RPC test results are distinct from compatibility evidence for a published package or native host: exercise the actual deployment form when making that claim.
+Keep exact build-specific evidence outside reusable guidance, and include only public-safe, appropriately sanitized evidence in public issues or pull requests.
+
 ## Releases
 
 Use `nbgv tag` to create a tag for a particular commit that you mean to release.
