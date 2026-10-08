@@ -44,14 +44,14 @@ overrides:
   'brace-expansion@1': 1.1.21
   'brace-expansion@2': 2.1.7
   'brace-expansion@5': 5.0.12
-  browserslist: 4.29.0
-  caniuse-lite: 1.0.30001810
+  browserslist: 4.29.2
+  caniuse-lite: 1.0.30001813
   electron-to-chromium: 1.5.434
   get-east-asian-width: 1.7.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.5.3
-  node-releases: 2.0.56
+  node-releases: 2.0.57
   'picomatch@4': 4.0.7
   '@jest/react-is-19': npm:react-is@19.3.0
   react-is: 19.3.0

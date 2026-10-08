@@ -37,7 +37,7 @@
 		"vscode-jsonrpc": "^9.0.0"
 	},
 	"devDependencies": {
-		"@microsoft/tsdoc": "0.17.0",
+		"@microsoft/tsdoc": "0.17.1",
 		"@tsconfig/node20": "20.1.10",
 		"@types/jest": "30.0.0",
 		"@types/msgpack-lite": "0.1.12",
@@ -51,7 +51,7 @@
 		"jshint": "2.13.6",
 		"nerdbank-gitversioning": "3.10.94",
 		"nyc": "18.0.0",
-		"prettier": "3.9.7",
+		"prettier": "3.9.9",
 		"ts-jest": "29.4.12",
 		"ts-node": "10.9.2",
 		"typescript": "6.0.3",
