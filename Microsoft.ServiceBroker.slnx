@@ -34,6 +34,7 @@
     <Project Path="src/Microsoft.ServiceHub.Framework/Microsoft.ServiceHub.Framework.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/AotCompatibilityTest/AotCompatibilityTest.csproj" />
     <Project Path="test/ExternalTestAssembly/ExternalTestAssembly.csproj" />
     <Project Path="test/Microsoft.ServiceHub.Analyzers.Tests/Microsoft.ServiceHub.Analyzers.Tests.csproj" />
     <Project Path="test/Microsoft.ServiceHub.Framework.Testing.Tests/Microsoft.ServiceHub.Framework.Testing.Tests.csproj" />

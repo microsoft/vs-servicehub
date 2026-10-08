@@ -8,6 +8,7 @@ if (!$match.Success) {
 }
 
 $setup = [scriptblock]::Create(($match.Groups['script'].Value -replace '(?m)^          ', ''))
+$npmRegistryScript = Join-Path $PSScriptRoot '..\..\src\servicebroker-npm\Get-NpmRegistry.ps1'
 $directory = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
 $oldEnv = $env:GITHUB_ENV
 New-Item -ItemType Directory -Path $directory | Out-Null
@@ -20,6 +21,12 @@ function az {
 Push-Location $directory
 try {
     $env:GITHUB_ENV = Join-Path $directory 'github-env'
+    $npmDirectory = Join-Path $directory 'src\servicebroker-npm'
+    New-Item -ItemType Directory -Path $npmDirectory | Out-Null
+    Copy-Item -LiteralPath $npmRegistryScript -Destination $npmDirectory
+    $npmrcPath = Join-Path $npmDirectory '.npmrc'
+    $registry = 'https://pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/'
+    Set-Content -LiteralPath $npmrcPath -Value "registry=$registry`nalways-auth=true"
     @'
 <configuration>
   <packageSources>
@@ -35,6 +42,15 @@ try {
     $output = & $setup
     if ($output -ne '::add-mask::test-access-token') {
         throw 'Token was not masked.'
+    }
+
+    $npmLines = @(Get-Content -LiteralPath $npmrcPath)
+    if ($npmLines -cnotcontains '//pkgs.dev.azure.com/azure-public/vside/_packaging/msft_consumption/npm/registry/:_authToken=test-access-token') {
+        throw 'Scoped npm registry credentials missing.'
+    }
+
+    if ($npmLines -cnotcontains "registry=$registry" -or $npmLines -cnotcontains 'always-auth=true') {
+        throw 'Existing npm registry configuration was not preserved.'
     }
 
     $lines = @(Get-Content -LiteralPath $env:GITHUB_ENV)
@@ -70,6 +86,8 @@ try {
 finally {
     Pop-Location
     $env:GITHUB_ENV = $oldEnv
+    Remove-Item -LiteralPath $npmrcPath, (Join-Path $npmDirectory 'Get-NpmRegistry.ps1') -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $npmDirectory, (Join-Path $directory 'src') -Force
     Remove-Item -LiteralPath (Join-Path $directory 'nuget.config'), (Join-Path $directory 'github-env') -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $directory -Force
 }
