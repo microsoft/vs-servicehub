@@ -14,9 +14,12 @@ namespace Microsoft.ServiceHub.Framework.Reflection;
 public sealed class ResilientProxyMappingAttribute(
 	[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)] Type proxyClass) : Attribute
 {
+	[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)]
+	private readonly Type proxyClass = proxyClass;
+
 	/// <summary>
 	/// Gets the class that implements a resilient proxy for the attributed interface.
 	/// </summary>
 	[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.Interfaces)]
-	public Type ProxyClass => proxyClass;
+	public Type ProxyClass => this.proxyClass;
 }

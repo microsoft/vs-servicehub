@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>exe</OutputType>
+    <PublishNativeAOTTests>false</PublishNativeAOTTests>
     <!-- Do not test on net472 because on the linux AzP agents this will run on mono, and the analyzer test library fails on mono. -->
     <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
