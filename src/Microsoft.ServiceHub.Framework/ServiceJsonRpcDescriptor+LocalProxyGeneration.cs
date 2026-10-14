@@ -29,7 +29,7 @@ public partial class ServiceJsonRpcDescriptor
 	[RequiresDynamicCode(Reasons.DynamicProxy)]
 	private static class LocalProxyGeneration
 	{
-		private static readonly List<(ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder)> TransparentProxyModuleBuilderByVisibilityCheck = new List<(ImmutableHashSet<AssemblyName>, ModuleBuilder)>();
+		private static readonly List<(ImmutableHashSet<AssemblyName> SkipVisibilitySet, bool Collectible, ModuleBuilder Builder)> TransparentProxyModuleBuilderByVisibilityCheck = new List<(ImmutableHashSet<AssemblyName>, bool, ModuleBuilder)>();
 		private static readonly object BuilderLock = new object();
 
 		private static readonly Dictionary<ReadOnlyMemory<Type>, TypeInfo> GeneratedProxiesByInterface = new(TypeArrayUnorderedEqualityComparer.Instance);
@@ -80,11 +80,39 @@ public partial class ServiceJsonRpcDescriptor
 		}
 
 		/// <summary>
-		/// Gets the <see cref="ModuleBuilder"/> to use for generating a proxy for the given type.
+		/// Defines a proxy type that supports contracts referencing collectible assemblies.
 		/// </summary>
-		/// <param name="interfaceTypes">The types of the interfaces the proxy will implement.</param>
-		/// <returns>The <see cref="ModuleBuilder"/> to use.</returns>
-		private static ModuleBuilder GetProxyModuleBuilder(Type[] interfaceTypes)
+		private static (ModuleBuilder ModuleBuilder, TypeBuilder TypeBuilder) DefineProxyType(Type[] interfaceTypes, string typeName)
+		{
+			ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies = ImmutableHashSet.CreateRange(interfaceTypes.SelectMany(t => SkipClrVisibilityChecks.GetSkipVisibilityChecksRequirements(t.GetTypeInfo())))
+				.Add(ExceptionHelperMethod.DeclaringType!.Assembly.GetName());
+
+			// A non-collectible assembly cannot reference a collectible assembly. Rather than pre-scanning the contract
+			// graph to detect this, first try the ordinary module and let the runtime reject the type definition when necessary.
+			try
+			{
+				return DefineProxyType(interfaceTypes, typeName, skipVisibilityCheckAssemblies, collectible: false);
+			}
+			catch (NotSupportedException)
+			{
+				return DefineProxyType(interfaceTypes, typeName, skipVisibilityCheckAssemblies, collectible: true);
+			}
+		}
+
+		private static (ModuleBuilder ModuleBuilder, TypeBuilder TypeBuilder) DefineProxyType(
+			Type[] interfaceTypes,
+			string typeName,
+			ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies,
+			bool collectible)
+		{
+			ModuleBuilder moduleBuilder = GetProxyModuleBuilder(skipVisibilityCheckAssemblies, collectible);
+			return (moduleBuilder, moduleBuilder.DefineType(typeName, TypeAttributes.Public, typeof(object), interfaceTypes));
+		}
+
+		/// <summary>
+		/// Gets the <see cref="ModuleBuilder"/> to use for generating a proxy.
+		/// </summary>
+		private static ModuleBuilder GetProxyModuleBuilder(ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies, bool collectible)
 		{
 			Assumes.True(Monitor.IsEntered(BuilderLock));
 
@@ -92,11 +120,9 @@ public partial class ServiceJsonRpcDescriptor
 			// For each set of skip visibility check assemblies, we need a dynamic assembly that skips at *least* that set.
 			// The CLR will not honor any additions to that set once the first generated type is closed.
 			// We maintain a dictionary to point at dynamic modules based on the set of skip visibility check assemblies they were generated with.
-			ImmutableHashSet<AssemblyName> skipVisibilityCheckAssemblies = ImmutableHashSet.CreateRange(interfaceTypes.SelectMany(t => SkipClrVisibilityChecks.GetSkipVisibilityChecksRequirements(t.GetTypeInfo())))
-				.Add(ExceptionHelperMethod.DeclaringType!.Assembly.GetName());
-			foreach ((ImmutableHashSet<AssemblyName> SkipVisibilitySet, ModuleBuilder Builder) existingSet in TransparentProxyModuleBuilderByVisibilityCheck)
+			foreach ((ImmutableHashSet<AssemblyName> SkipVisibilitySet, bool Collectible, ModuleBuilder Builder) existingSet in TransparentProxyModuleBuilderByVisibilityCheck)
 			{
-				if (existingSet.SkipVisibilitySet.IsSupersetOf(skipVisibilityCheckAssemblies))
+				if (existingSet.Collectible == collectible && existingSet.SkipVisibilitySet.IsSupersetOf(skipVisibilityCheckAssemblies))
 				{
 					return existingSet.Builder;
 				}
@@ -107,22 +133,21 @@ public partial class ServiceJsonRpcDescriptor
 			// I have disabled this optimization though till we need it since it would sometimes cover up any bugs in the above visibility checking code.
 			////skipVisibilityCheckAssemblies = skipVisibilityCheckAssemblies.Union(AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetName()));
 
-			AssemblyBuilder assemblyBuilder = CreateProxyAssemblyBuilder(skipVisibilityCheckAssemblies);
+			AssemblyBuilder assemblyBuilder = CreateProxyAssemblyBuilder(skipVisibilityCheckAssemblies, collectible);
 			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("rpcProxies");
 			var skipClrVisibilityChecks = new SkipClrVisibilityChecks(assemblyBuilder, moduleBuilder);
 			skipClrVisibilityChecks.SkipVisibilityChecksFor(skipVisibilityCheckAssemblies);
-			TransparentProxyModuleBuilderByVisibilityCheck.Add((skipVisibilityCheckAssemblies, moduleBuilder));
-
+			TransparentProxyModuleBuilderByVisibilityCheck.Add((skipVisibilityCheckAssemblies, collectible, moduleBuilder));
 			return moduleBuilder;
 		}
 
-		private static AssemblyBuilder CreateProxyAssemblyBuilder(ImmutableHashSet<AssemblyName> assemblies)
+		private static AssemblyBuilder CreateProxyAssemblyBuilder(ImmutableHashSet<AssemblyName> assemblies, bool collectible)
 		{
 			var proxyAssemblyName = new AssemblyName(string.Format(CultureInfo.InvariantCulture, "localRpcProxies_{0}", GenerateGuidFromAssemblies(assemblies)));
 #if SaveAssembly
 			return AssemblyBuilder.DefineDynamicAssembly(proxyAssemblyName, AssemblyBuilderAccess.RunAndSave);
 #else
-			return AssemblyBuilder.DefineDynamicAssembly(proxyAssemblyName, AssemblyBuilderAccess.RunAndCollect);
+			return AssemblyBuilder.DefineDynamicAssembly(proxyAssemblyName, collectible ? AssemblyBuilderAccess.RunAndCollect : AssemblyBuilderAccess.Run);
 #endif
 		}
 
@@ -188,13 +213,9 @@ public partial class ServiceJsonRpcDescriptor
 				}
 
 				Type[] contractInterfaces = [serviceInterface, .. additionalInterfaces];
-				ModuleBuilder proxyModuleBuilder = GetProxyModuleBuilder(interfaces);
-
-				TypeBuilder proxyTypeBuilder = proxyModuleBuilder.DefineType(
-					string.Format(CultureInfo.InvariantCulture, "_localproxy_{0}_{1}", serviceInterface.FullName, Guid.NewGuid()),
-					TypeAttributes.Public,
-					typeof(object),
-					interfaces);
+				(ModuleBuilder proxyModuleBuilder, TypeBuilder proxyTypeBuilder) = DefineProxyType(
+					interfaces,
+					string.Format(CultureInfo.InvariantCulture, "_localproxy_{0}_{1}", serviceInterface.FullName, Guid.NewGuid()));
 				Type proxyType = proxyTypeBuilder;
 				const FieldAttributes fieldAttributes = FieldAttributes.Private;
 				FieldBuilder disposedSentinelStaticField = proxyTypeBuilder.DefineField("DisposedSentinel", typeof(object), fieldAttributes | FieldAttributes.Static | FieldAttributes.InitOnly);
