@@ -8,10 +8,6 @@
   <Import Project="AOT.props"
           Condition="'$(IsTestProject)' == 'true' and '$(PublishNativeAOTTests)' == 'true' and '$(TargetFramework)' != '' and $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))" />
 
-  <PropertyGroup Condition="'$(NativeAOT)' == 'true' and '$(PublishNativeAOTTests)' == 'true'">
-    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
-  </PropertyGroup>
-
   <ItemGroup Condition="'$(IsTestProject)' != 'false'">
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />

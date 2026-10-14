@@ -86,7 +86,7 @@ Then run `./tools/dotnet-test-cloud.ps1 -Configuration Release -IncludeNativeAOT
 The traversal project publishes each eligible test framework targeting .NET.
 Keep test projects in the solution as well: managed test runs still use the solution, while NativeAOT runs use the traversal's evaluated executable paths.
 Test projects can opt out of NativeAOT publishing with `<PublishNativeAOTTests>false</PublishNativeAOTTests>`.
-The existing xUnit test projects opt out because their test execution requires file-backed assembly paths; `test/AotCompatibilityTest` instead publishes `Microsoft.ServiceHub.Framework` with NativeAOT.
+The existing xUnit test projects opt out because their test execution requires file-backed assembly paths; `test/AotCompatibilityTest` instead compiles a source-generated remote service broker RPC client with NativeAOT.
 One restore includes all test target frameworks, runtime identifiers, and NativeAOT compiler dependencies.
 Managed builds are RID-neutral by default; NativeAOT builds use the SDK's runtime-specific output directories.
 For a specified RID, managed execution and native publishing can share the same build outputs.
@@ -95,8 +95,7 @@ The `ConfigureNativeAOTTestFeatures` target disables those features only in the 
 It preserves all other runtime feature options, including invariant globalization, so native compilation and linking use consistent settings.
 NativeAOT test publishes use invariant globalization and retain only English satellite resources; managed test executions retain normal globalization settings. RID-specific builds are self-contained.
 Shipping libraries targeting .NET opt into NativeAOT compatibility analysis with `IsAotCompatible`.
-The `test/AotCompatibilityTest` project complements those analyzers by rooting the shipping assembly and passing it through the NativeAOT compiler during every traversal publish.
-Add each shipping assembly that must be validated as a `TrimmerRootAssembly`, and keep this project publishable in `test/dirs.proj`.
+The `test/AotCompatibilityTest` project complements those analyzers by compiling a representative source-generated JSON-RPC client over the shipping framework during every traversal publish. The framework also exposes APIs that intentionally require dynamic code; the compatibility executable validates the generated-proxy path rather than rooting those unsupported APIs. Keep this project publishable in `test/dirs.proj`.
 Root `Directory.Build.props` supplies project-reference defaults for both traversal and SDK projects that remove the `_IsPublishing` global property for managed dependencies, avoiding duplicate project instances that write to the same outputs during parallel publishing.
 
 ## Releases

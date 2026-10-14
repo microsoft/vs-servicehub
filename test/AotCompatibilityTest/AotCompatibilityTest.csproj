@@ -11,10 +11,6 @@
   <Import Project="..\AOT.props" />
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="Microsoft.ServiceHub.Framework" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.ServiceHub.Framework\Microsoft.ServiceHub.Framework.csproj" />
   </ItemGroup>
 </Project>
