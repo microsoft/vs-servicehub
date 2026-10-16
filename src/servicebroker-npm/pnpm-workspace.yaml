@@ -23,13 +23,13 @@ overrides:
   '@babel/helper-string-parser': 7.29.7
   '@babel/helper-validator-identifier': 7.29.7
   '@babel/helper-validator-option': 7.29.7
-  '@babel/helpers': 7.29.7
+  '@babel/helpers': 7.29.10
   '@babel/parser': 7.29.9
   '@babel/plugin-syntax-import-attributes': 7.29.7
   '@babel/plugin-syntax-jsx': 7.29.7
   '@babel/plugin-syntax-typescript': 7.29.7
   '@babel/template': 7.29.7
-  '@babel/traverse': 7.29.8
+  '@babel/traverse': 7.29.10
   '@babel/types': 7.29.8
   '@istanbuljs/schema': 0.1.6
   '@pkgr/core': 0.3.6
@@ -40,13 +40,13 @@ overrides:
   '@humanfs/node': 0.17.0
   acorn: 8.18.0
   ajv: 8.20.0
-  baseline-browser-mapping: 2.11.25
+  baseline-browser-mapping: 2.11.27
   'brace-expansion@1': 1.1.21
   'brace-expansion@2': 2.1.7
   'brace-expansion@5': 5.0.12
-  browserslist: 4.29.2
-  caniuse-lite: 1.0.30001813
-  electron-to-chromium: 1.5.434
+  browserslist: 4.29.3
+  caniuse-lite: 1.0.30001814
+  electron-to-chromium: 1.5.444
   get-east-asian-width: 1.7.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
