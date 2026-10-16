@@ -24,7 +24,7 @@
       "rollForward": false
     },
     "docfx": {
-      "version": "2.78.5",
+      "version": "2.81.0",
       "commands": [
         "docfx"
       ],
@@ -38,7 +38,7 @@
       "rollForward": false
     },
     "dotnet-symbol": {
-      "version": "10.0.750601",
+      "version": "10.0.750901",
       "commands": [
         "dotnet-symbol"
       ],
