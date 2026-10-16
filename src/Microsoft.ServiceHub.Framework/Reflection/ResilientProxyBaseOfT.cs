@@ -56,6 +56,7 @@ public abstract class ResilientProxyBase<T> : ResilientProxyBase
 	/// <param name="serviceBroker">The broker used to acquire inner proxies.</param>
 	/// <param name="serviceDescriptor">The service descriptor.</param>
 	/// <param name="options">Service activation options.</param>
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Generated proxy types are discovered through ResilientProxyMappingAttribute.ProxyClass, which preserves their interfaces for reflection.")]
 	protected ResilientProxyBase(IServiceBroker serviceBroker, ServiceRpcDescriptor serviceDescriptor, ServiceActivationOptions options)
 	{
 		this.serviceBroker = Requires.NotNull(serviceBroker);
