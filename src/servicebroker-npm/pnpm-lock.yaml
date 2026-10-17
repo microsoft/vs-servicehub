@@ -198,7 +198,7 @@ overrides:
   brace-expansion@5: 5.0.12
   browserslist: 4.29.3
   caniuse-lite: 1.0.30001815
-  electron-to-chromium: 1.5.444
+  electron-to-chromium: 1.5.452
   get-east-asian-width: 1.7.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
@@ -1347,8 +1347,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha1-aWzi7Aqg5uqTo5f/zySqeEDIJ8s=}
 
-  electron-to-chromium@1.5.444:
-    resolution: {integrity: sha512-5ss/uJfoDYDHT0lfJzT6FbcskIzROIOPf0BbbFkGcvDzoJU7i//9GDrwwIHQVmIsrAGiF3ihpADBRIsrEFt1rQ==}
+  electron-to-chromium@1.5.452:
+    resolution: {integrity: sha512-cVvk1YBSj6571VmV6hdJTqj94Y79xSu8cj6Y9t6ae4Y4431z8/7EJFvu3rVp90xhfuv9BpPKUmaLfTo4+FOGBg==}
 
   emittery@0.13.1:
     resolution: {integrity: sha1-wEuMNFdJDghHrlH87Tr1LTOOPa0=}
@@ -3513,7 +3513,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.28
       caniuse-lite: 1.0.30001815
-      electron-to-chromium: 1.5.444
+      electron-to-chromium: 1.5.452
       node-releases: 2.0.58
       update-browserslist-db: 1.3.3(browserslist@4.29.3)
 
@@ -3666,7 +3666,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  electron-to-chromium@1.5.444: {}
+  electron-to-chromium@1.5.452: {}
 
   emittery@0.13.1: {}
 
