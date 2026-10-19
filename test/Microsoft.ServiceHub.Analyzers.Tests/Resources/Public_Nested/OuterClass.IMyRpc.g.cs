@@ -37,7 +37,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 					cancellationToken
 					);
 			}
-			catch (global::System.Exception ex)
+			catch (global::System.Exception ex) when (!(ex is global::System.OperationCanceledException))
 			{
 				throw this.ExceptionHelper(ex);
 			}

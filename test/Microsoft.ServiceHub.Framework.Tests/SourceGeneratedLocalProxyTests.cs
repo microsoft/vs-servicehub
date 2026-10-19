@@ -43,6 +43,19 @@ public partial class SourceGeneratedLocalProxyTests
 		ValueTask<double> GetPiAsync();
 	}
 
+	[JsonRpcContract]
+	[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+	public partial interface ICancelingService
+	{
+		Task GetTaskAsync(bool yieldFirst, CancellationToken cancellationToken);
+
+		Task<int> GetTaskOfTAsync(bool yieldFirst, CancellationToken cancellationToken);
+
+		ValueTask GetValueTaskAsync(bool yieldFirst, CancellationToken cancellationToken);
+
+		ValueTask<int> GetValueTaskOfTAsync(bool yieldFirst, CancellationToken cancellationToken);
+	}
+
 	[Fact]
 	public void Dispose_OnDisposableTarget()
 	{
@@ -145,6 +158,28 @@ public partial class SourceGeneratedLocalProxyTests
 		Assert.IsType<InvalidOperationException>(ex.GetBaseException());
 	}
 
+	[Theory]
+	[CombinatorialData]
+	public async Task CancellationDuringInvocationIsNotWrapped(bool yieldFirst, bool valueTask, bool generic, ExceptionProcessing exceptionStrategy)
+	{
+		using var cancellationSource = new CancellationTokenSource();
+		ICancelingService service = CalculatorDescriptor
+			.WithExceptionStrategy(exceptionStrategy)
+			.ConstructLocalProxy<ICancelingService>(new CancelingService(cancellationSource));
+
+		Task invocation = (valueTask, generic) switch
+		{
+			(false, false) => service.GetTaskAsync(yieldFirst, cancellationSource.Token),
+			(false, true) => service.GetTaskOfTAsync(yieldFirst, cancellationSource.Token),
+			(true, false) => service.GetValueTaskAsync(yieldFirst, cancellationSource.Token).AsTask(),
+			(true, true) => service.GetValueTaskOfTAsync(yieldFirst, cancellationSource.Token).AsTask(),
+		};
+
+		OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => invocation);
+		Assert.Equal(cancellationSource.Token, exception.CancellationToken);
+		Assert.True(invocation.IsCanceled);
+	}
+
 	[Fact]
 	public void Is_SimpleCalculator()
 	{
@@ -220,5 +255,37 @@ public partial class SourceGeneratedLocalProxyTests
 		public ValueTask<int> AddAsync(int a, int b, CancellationToken cancellationToken) => new(Task.FromException<int>(new InvalidOperationException()));
 
 		public Task<int> SubtractAsync(int a, int b, CancellationToken cancellationToken) => Task.FromException<int>(new InvalidOperationException());
+	}
+
+	private class CancelingService(CancellationTokenSource cancellationSource) : ICancelingService
+	{
+		public Task GetTaskAsync(bool yieldFirst, CancellationToken cancellationToken)
+			=> this.CancelAsync(yieldFirst, cancellationToken);
+
+		public async Task<int> GetTaskOfTAsync(bool yieldFirst, CancellationToken cancellationToken)
+		{
+			await this.CancelAsync(yieldFirst, cancellationToken);
+			return 0;
+		}
+
+		public ValueTask GetValueTaskAsync(bool yieldFirst, CancellationToken cancellationToken)
+			=> new(this.CancelAsync(yieldFirst, cancellationToken));
+
+		public async ValueTask<int> GetValueTaskOfTAsync(bool yieldFirst, CancellationToken cancellationToken)
+		{
+			await this.CancelAsync(yieldFirst, cancellationToken);
+			return 0;
+		}
+
+		private async Task CancelAsync(bool yieldFirst, CancellationToken cancellationToken)
+		{
+			if (yieldFirst)
+			{
+				await Task.Yield();
+			}
+
+			cancellationSource.Cancel();
+			cancellationToken.ThrowIfCancellationRequested();
+		}
 	}
 }
