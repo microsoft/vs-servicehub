@@ -82,9 +82,10 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 		writer.WriteLine(");");
 
 		writer.Indentation -= 2;
-		writer.WriteLine("""
+		string exceptionFilter = isAsync ? " when (!(ex is global::System.OperationCanceledException))" : string.Empty;
+		writer.WriteLine($$"""
 			}
-			catch (global::System.Exception ex)
+			catch (global::System.Exception ex){{exceptionFilter}}
 			{
 				throw this.ExceptionHelper(ex);
 			}
