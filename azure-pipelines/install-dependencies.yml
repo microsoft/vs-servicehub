@@ -104,6 +104,11 @@ steps:
       mono --version
     }
   displayName: ⚙ Install prerequisites
+  env:
+    ${{ if eq(variables['System.PullRequest.IsFork'], 'True') }}:
+      # Anonymous feed access cannot query metadata for unsaved optional platform packages.
+      # Keep frozen-lockfile installs, but leave metadata-based policy verification to trusted builds.
+      PNPM_CONFIG_TRUST_LOCKFILE: 'true'
 
 - powershell: tools/variables/_define.ps1
   failOnStderr: true
