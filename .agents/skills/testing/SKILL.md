@@ -26,12 +26,12 @@ dotnet test --no-build -c Release
 
 **Run tests for a specific test project** (within that test project's directory):
 ```bash
-dotnet test test/Project.Tests/Project.Tests.csproj --no-build -c Release
+dotnet test --no-build -c Release
 ```
 
 For runner options such as selecting a test case, inspect the xUnit v3 MTP runner help:
 ```bash
-dotnet test test/Project.Tests/Project.Tests.csproj --no-build -c Release -- --help
+dotnet test --no-build -c Release -- --help
 ```
 
 Options after `--` are passed to the test runner. The repository's CI filters excluded tests with xUnit v3 options such as `--filter-not-trait TestCategory=FailsInCloudTest`.
