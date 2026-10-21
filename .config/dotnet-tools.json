@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "powershell": {
-      "version": "7.6.6",
+      "version": "7.6.7",
       "commands": [
         "pwsh"
       ],
@@ -38,7 +38,7 @@
       "rollForward": false
     },
     "dotnet-symbol": {
-      "version": "10.0.751501",
+      "version": "10.0.751801",
       "commands": [
         "dotnet-symbol"
       ],
