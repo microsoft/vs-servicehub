@@ -22,6 +22,29 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 
 	private string? CancellationTokenExpression => this.CancellationToken?.Name;
 
+	internal static MethodModel Create(IMethodSymbol method, KnownSymbols symbols)
+	{
+		var parameters = new ImmutableEquatableArray<ParameterModel>([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]);
+		RpcSpecialType returnSpecialType = ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols);
+		string? returnTypeArg = method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] }
+			? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
+			: null;
+		bool isObserverSubscription = returnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask
+			&& method.ReturnType is INamedTypeSymbol { TypeArguments: [ITypeSymbol subscriptionType] }
+			&& SymbolEqualityComparer.Default.Equals(subscriptionType, symbols.IDisposable)
+			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver)
+			&& parameters is [.., { SpecialType: RpcSpecialType.CancellationToken }];
+		return new MethodModel(
+			method.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
+			method.Name,
+			method.ReturnType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
+			returnSpecialType,
+			returnTypeArg,
+			parameters,
+			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable),
+			isObserverSubscription);
+	}
+
 	internal override void WriteMethods(SourceWriter writer)
 	{
 		// The possible methods we invoke are as follows:
@@ -32,9 +55,11 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 		// | Task        | No         | Task InvokeWithCancellationAsync(string targetName, IReadOnlyList<object?>? arguments, IReadOnlyList<Type> argumentDeclaredTypes, CancellationToken cancellationToken)
 		// | Task<T>     | No         | Task<TResult> InvokeWithCancellationAsync<TResult>(string targetName, IReadOnlyList<object?>? arguments, IReadOnlyList<Type>? argumentDeclaredTypes, CancellationToken cancellationToken)
 		// | void        | No         | Task NotifyAsync(string targetName, object?[]? arguments, IReadOnlyList<Type>? argumentDeclaredTypes)
-		string returnTypeArg = this.ReturnTypeArg is null ? string.Empty :
-			this.ReturnSpecialType == RpcSpecialType.IAsyncEnumerable ? $"<{this.ReturnType}>" :
-			$"<{this.ReturnTypeArg}>";
+		string returnTypeArg = this.ReturnTypeArg is null
+			? string.Empty
+			: this.ReturnSpecialType == RpcSpecialType.IAsyncEnumerable
+				? $"<{this.ReturnType}>"
+				: $"<{this.ReturnTypeArg}>";
 		string cancellationArg = this.ReturnSpecialType == RpcSpecialType.Void ? string.Empty : $", {this.CancellationToken?.Name ?? "default"}";
 		bool isAsync = this.ReturnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask;
 		string asyncKeyword = isAsync ? "async " : string.Empty;
@@ -171,29 +196,6 @@ internal record MethodModel(string DeclaringInterfaceName, string Name, string R
 
 		writer.Indentation--;
 		writer.WriteLine("}");
-	}
-
-	internal static MethodModel Create(IMethodSymbol method, KnownSymbols symbols)
-	{
-		var parameters = new ImmutableEquatableArray<ParameterModel>([.. method.Parameters.Select(p => ParameterModel.Create(p, symbols))]);
-		RpcSpecialType returnSpecialType = ProxyGenerator.ClassifySpecialType(method.ReturnType, symbols);
-		string? returnTypeArg = method.ReturnType is INamedTypeSymbol { IsGenericType: true, TypeArguments: [ITypeSymbol typeArg] }
-			? typeArg.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
-			: null;
-		bool isObserverSubscription = returnSpecialType is RpcSpecialType.Task or RpcSpecialType.ValueTask
-			&& method.ReturnType is INamedTypeSymbol { TypeArguments: [ITypeSymbol subscriptionType] }
-			&& SymbolEqualityComparer.Default.Equals(subscriptionType, symbols.IDisposable)
-			&& parameters.Any(parameter => parameter.SpecialType == RpcSpecialType.IObserver)
-			&& parameters is [.., { SpecialType: RpcSpecialType.CancellationToken }];
-		return new MethodModel(
-			method.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
-			method.Name,
-			method.ReturnType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
-			returnSpecialType,
-			returnTypeArg,
-			parameters,
-			symbols.IAsyncDisposable is not null && SymbolEqualityComparer.Default.Equals(method.ContainingType, symbols.IAsyncDisposable),
-			isObserverSubscription);
 	}
 
 	private string GetUniqueParameterName(string baseName)

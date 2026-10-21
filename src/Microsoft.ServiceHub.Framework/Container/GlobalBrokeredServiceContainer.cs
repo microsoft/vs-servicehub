@@ -1456,7 +1456,7 @@ public abstract partial class GlobalBrokeredServiceContainer : IBrokeredServiceC
 			where T : class
 			=> throw new NotSupportedException();
 
-		Task<RemoteServiceConnectionInfo> IRemoteServiceBroker.RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
+		Task<RemoteServiceConnectionInfo> IRemoteServiceBroker.RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
 			=> throw new NotSupportedException();
 
 		Task IRemoteServiceBroker.HandshakeAsync(ServiceBrokerClientMetadata clientMetadata, CancellationToken cancellationToken)
