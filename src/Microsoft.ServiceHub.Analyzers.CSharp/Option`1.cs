@@ -47,7 +47,9 @@ public readonly struct Option<T>
 		=> this.hasValue is false ? 0 : EqualityComparer<T>.Default.GetHashCode(this.value);
 }
 
+#pragma warning disable SA1402 // File may only contain a single type
 public static class Option
+#pragma warning restore SA1402 // File may only contain a single type
 {
 	public static Option<T> Some<T>(T value) => Option<T>.Some(value);
 

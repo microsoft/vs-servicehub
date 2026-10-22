@@ -93,9 +93,9 @@ public partial class GlobalBrokeredServiceContainer
 		}
 
 		/// <inheritdoc />
-		Task<RemoteServiceConnectionInfo> IRemoteServiceBroker.RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
+		Task<RemoteServiceConnectionInfo> IRemoteServiceBroker.RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
 		{
-			return this.RemoteServiceBroker.RequestServiceChannelAsync(serviceMoniker, serviceActivationOptions, cancellationToken);
+			return this.RemoteServiceBroker.RequestServiceChannelAsync(serviceMoniker, options, cancellationToken);
 		}
 
 		/// <inheritdoc />
