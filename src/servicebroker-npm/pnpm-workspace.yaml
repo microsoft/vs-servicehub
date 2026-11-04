@@ -14,7 +14,7 @@ overrides:
   '@babel/code-frame': 7.29.7
   '@babel/compat-data': 7.29.7
   '@babel/core': 7.29.7
-  '@babel/generator': 7.29.12
+  '@babel/generator': 7.29.8
   '@babel/helper-compilation-targets': 7.29.7
   '@babel/helper-globals': 7.29.7
   '@babel/helper-module-imports': 7.29.7
