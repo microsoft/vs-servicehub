@@ -23,7 +23,7 @@ internal static class ReferencesHelper
 		.WithPackages(
 		[
 #if NETFRAMEWORK
-			new PackageIdentity("Microsoft.Bcl.AsyncInterfaces", "10.0.10"),
+			new PackageIdentity("Microsoft.Bcl.AsyncInterfaces", "10.0.13"),
 #endif
 			new PackageIdentity("System.ComponentModel.Composition", "10.0.10"),
 			new PackageIdentity("System.Threading.Tasks.Extensions", "4.5.4"),
