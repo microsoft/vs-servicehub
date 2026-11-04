@@ -13,6 +13,12 @@
     },
     "orderingRules": {
       "usingDirectivesPlacement": "outsideNamespace"
+    },
+    "maintainabilityRules": {
+      "topLevelTypes": [
+        "class",
+        "struct"
+      ]
     }
   }
 }

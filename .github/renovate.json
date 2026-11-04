@@ -30,10 +30,6 @@
 			"groupName": "Dockerfile and global.json updates"
 		},
 		{
-			"matchPackageNames": ["*"],
-			"allowedVersions": "!/-g[a-f0-9]+$/"
-		},
-		{
 			"matchFileNames": ["Directory.Packages.Analyzers.props"],
 			"enabled": false
 		},

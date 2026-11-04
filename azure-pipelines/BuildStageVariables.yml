@@ -2,3 +2,7 @@ variables:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   BuildConfiguration: Release
   NUGET_PACKAGES: $(Agent.TempDirectory)/.nuget/packages/
+  ${{ if eq(variables['System.PullRequest.IsFork'], 'True') }}:
+    # Anonymous feed access cannot query metadata for unsaved optional platform packages.
+    # Apply to every task: version stamping/resetting during packing can also invoke pnpm install.
+    PNPM_CONFIG_TRUST_LOCKFILE: 'true'

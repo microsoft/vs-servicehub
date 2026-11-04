@@ -39,7 +39,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				await target.EatFruitAsync(
 					);
 			}
-			catch (global::System.Exception ex)
+			catch (global::System.Exception ex) when (!(ex is global::System.OperationCanceledException))
 			{
 				throw this.ExceptionHelper(ex);
 			}
@@ -54,7 +54,7 @@ namespace Microsoft.ServiceHub.Framework.Generated
 				await target.EatAppleAsync(
 					);
 			}
-			catch (global::System.Exception ex)
+			catch (global::System.Exception ex) when (!(ex is global::System.OperationCanceledException))
 			{
 				throw this.ExceptionHelper(ex);
 			}

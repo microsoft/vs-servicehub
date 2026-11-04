@@ -39,12 +39,12 @@ internal class RemoteServiceBrokerWrapper : IRemoteServiceBroker, IDisposable
 	}
 
 	/// <inheritdoc />
-	public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken = default)
+	public Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken = default)
 	{
 		return this.RequestServiceChannelAsync(
-			() => this.serviceBroker.GetPipeAsync(serviceMoniker, serviceActivationOptions, cancellationToken),
+			() => this.serviceBroker.GetPipeAsync(serviceMoniker, options, cancellationToken),
 			serviceMoniker,
-			serviceActivationOptions,
+			options,
 			cancellationToken);
 	}
 

@@ -68,12 +68,12 @@ public class IpcRelayServiceBroker : IRemoteServiceBroker, IDisposable
 	}
 
 	/// <inheritdoc />
-	public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken = default)
+	public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken = default)
 	{
 		DisposableBag faultOrCancelBag = new();
 		try
 		{
-			IDuplexPipe? servicePipe = await this.serviceBroker.GetPipeAsync(serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false);
+			IDuplexPipe? servicePipe = await this.serviceBroker.GetPipeAsync(serviceMoniker, options, cancellationToken).ConfigureAwait(false);
 			if (servicePipe == null)
 			{
 				return default;

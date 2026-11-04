@@ -50,7 +50,9 @@ internal struct ImmutableEquatableArray<T>(ImmutableArray<T> inner) : IEquatable
 	}
 }
 
+#pragma warning disable SA1402 // File may only contain a single type
 internal static class ImmutableEquatableArray
+#pragma warning restore SA1402 // File may only contain a single type
 {
 	internal static ImmutableEquatableArray<T> Create<T>(params ReadOnlySpan<T> inner)
 	{

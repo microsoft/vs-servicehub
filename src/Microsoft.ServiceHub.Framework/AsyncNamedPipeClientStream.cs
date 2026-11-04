@@ -74,7 +74,7 @@ internal class AsyncNamedPipeClientStream : PipeStream
 		Windows.Win32.Security.SECURITY_ATTRIBUTES securityAttributes,
 		System.IO.FileMode dwCreationDisposition,
 		int dwFlagsAndAttributes,
-		IntPtr hTemplateFile);
+		nint hTemplateFile);
 
 	/// <summary>
 	/// Connects pipe client to server.
@@ -156,7 +156,7 @@ internal class AsyncNamedPipeClientStream : PipeStream
 			this.GetSecurityAttributes(true),
 			System.IO.FileMode.Open,
 			(int)(this.pipeOptions & ~PipeOptionsEx.CurrentUserOnly),
-			IntPtr.Zero);
+			default);
 
 		if (handle.IsInvalid)
 		{

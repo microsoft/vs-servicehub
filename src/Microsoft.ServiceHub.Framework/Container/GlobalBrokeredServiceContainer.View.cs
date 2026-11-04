@@ -310,10 +310,10 @@ public abstract partial class GlobalBrokeredServiceContainer
 		}
 
 		/// <inheritdoc />
-		public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions serviceActivationOptions, CancellationToken cancellationToken)
+		public async Task<RemoteServiceConnectionInfo> RequestServiceChannelAsync(ServiceMoniker serviceMoniker, ServiceActivationOptions options, CancellationToken cancellationToken)
 		{
 			Requires.NotNull(serviceMoniker, nameof(serviceMoniker));
-			serviceActivationOptions = this.ApplyOptionsFilter(serviceActivationOptions);
+			options = this.ApplyOptionsFilter(options);
 
 			using StartActivityExtension.TraceActivity activity = this.container.traceSource.StartActivity("Requesting service channel to \"{0}\"", serviceMoniker);
 
@@ -324,8 +324,8 @@ public abstract partial class GlobalBrokeredServiceContainer
 				if (proffered is object)
 				{
 					RemoteServiceConnectionInfo connectionInfo = proffered is ProfferedViewIntrinsicService viewIntrinsic
-						? await viewIntrinsic.RequestServiceChannelAsync(this, serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false)
-						: await proffered.RequestServiceChannelAsync(serviceMoniker, serviceActivationOptions, cancellationToken).ConfigureAwait(false);
+						? await viewIntrinsic.RequestServiceChannelAsync(this, serviceMoniker, options, cancellationToken).ConfigureAwait(false)
+						: await proffered.RequestServiceChannelAsync(serviceMoniker, options, cancellationToken).ConfigureAwait(false);
 
 					if (connectionInfo.IsEmpty)
 					{

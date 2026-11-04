@@ -5,6 +5,29 @@ namespace Microsoft.ServiceHub.Analyzers.GeneratorModels;
 
 internal record EventModel(string DeclaringType, string Name, string DelegateType, string EventArgsType, bool SupportsResilientProxy) : FormattableModel
 {
+	internal static EventModel? Create(IEventSymbol evt, KnownSymbols symbols)
+	{
+		if (evt.Type is not INamedTypeSymbol { DelegateInvokeMethod: { } invokeMethod })
+		{
+			return null;
+		}
+
+		bool supportsResilientProxy = invokeMethod.ReturnsVoid
+			&& invokeMethod.Parameters.Length == 2
+			&& invokeMethod.Parameters[0].RefKind == RefKind.None
+			&& invokeMethod.Parameters[0].Type.SpecialType == SpecialType.System_Object
+			&& invokeMethod.Parameters[1].RefKind == RefKind.None;
+		string eventArgsType = invokeMethod.Parameters.Length > 1
+			? invokeMethod.Parameters[1].Type.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
+			: string.Empty;
+		return new EventModel(
+			evt.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
+			evt.Name,
+			evt.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+			eventArgsType,
+			supportsResilientProxy);
+	}
+
 	internal override void WriteEvents(SourceWriter writer)
 	{
 		writer.WriteLine($$"""
@@ -65,28 +88,5 @@ internal record EventModel(string DeclaringType, string Name, string DelegateTyp
 		writer.WriteLine($$"""
 			private readonly ResilientEvent<{{this.DelegateType}}> {{this.Name}}Subscription;
 			""");
-	}
-
-	internal static EventModel? Create(IEventSymbol evt, KnownSymbols symbols)
-	{
-		if (evt.Type is not INamedTypeSymbol { DelegateInvokeMethod: { } invokeMethod })
-		{
-			return null;
-		}
-
-		bool supportsResilientProxy = invokeMethod.ReturnsVoid
-			&& invokeMethod.Parameters.Length == 2
-			&& invokeMethod.Parameters[0].RefKind == RefKind.None
-			&& invokeMethod.Parameters[0].Type.SpecialType == SpecialType.System_Object
-			&& invokeMethod.Parameters[1].RefKind == RefKind.None;
-		string eventArgsType = invokeMethod.Parameters.Length > 1
-			? invokeMethod.Parameters[1].Type.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat)
-			: string.Empty;
-		return new EventModel(
-			evt.ContainingType.ToDisplayString(ProxyGenerator.FullyQualifiedWithNullableFormat),
-			evt.Name,
-			evt.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-			eventArgsType,
-			supportsResilientProxy);
 	}
 }
