@@ -34,7 +34,7 @@ overrides:
   '@istanbuljs/schema': 0.1.6
   '@pkgr/core': 0.3.6
   '@sinclair/typebox': 0.34.52
-  '@types/estree': 1.0.9
+  '@types/estree': 1.0.10
   '@ungap/structured-clone': 1.4.0
   '@humanfs/core': 0.20.0
   '@humanfs/node': 0.17.0
