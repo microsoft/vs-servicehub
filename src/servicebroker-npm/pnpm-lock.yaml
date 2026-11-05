@@ -205,9 +205,9 @@ overrides:
   lru-cache@11: 11.5.3
   node-releases: 2.0.60
   picomatch@4: 4.0.7
-  '@jest/react-is-19': npm:react-is@19.3.0
-  react-is: 19.3.0
-  react-is-19: npm:react-is@19.3.0
+  '@jest/react-is-19': npm:react-is@19.3.1
+  react-is: 19.3.1
+  react-is-19: npm:react-is@19.3.1
   synckit: 0.12.3
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
@@ -1057,7 +1057,7 @@ packages:
   acorn-jsx@5.3.2:
     resolution: {integrity: sha1-ftW7VZCLOy8bxVxq8WU7rafweTc=}
     peerDependencies:
-      acorn: 8.18.0
+      acorn: 8.19.0
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha1-imuMqPxbNGha8V2rtEEYZjwpZJY=}
@@ -2153,8 +2153,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha1-6DVX3BLq5jqZ4AOkY4ix3LtE234=}
 
-  react-is@19.3.0:
-    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
 
   readable-stream@1.1.14:
     resolution: {integrity: sha1-fPTFTvZI44EwhMY23SB54WbAgdk=}
@@ -4672,12 +4672,12 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.3.0
+      react-is-19: react-is@19.3.1
 
   pretty-format@30.5.1:
     dependencies:
       '@jest/react-is-18': react-is@18.3.1
-      '@jest/react-is-19': react-is@19.3.0
+      '@jest/react-is-19': react-is@19.3.1
       '@jest/schemas': 30.5.0
       ansi-styles: 5.2.0
 
@@ -4695,7 +4695,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-is@19.3.0: {}
+  react-is@19.3.1: {}
 
   readable-stream@1.1.14:
     dependencies:
