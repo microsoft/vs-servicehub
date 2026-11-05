@@ -56,6 +56,6 @@ overrides:
   '@jest/react-is-19': npm:react-is@19.3.0
   react-is: 19.3.0
   react-is-19: npm:react-is@19.3.0
-  synckit: 0.11.13
+  synckit: 0.12.3
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
