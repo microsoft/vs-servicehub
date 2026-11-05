@@ -203,7 +203,7 @@ overrides:
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   lru-cache@11: 11.5.3
-  node-releases: 2.0.60
+  node-releases: 2.0.61
   picomatch@4: 4.0.7
   '@jest/react-is-19': npm:react-is@19.3.0
   react-is: 19.3.0
@@ -2012,8 +2012,8 @@ packages:
     resolution: {integrity: sha1-wDBDuzJ/QXoY/uerfuV7QIoUQwE=}
     engines: {node: '>=8'}
 
-  node-releases@2.0.60:
-    resolution: {integrity: sha512-OmO8+GM1JUZqXET720VrJCwkjUCXmCMQm0Z3UDDRbfNLHS4NEAvY60j5jiFv0tkKw2PNNlqOLhahVmwJIOLDIQ==}
+  node-releases@2.0.61:
+    resolution: {integrity: sha512-5NUN6QCxNFrS9oEA9RPS+d0AP+ooGBzzovY2JhIpDRHacPvOhHjXjUsUMX9qp4nLHZ+5jVgXB2jj/P4arGOE/g==}
     engines: {node: '>=18'}
 
   normalize-path@3.0.0:
@@ -3519,7 +3519,7 @@ snapshots:
       baseline-browser-mapping: 2.11.34
       caniuse-lite: 1.0.30001819
       electron-to-chromium: 1.5.467
-      node-releases: 2.0.60
+      node-releases: 2.0.61
       update-browserslist-db: 1.3.4(browserslist@4.29.5)
 
   bs-logger@0.2.6:
@@ -4536,7 +4536,7 @@ snapshots:
     dependencies:
       process-on-spawn: 1.1.0
 
-  node-releases@2.0.60: {}
+  node-releases@2.0.61: {}
 
   normalize-path@3.0.0: {}
 
