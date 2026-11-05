@@ -34,11 +34,11 @@ overrides:
   '@istanbuljs/schema': 0.1.6
   '@pkgr/core': 0.3.6
   '@sinclair/typebox': 0.34.52
-  '@types/estree': 1.0.9
+  '@types/estree': 1.0.10
   '@ungap/structured-clone': 1.4.0
   '@humanfs/core': 0.20.0
   '@humanfs/node': 0.17.0
-  acorn: 8.18.0
+  acorn: 8.19.0
   'ajv@8': 8.20.0
   baseline-browser-mapping: 2.11.34
   'brace-expansion@1': 1.1.21
@@ -56,6 +56,6 @@ overrides:
   '@jest/react-is-19': npm:react-is@19.3.0
   react-is: 19.3.0
   react-is-19: npm:react-is@19.3.0
-  synckit: 0.11.13
+  synckit: 0.12.3
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
