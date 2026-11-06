@@ -241,8 +241,8 @@ importers:
         specifier: ^1.1.3
         version: 1.1.3
       vscode-jsonrpc:
-        specifier: ^9.0.0
-        version: 9.0.2
+        specifier: ^10.0.0
+        version: 10.0.0
     devDependencies:
       '@microsoft/tsdoc':
         specifier: 0.17.1
@@ -2419,9 +2419,9 @@ packages:
     resolution: {integrity: sha1-uVcqv6Yr1VbBbXX968GkEdX/MXU=}
     engines: {node: '>=10.12.0'}
 
-  vscode-jsonrpc@9.0.2:
-    resolution: {integrity: sha1-CGt2xPlPGwdD3urE4LV8nEpV6B0=}
-    engines: {node: '>=14.0.0'}
+  vscode-jsonrpc@10.0.0:
+    resolution: {integrity: sha512-USSfxg0vDIpTQqlQBGxF3mBARyoS8cU7LHLpbYNh6dOJt32dlskxPWB0Irrh5TllTmyf7oNLAvqDqzklbwwnpA==}
+    engines: {node: '>=14.17.0'}
 
   which-module@2.0.1:
     resolution: {integrity: sha1-d2sf412Qrr6Z6KwV6yQJM4mkpAk=}
@@ -4963,7 +4963,7 @@ snapshots:
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
-  vscode-jsonrpc@9.0.2: {}
+  vscode-jsonrpc@10.0.0: {}
 
   which-module@2.0.1: {}
 
