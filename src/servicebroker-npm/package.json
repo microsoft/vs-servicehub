@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "pnpm@12.4.2",
+	"packageManager": "pnpm@12.16.1",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
@@ -34,14 +34,14 @@
 		"nerdbank-streams": "^2.14.354",
 		"strict-event-emitter-types": "^2.0.0",
 		"string-hash": "^1.1.3",
-		"vscode-jsonrpc": "^9.0.0"
+		"vscode-jsonrpc": "^10.0.0"
 	},
 	"devDependencies": {
 		"@microsoft/tsdoc": "0.17.1",
 		"@tsconfig/node20": "20.1.10",
 		"@types/jest": "30.0.0",
 		"@types/msgpack-lite": "0.1.12",
-		"@types/node": "20.19.43",
+		"@types/node": "26.6.6",
 		"@types/string-hash": "1.1.3",
 		"eslint": "10.13.0",
 		"eslint-config-prettier": "10.1.8",
