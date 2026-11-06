@@ -51,7 +51,7 @@ export class BE32MessageWriter extends AbstractMessageWriter implements MessageW
 	private errorCount = 0
 
 	constructor(
-		private readonly writable: NodeJS.WritableStream | Writable,
+		private readonly writable: NodeJS.WritableStream,
 		private readonly encoder: (message: Message) => Promise<Uint8Array>
 	) {
 		super()
