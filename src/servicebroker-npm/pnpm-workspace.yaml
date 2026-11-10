@@ -14,7 +14,7 @@ overrides:
   '@babel/code-frame': 7.29.7
   '@babel/compat-data': 7.29.7
   '@babel/core': 7.29.7
-  '@babel/generator': 7.29.8
+  '@babel/generator': 7.29.12
   '@babel/helper-compilation-targets': 7.29.7
   '@babel/helper-globals': 7.29.7
   '@babel/helper-module-imports': 7.29.7
@@ -24,12 +24,12 @@ overrides:
   '@babel/helper-validator-identifier': 7.29.7
   '@babel/helper-validator-option': 7.29.7
   '@babel/helpers': 7.29.10
-  '@babel/parser': 7.29.11
+  '@babel/parser': 7.29.12
   '@babel/plugin-syntax-import-attributes': 7.29.7
   '@babel/plugin-syntax-jsx': 7.29.7
   '@babel/plugin-syntax-typescript': 7.29.7
   '@babel/template': 7.29.7
-  '@babel/traverse': 7.29.10
+  '@babel/traverse': 7.29.12
   '@babel/types': 7.29.11
   '@istanbuljs/schema': 0.1.6
   '@pkgr/core': 0.3.6
@@ -45,17 +45,17 @@ overrides:
   'brace-expansion@2': 2.1.7
   'brace-expansion@5': 5.0.12
   browserslist: 4.29.5
-  caniuse-lite: 1.0.30001819
-  electron-to-chromium: 1.5.467
+  caniuse-lite: 1.0.30001820
+  electron-to-chromium: 1.5.468
   get-east-asian-width: 1.7.0
   immutable: 5.1.9
   istanbul-lib-processinfo: 3.0.1
   'lru-cache@11': 11.5.3
-  node-releases: 2.0.60
+  node-releases: 2.0.61
   'picomatch@4': 4.0.7
-  '@jest/react-is-19': npm:react-is@19.3.0
-  react-is: 19.3.0
-  react-is-19: npm:react-is@19.3.0
+  '@jest/react-is-19': npm:react-is@19.3.1
+  react-is: 19.3.1
+  react-is-19: npm:react-is@19.3.1
   synckit: 0.12.3
   tinyglobby: 0.2.17
   unrs-resolver: 1.12.2
