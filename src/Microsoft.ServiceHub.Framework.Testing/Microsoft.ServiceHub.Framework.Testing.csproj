@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
     <Description>A library that can assist in testing brokered service contracts.</Description>
     <PackageValidationBaselineVersion>4.8.55</PackageValidationBaselineVersion>
     <!-- We do not (yet) have any resx files. -->
     <MicroBuild_LocalizeOutputAssembly>false</MicroBuild_LocalizeOutputAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageValidationBaselineFrameworkToIgnore Include="net8.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Validation" />
