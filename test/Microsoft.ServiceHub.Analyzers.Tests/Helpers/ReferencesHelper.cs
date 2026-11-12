@@ -17,7 +17,7 @@ internal static class ReferencesHelper
 #if NETFRAMEWORK
 		ReferenceAssemblies.NetFramework.Net472.Default
 #else
-		ReferenceAssemblies.Net.Net80
+		new ReferenceAssemblies("net10.0", new PackageIdentity("Microsoft.NETCore.App.Ref", "10.0.0"), "ref/net10.0")
 #endif
 		.WithNuGetConfigFilePath(NuGetConfigPath)
 		.WithPackages(
@@ -31,7 +31,7 @@ internal static class ReferencesHelper
 			new PackageIdentity("Microsoft.VisualStudio.Validation", "18.7.19"),
 		]);
 
-	/// <summary>Replaces the .NET 8 reference assembly for System.Collections.Immutable with the version used by this test project.</summary>
+	/// <summary>Replaces the .NET reference assembly for System.Collections.Immutable with the version used by this test project.</summary>
 	/// <param name="solution">The test solution.</param>
 	/// <param name="projectId">The test project to update.</param>
 	/// <returns>The updated test solution.</returns>

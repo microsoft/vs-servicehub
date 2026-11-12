@@ -34,9 +34,9 @@ From that project's directory, the equivalent command is:
 dotnet test --no-build -c Release
 ```
 
-To target one framework, use a target supported by the project (for example, `net8.0` for `test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj`):
+To target one framework, use a target supported by the project (for example, `net10.0` for `test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj`):
 ```bash
-dotnet test test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj --no-build -c Release --framework net8.0
+dotnet test test/Microsoft.ServiceHub.Framework.Tests/Microsoft.ServiceHub.Framework.Tests.csproj --no-build -c Release --framework net10.0
 ```
 
 Options after `--` are passed to the xUnit v3 MTP runner. For runner options such as selecting a test case, inspect its help:
