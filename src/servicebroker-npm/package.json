@@ -1,7 +1,7 @@
 {
 	"name": "@microsoft/servicehub-framework",
 	"version": "0.0.0-placeholder",
-	"packageManager": "pnpm@12.16.1",
+	"packageManager": "pnpm@12.18.0",
 	"description": "The distributed ServiceHub Framework",
 	"typings": "js/src/index.d.ts",
 	"main": "js/src/index.js",
@@ -55,7 +55,7 @@
 		"ts-jest": "29.4.15",
 		"ts-node": "10.9.2",
 		"typescript": "6.0.3",
-		"typescript-eslint": "8.72.1",
+		"typescript-eslint": "8.72.2",
 		"yargs": "18.2.0"
 	}
 }
