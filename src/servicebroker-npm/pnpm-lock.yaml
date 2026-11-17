@@ -200,7 +200,7 @@ overrides:
   caniuse-lite: 1.0.30001823
   electron-to-chromium: 1.5.478
   get-east-asian-width: 1.7.0
-  immutable: 5.1.9
+  immutable: 5.1.10
   istanbul-lib-processinfo: 3.0.1
   lru-cache@11: 11.5.3
   node-releases: 2.0.63
@@ -226,8 +226,8 @@ importers:
         specifier: ^0.1.3
         version: 0.1.3
       immutable:
-        specifier: 5.1.9
-        version: 5.1.9
+        specifier: 5.1.10
+        version: 5.1.10
       msgpack-lite:
         specifier: ^0.2.1
         version: 0.2.1
@@ -1628,8 +1628,8 @@ packages:
     resolution: {integrity: sha1-aleq70yQ3yesNZCHXSno8RmIyI4=}
     engines: {node: '>= 4'}
 
-  immutable@5.1.9:
-    resolution: {integrity: sha1-rCPDoBmSq2ZeFKyf//KY8ozXSgw=}
+  immutable@5.1.10:
+    resolution: {integrity: sha512-Uu72qZXUtm+n98uML3Xr6pVFHl4xnmeCuAsrm0VqFlQim/Ib6NrPSJLpx6CrZ/G6DnoGaCUgtx8gY+o+ovxnCw==}
 
   import-local@3.2.0:
     resolution: {integrity: sha1-w9XHRXmMAqb4uJdyarpRABhu4mA=}
@@ -3964,7 +3964,7 @@ snapshots:
 
   ignore@7.0.6: {}
 
-  immutable@5.1.9: {}
+  immutable@5.1.10: {}
 
   import-local@3.2.0:
     dependencies:
