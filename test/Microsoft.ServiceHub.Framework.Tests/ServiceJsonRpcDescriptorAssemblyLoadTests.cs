@@ -10,7 +10,6 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using MessagePack;
 using Microsoft.ServiceHub.Framework;
 using Nerdbank.Streams;
 using Newtonsoft.Json;
@@ -29,7 +28,7 @@ public class ServiceJsonRpcDescriptorAssemblyLoadTests : TestBase
 	/// <remarks>
 	/// This interface is internal because when it's public, we can't avoid the assembly load.
 	/// </remarks>
-	[JsonObject, Union(0, typeof(object))]
+	[JsonObject, MessagePack.Union(0, typeof(object))]
 	public interface IPublicServiceData
 	{
 	}
@@ -55,7 +54,7 @@ public class ServiceJsonRpcDescriptorAssemblyLoadTests : TestBase
 	/// <remarks>
 	/// This interface is internal because when it's public, we can't avoid the assembly load.
 	/// </remarks>
-	[JsonObject, Union(0, typeof(object))]
+	[JsonObject, MessagePack.Union(0, typeof(object))]
 	internal interface IInternalServiceData
 	{
 	}
