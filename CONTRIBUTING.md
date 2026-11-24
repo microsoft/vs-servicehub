@@ -48,6 +48,12 @@ pnpm --dir src/servicebroker-npm run auth-install
 
 The root `init.ps1` script installs the pnpm version pinned by this repo's `packageManager` field.
 
+Copilot setup and documentation validation use `init.ps1 -NoNpmRestore` to restore managed
+projects and .NET tools without installing TypeScript dependencies.
+Copilot setup also builds the repository analyzers to verify the managed prerequisites.
+For TypeScript work, run `init.ps1` without `-NoNpmRestore` to install pnpm and restore
+the npm dependencies (including refreshing feed credentials locally as described in the repository instructions).
+
 #### NPM/pnpm Maintenance
 
 To update the pinned pnpm version and regenerate the lockfile, run:

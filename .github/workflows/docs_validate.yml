@@ -19,7 +19,8 @@ jobs:
         uses: becheran/mlc@d791bd6ae91ea883f02172e21f453ba8da45dfcd # v1.3.0
       - name: ⚙ Install prerequisites
         run: |
-          ./init.ps1 -UpgradePrerequisites
+          # DocFX consumes the managed projects, not the npm package.
+          ./init.ps1 -UpgradePrerequisites -NoNpmRestore
           dotnet --info
         shell: pwsh
       - name: 🏗️ Build analyzers
